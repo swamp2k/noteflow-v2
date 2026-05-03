@@ -1,0 +1,2142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script>
+// Apply saved theme immediately to prevent flash of default theme
+(function(){
+  var THEME_VARS = {
+    'warm':      {bg:'#f7f4ef',surface:'#ffffff',surfaceAlt:'#f2ede5',accent:'#c17f3e',text:'#2c2825',border:'#e8e2d9',muted:'#a89f94'},
+    'arctic':    {bg:'#f5f8fc',surface:'#ffffff',surfaceAlt:'#edf2f8',accent:'#2b7fff',text:'#0f1c2e',border:'#d8e4f0',muted:'#7a96b8'},
+    'forest':    {bg:'#f0f5f1',surface:'#ffffff',surfaceAlt:'#e8f0ea',accent:'#2e7d4f',text:'#1a2e20',border:'#cfe3d4',muted:'#6e9a7a'},
+    'rose':      {bg:'#fdf4f6',surface:'#ffffff',surfaceAlt:'#f8e8ec',accent:'#d63a60',text:'#2d1a20',border:'#f0d0d8',muted:'#b0707e'},
+    'lavender':  {bg:'#f4f2fb',surface:'#ffffff',surfaceAlt:'#ece8f8',accent:'#6d4fc4',text:'#231a38',border:'#dcd4f2',muted:'#9880c4'},
+    'sepia':     {bg:'#faf6f0',surface:'#fdf9f4',surfaceAlt:'#f2ebe0',accent:'#8b5e3c',text:'#3d2b1a',border:'#e8ddd0',muted:'#a08060'},
+    'stone':     {bg:'#f5f4f2',surface:'#ffffff',surfaceAlt:'#eeece8',accent:'#78716c',text:'#1c1917',border:'#e7e5e1',muted:'#a8a29e'},
+    'midnight':  {bg:'#0f1117',surface:'#181b24',surfaceAlt:'#1e2130',accent:'#7c8cf8',text:'#e4e8f5',border:'#262c40',muted:'#5c6480'},
+    'obsidian':  {bg:'#13131a',surface:'#1c1c26',surfaceAlt:'#222230',accent:'#a78bfa',text:'#e8e4f8',border:'#2a2a3e',muted:'#6060a0'},
+    'ink':       {bg:'#161616',surface:'#1e1e1e',surfaceAlt:'#262626',accent:'#e8c547',text:'#f0ede8',border:'#2e2e2e',muted:'#666666'},
+    'charcoal':  {bg:'#1e2028',surface:'#272b36',surfaceAlt:'#2e3340',accent:'#4ecdc4',text:'#dde3f0',border:'#363c4e',muted:'#6a7490'},
+    'forest-dk': {bg:'#0e1a12',surface:'#152018',surfaceAlt:'#1c2a20',accent:'#4ade80',text:'#d4f0dd',border:'#1e3224',muted:'#4a7a58'},
+    'ember':     {bg:'#1a1208',surface:'#241a0e',surfaceAlt:'#2e2010',accent:'#f97316',text:'#fde8cc',border:'#382612',muted:'#7a5530'},
+    'nord':      {bg:'#2e3440',surface:'#3b4252',surfaceAlt:'#434c5e',accent:'#88c0d0',text:'#eceff4',border:'#4c566a',muted:'#7b8a9e'},
+    'rose-dk':   {bg:'#1a0e12',surface:'#26141a',surfaceAlt:'#301820',accent:'#fb7185',text:'#fde4ea',border:'#3a1c24',muted:'#8a4458'},
+  };
+  try {
+    var saved = localStorage.getItem('noteflow_display_prefs');
+    var themeId = saved ? JSON.parse(saved).theme : null;
+    var t = THEME_VARS[themeId] || THEME_VARS['warm'];
+    var r = document.documentElement;
+    r.style.setProperty('--bg', t.bg);
+    r.style.setProperty('--surface', t.surface);
+    r.style.setProperty('--surface-alt', t.surfaceAlt);
+    r.style.setProperty('--accent', t.accent);
+    r.style.setProperty('--text', t.text);
+    r.style.setProperty('--border', t.border);
+    r.style.setProperty('--muted', t.muted);
+    r.style.setProperty('--accent-bg', t.accent + '20');
+    r.style.setProperty('--text-soft', t.muted);
+    var hex = t.bg.replace('#','');
+    r.style.setProperty('--header-bg', 'rgba('+parseInt(hex.slice(0,2),16)+','+parseInt(hex.slice(2,4),16)+','+parseInt(hex.slice(4,6),16)+',0.95)');
+    var isDark = (parseInt(hex.slice(0,2),16)+parseInt(hex.slice(2,4),16)+parseInt(hex.slice(4,6),16)) < 300;
+    r.style.setProperty('--hidden-bg',     isDark ? 'rgba(124,111,158,0.15)' : '#f0edf8');
+    r.style.setProperty('--hidden-border', isDark ? 'rgba(124,111,158,0.35)' : '#c4b8e8');
+  } catch(e) {}
+})();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>NoteFlow — Tracker</title>
+<link rel="manifest" href="https://noteflow-api.jeppesen.cc/pwa/manifest.json" crossorigin="anonymous">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&display=swap" media="print" onload="this.media='all'">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.1/marked.min.js" defer></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:           #f7f4ef;
+    --surface:      #ffffff;
+    --border:       #e8e2d9;
+    --muted:        #a89f94;
+    --text:         #2c2825;
+    --text-soft:    #6b6560;
+    --accent:       #c17f3e;
+    --accent-bg:    #fdf3e7;
+    --star:         #e8a020;
+    --danger:       #c0392b;
+    --hidden-bg:    #f0edf8;
+    --hidden-border:#c4b8e8;
+    --sidebar-w:    220px;
+    --header-h:     52px;
+    --radius:       12px;
+    --shadow:       0 1px 3px rgba(44,40,37,0.07), 0 4px 12px rgba(44,40,37,0.05);
+    --font-body:    'DM Sans', sans-serif;
+    --font-serif:   'Lora', serif;
+    --surface-alt:  var(--surface-alt);
+  }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.4;
+  }
+
+  /* ── App shell ──────────────────────────────────────────────────── */
+  /* Not display:flex — sidebar is position:fixed so no flex needed.
+     Using flex caused Blink to occasionally treat the fixed sidebar as
+     in-flow during large DOM insertions (infinite scroll), pushing
+     #content 220px to the right. */
+  #app { min-height: 100vh; }
+
+  /* ── Sidebar ────────────────────────────────────────────────────── */
+  #sidebar {
+    width: var(--sidebar-w);
+    min-height: 100vh;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    position: fixed; left: 0; top: 0; bottom: 0;
+    z-index: 50;
+    transition: transform 0.2s;
+  }
+
+  .sidebar-logo {
+    padding: 16px 18px 12px;
+    font-family: var(--font-serif);
+    font-size: 19px; font-weight: 500;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+    letter-spacing: -0.3px;
+  }
+
+  .sidebar-nav { flex: 1; padding: 10px 8px; display: flex; flex-direction: column; }
+  .sidebar-nav .nav-spacer { flex: 1; min-height: 16px; }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px; border-radius: 8px;
+    cursor: pointer; font-size: 14px; color: var(--text-soft);
+    transition: all 0.12s; user-select: none; border: none;
+    background: none; width: 100%; text-align: left;
+    font-family: var(--font-body);
+  }
+  .nav-item:hover { background: var(--accent-bg); color: var(--accent); }
+  .nav-item.active { background: var(--accent-bg); color: var(--accent); font-weight: 500; }
+  .nav-item svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; pointer-events: none; }
+  .nav-item.active svg { stroke: var(--accent); }
+
+  .nav-section-label {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.8px;
+    color: var(--muted); text-transform: uppercase;
+    padding: 12px 12px 4px;
+  }
+
+  /* ── Collapsible sidebar sections ───────────────────────────────── */
+  .nav-section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 12px 4px; cursor: pointer; user-select: none;
+  }
+  .nav-section-header:hover .nav-section-label-text { color: var(--text-soft); }
+  .nav-section-label-text {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.8px;
+    color: var(--muted); text-transform: uppercase; transition: color 0.15s;
+  }
+  .nav-section-chevron {
+    font-size: 9px; color: var(--muted); transition: transform 0.2s;
+  }
+  .nav-section-header.collapsed .nav-section-chevron { transform: rotate(-90deg); }
+  .nav-section-body { overflow: hidden; }
+  .nav-section-body.collapsed { display: none; }
+
+  /* ── Project popover ─────────────────────────────────────────────── */
+  .project-popover {
+    position: absolute; z-index: 200;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    padding: 6px; min-width: 180px; max-width: 240px;
+  }
+  .project-popover-item {
+    display: block; width: 100%; text-align: left;
+    background: none; border: none; border-radius: 6px;
+    padding: 7px 10px; font-size: 13px; font-family: var(--font-body);
+    color: var(--text); cursor: pointer; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
+  }
+  .project-popover-item:hover { background: var(--accent-bg); color: var(--accent); }
+  .project-popover-item.active-project { color: var(--accent); font-weight: 500; }
+  .project-popover-divider { height: 1px; background: var(--border); margin: 4px 0; }
+  .project-popover-new {
+    display: flex; align-items: center; gap: 6px;
+    padding: 4px 6px;
+  }
+  .project-popover-new input {
+    flex: 1; border: 1px solid var(--border); border-radius: 6px;
+    padding: 5px 8px; font-size: 12px; font-family: var(--font-body);
+    background: var(--bg); color: var(--text); outline: none;
+  }
+  .project-popover-new input:focus { border-color: var(--accent); }
+  .project-popover-new button {
+    background: var(--accent); color: #fff; border: none;
+    border-radius: 6px; padding: 5px 9px; font-size: 12px;
+    font-family: var(--font-body); cursor: pointer; white-space: nowrap;
+  }
+
+  /* ── Main content ───────────────────────────────────────────────── */
+  #content {
+    display: flex; flex-direction: column;
+    min-height: 100vh;
+    margin-left: 0;
+  }
+  #content.sidebar-visible {
+    margin-left: var(--sidebar-w);
+  }
+
+  header {
+    position: sticky; top: 0; z-index: 40;
+    background: var(--header-bg, rgba(247,244,239,0.95));
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 20px;
+    height: var(--header-h);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+
+  .header-title {
+    font-size: 15px; font-weight: 500; color: var(--text);
+  }
+
+  .header-right { display: flex; gap: 8px; align-items: center; }
+
+  .icon-btn {
+    width: 32px; height: 32px; border-radius: 7px;
+    border: 1px solid var(--border); background: var(--surface);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    color: var(--text-soft); transition: all 0.15s;
+  }
+  .icon-btn:hover { background: var(--accent-bg); color: var(--accent); border-color: var(--accent); }
+  .icon-btn svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+
+  /* hamburger for mobile */
+  #menu-toggle { display: none; }
+
+  main {
+    flex: 1;
+    max-width: min(var(--feed-max-width, 700px), 100%);
+    width: 100%;
+    margin: 0 auto;
+    padding: 20px 20px 100px;
+  }
+
+  /* ── Composer ───────────────────────────────────────────────────── */
+  #composer {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+
+  /* Card display collapsibles */
+  .card-content details { border: 1px solid var(--border); border-radius: 6px; margin: 6px 0; }
+  .card-content details summary { padding: 6px 10px; font-weight: 600; cursor: pointer; color: var(--accent); }
+  .card-content details > *:not(summary) { padding: 6px 10px; }
+
+  /* ── Native markdown toolbar ──────────────────────────────────────────────── */
+  .md-toolbar {
+    display: flex; flex-wrap: wrap; gap: 2px; align-items: center;
+    padding: 5px 8px; background: var(--surface-alt);
+    border-bottom: 1px solid var(--border);
+  }
+  .md-btn {
+    height: 26px; min-width: 26px; padding: 0 5px;
+    border: none; background: none; border-radius: 4px;
+    cursor: pointer; color: var(--text-soft);
+    font-family: var(--font-body); font-size: 12px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.12s; white-space: nowrap;
+  }
+  .md-btn:hover { background: var(--accent-bg); color: var(--accent); }
+  .md-btn svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+  .md-sep { width: 1px; background: var(--border); margin: 3px 2px; height: 18px; }
+  .md-textarea {
+    width: 100%; border: none; outline: none; resize: none;
+    font-family: var(--font-body); font-size: 14.5px; line-height: 1.6;
+    color: var(--text); background: var(--surface);
+    padding: 10px 14px; min-height: 44px; max-height: 280px;
+    overflow-y: auto; display: block; box-sizing: border-box;
+    transition: min-height 0.15s;
+  }
+  .md-textarea::placeholder { color: var(--muted); }
+  .md-textarea:focus { outline: none; }
+  #composer .md-toolbar { display: none; }
+  #composer.expanded .md-toolbar { display: flex; }
+  #composer.expanded .md-textarea { min-height: 90px; }
+  /* Inline card editing */
+  .inline-md-wrap .md-toolbar { display: flex; border-radius: 6px 6px 0 0; }
+  .inline-md-wrap .md-textarea {
+    min-height: 90px; max-height: 320px; border: 1px solid var(--border);
+    border-top: none; border-radius: 0 0 6px 6px; font-size: 14px; overflow-y: auto;
+  }
+
+  .composer-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 7px 12px; border-top: 1px solid var(--border); background: var(--surface-alt);
+  }
+  .composer-left { display: flex; gap: 6px; align-items: center; }
+
+  .attach-btn {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 12px; color: var(--muted);
+    background: none; border: none; cursor: pointer; padding: 4px 6px;
+    border-radius: 6px; transition: all 0.12s; font-family: var(--font-body);
+  }
+  .attach-btn:hover { background: var(--accent-bg); color: var(--accent); }
+  .attach-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; pointer-events: none; }
+
+  #image-preview-area { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 12px 10px; }
+  .img-preview-wrap { position: relative; width: 68px; height: 68px; }
+  .img-preview-wrap img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); }
+  .img-remove {
+    position: absolute; top: -5px; right: -5px;
+    width: 17px; height: 17px; border-radius: 50%;
+    background: var(--danger); color: #fff; border: none; cursor: pointer;
+    font-size: 10px; display: flex; align-items: center; justify-content: center;
+  }
+  .ocr-badge {
+    position: absolute; bottom: 2px; left: 2px; right: 2px;
+    background: rgba(0,0,0,0.55); color: #fff; font-size: 9px;
+    text-align: center; border-radius: 0 0 6px 6px; padding: 1px 2px;
+  }
+
+  .save-btn {
+    background: var(--accent); color: #fff; border: none; border-radius: 8px;
+    padding: 6px 18px; font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: all 0.15s; font-family: var(--font-body);
+  }
+  .save-btn:hover { background: #a96d32; }
+  .save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ── Feed ───────────────────────────────────────────────────────── */
+  #feed { display: flex; flex-direction: column; gap: 10px; }
+
+  .memo-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 12px 14px; transition: box-shadow 0.15s; position: relative;
+  }
+  .memo-card:hover { box-shadow: 0 2px 8px rgba(44,40,37,0.1), 0 6px 20px rgba(44,40,37,0.07); }
+  .memo-card.starred { border-left: 3px solid var(--star); }
+  .memo-card.hidden-note { border-left: 3px solid var(--hidden-border); background: var(--hidden-bg); }
+  .memo-card.pinned { border-top: 2px solid var(--accent); }
+  @keyframes tc-note-flash { 0%,100% { box-shadow: var(--shadow); } 30% { box-shadow: 0 0 0 3px var(--accent); } }
+  .memo-card.tc-highlight { animation: tc-note-flash 1.4s ease; }
+
+  .card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .card-meta { display: flex; align-items: center; gap: 7px; }
+  .card-date { font-size: 11.5px; color: var(--muted); }
+  .card-badges { display: flex; gap: 4px; }
+  .badge { font-size: 10px; padding: 1px 6px; border-radius: 10px; font-weight: 500; }
+  .badge-pinned { background: var(--accent-bg); color: var(--accent); }
+  .badge-hidden { background: var(--hidden-bg); color: #7c5cbf; border: 1px solid var(--hidden-border); }
+
+  .card-actions {
+    display: flex; gap: 2px; opacity: 0; transition: opacity 0.15s;
+  }
+  .memo-card:hover .card-actions,
+  .memo-card .card-actions:focus-within { opacity: 1; }
+
+  .card-action-btn {
+    width: 26px; height: 26px; border-radius: 6px; border: none;
+    background: none; cursor: pointer; color: var(--muted);
+    display: flex; align-items: center; justify-content: center; transition: all 0.12s;
+  }
+  .card-action-btn:hover { background: var(--accent-bg); color: var(--accent); }
+  .card-action-btn.star-active { color: var(--star); }
+  .card-action-btn.star-active svg { fill: var(--star); }
+  .card-action-btn svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+
+  /* ── Card content ───────────────────────────────────────────────── */
+  .card-content {
+    font-size: 14.5px; line-height: 1.65; color: var(--text); word-break: break-word;
+  }
+  .card-content p { margin: 0 0 8px; }
+  .card-content p:last-child { margin-bottom: 0; }
+  .card-content h1 { font-family: var(--font-serif); font-size: 1.25em; font-weight: 500; line-height: 1.3; margin: 6px 0 4px; }
+  .card-content h2 { font-family: var(--font-serif); font-size: 1.1em; font-weight: 500; line-height: 1.3; margin: 5px 0 3px; }
+  .card-content h3 { font-size: 1em; font-weight: 600; line-height: 1.3; margin: 4px 0 2px; }
+  .card-content code { background: var(--surface-alt); padding: 1px 4px; border-radius: 3px; font-size: 0.87em; font-family: monospace; }
+  .card-content pre { background: var(--surface-alt); padding: 8px 12px; border-radius: 8px; overflow-x: auto; margin: 6px 0; }
+  .card-content blockquote { border-left: 3px solid var(--accent); padding-left: 10px; color: var(--text-soft); margin: 6px 0; }
+  .card-content ul, .card-content ol { padding-left: 18px; margin: 4px 0 8px; }
+  .card-content li { margin: 2px 0; }
+  .card-content a { color: var(--accent); }
+  .card-content hr { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
+  .card-content details { margin-top: 8px; }
+  .card-content details summary { cursor: pointer; color: var(--muted); font-size: 12px; user-select: none; }
+
+  .card-images { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; align-items: flex-start; }
+  .file-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: var(--accent-bg); color: var(--accent);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 5px 10px; font-size: 12px; text-decoration: none;
+    transition: all 0.12s; max-width: 200px; cursor: pointer;
+    font-family: var(--font-body);
+  }
+  .file-chip:hover { background: var(--accent); color: #fff; }
+  .file-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .file-chip-indexing::after { content: ' ⏳'; font-size: 10px; opacity: 0.6; }
+  /* Rich previews */
+  .att-preview-pdf { width: 100%; height: 320px; border: none; border-radius: 8px; margin-top: 6px; background: var(--bg-alt); display: block; }
+  .att-preview-video { width: 100%; max-height: 320px; border-radius: 8px; margin-top: 6px; display: block; background: #000; }
+  .att-preview-audio { width: 100%; margin-top: 6px; border-radius: 8px; }
+  .att-preview-text { font-family: monospace; font-size: 12px; line-height: 1.5; color: var(--muted); background: var(--bg-alt); border-radius: 8px; padding: 10px 12px; margin-top: 6px; max-height: 160px; overflow-y: auto; white-space: pre-wrap; word-break: break-word; }
+  .att-preview-indexed { font-size: 12px; line-height: 1.5; color: var(--muted); background: var(--bg-alt); border-radius: 8px; padding: 10px 12px; margin-top: 6px; max-height: 120px; overflow-y: auto; font-style: italic; }
+  .att-preview-indexed::before { content: '📄 '; }
+
+  /* Attachments gallery view */
+  .att-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
+  .att-gallery-item {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden; cursor: pointer;
+    transition: box-shadow 0.15s; position: relative;
+  }
+  .att-gallery-item:hover { box-shadow: 0 4px 16px rgba(44,40,37,0.12); }
+  .att-gallery-img { width: 100%; height: 120px; object-fit: cover; display: block; background: var(--bg); }
+  .att-gallery-icon {
+    width: 100%; height: 120px; display: flex; align-items: center;
+    justify-content: center; font-size: 36px; background: var(--accent-bg);
+  }
+  .att-gallery-meta {
+    padding: 7px 10px; border-top: 1px solid var(--border);
+  }
+  .att-gallery-name { font-size: 12px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .att-gallery-link { font-size: 11px; color: var(--accent); margin-top: 2px; cursor: pointer; }
+  .att-gallery-link:hover { text-decoration: underline; }
+  .card-images img {
+    max-width: 180px; max-height: 140px; border-radius: 7px;
+    border: 1px solid var(--border); object-fit: cover; cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .card-images img:hover { transform: scale(1.02); }
+
+  .card-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+  body.hide-tags .card-tags { display: none; }
+  .tag-pill {
+    font-size: 11px; padding: 2px 7px;
+    background: var(--accent-bg); color: var(--accent);
+    border-radius: 10px; cursor: pointer; transition: all 0.12s; font-weight: 500;
+  }
+  .tag-pill:hover { background: var(--accent); color: #fff; }
+
+  /* ── Share modal ────────────────────────────────────────────────── */
+  .modal-backdrop {
+    display: none; position: fixed; inset: 0; z-index: 200;
+    background: rgba(44,40,37,0.4); backdrop-filter: blur(4px);
+    align-items: center; justify-content: center;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    background: var(--surface); border-radius: var(--radius);
+    border: 1px solid var(--border); box-shadow: 0 8px 40px rgba(44,40,37,0.18);
+    padding: 24px; width: 380px; max-width: 90vw;
+  }
+  .modal h3 { font-size: 15px; font-weight: 600; margin-bottom: 14px; }
+  .modal-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; }
+  .modal-label { font-size: 12px; color: var(--muted); min-width: 60px; }
+  .modal input[type=text] {
+    flex: 1; border: 1px solid var(--border); border-radius: 7px;
+    padding: 6px 10px; font-size: 13px; font-family: var(--font-body);
+    background: var(--bg); color: var(--text); outline: none;
+  }
+  .modal input[type=text]:focus { border-color: var(--accent); }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+  .btn-ghost {
+    background: none; border: 1px solid var(--border); border-radius: 7px;
+    padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--text-soft);
+    font-family: var(--font-body); transition: all 0.12s;
+  }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-primary {
+    background: var(--accent); color: #fff; border: none; border-radius: 7px;
+    padding: 6px 14px; font-size: 13px; cursor: pointer; font-family: var(--font-body);
+    transition: all 0.12s;
+  }
+  .btn-primary:hover { background: #a96d32; }
+  .share-link-row {
+    display: flex; gap: 6px; margin-top: 10px;
+  }
+  .share-link-row input {
+    flex: 1; border: 1px solid var(--border); border-radius: 7px;
+    padding: 6px 10px; font-size: 12px; font-family: monospace;
+    background: var(--bg); color: var(--text-soft); outline: none;
+  }
+  .copy-btn {
+    background: var(--accent-bg); color: var(--accent); border: 1px solid var(--accent);
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer;
+    font-family: var(--font-body); transition: all 0.12s; white-space: nowrap;
+  }
+  .copy-btn:hover { background: var(--accent); color: #fff; }
+
+  /* ── Load more ──────────────────────────────────────────────────── */
+  #load-more { text-align: center; padding: 16px 0; }
+  .load-more-btn {
+    background: none; border: 1px solid var(--border); border-radius: 8px;
+    padding: 7px 20px; font-size: 13px; color: var(--muted);
+    cursor: pointer; transition: all 0.15s; font-family: var(--font-body);
+  }
+  .load-more-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
+
+  /* ── Lightbox ───────────────────────────────────────────────────── */
+  #lightbox {
+    display: none; position: fixed; inset: 0; z-index: 300;
+    background: rgba(0,0,0,0.9); align-items: center; justify-content: center;
+  }
+  #lightbox.open { display: flex; }
+  #lightbox img { max-width: 88vw; max-height: 88vh; border-radius: 8px; user-select: none; touch-action: none; transform-origin: center center; cursor: zoom-in; }
+  #lightbox-content { display: none; }
+  #lightbox-content.open { display: flex !important; }
+  .lb-file-header { padding: 14px 18px; font-size: 13px; font-weight: 600; color: var(--text); background: var(--surface-alt); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .lb-file-body { flex: 1; overflow: hidden; position: relative; }
+  .lb-file-body iframe { width: 100%; height: 100%; border: none; display: block; }
+  .lb-file-body video, .lb-file-body audio { width: 100%; padding: 20px; box-sizing: border-box; }
+  .lb-file-body .lb-text { padding: 20px; font-family: monospace; font-size: 13px; line-height: 1.6; white-space: pre-wrap; overflow-y: auto; height: 100%; box-sizing: border-box; color: #333; }
+  .lb-file-body .lb-indexed { padding: 20px; font-size: 14px; line-height: 1.7; overflow-y: auto; height: 100%; box-sizing: border-box; color: #444; }
+  .lb-file-body .lb-indexed h3 { font-size: 13px; color: #999; font-weight: normal; margin: 0 0 12px; }
+  .lb-loading { display: flex; align-items: center; justify-content: center; height: 100%; color: #999; font-size: 14px; }
+  #lightbox-close {
+    position: absolute; top: 16px; right: 16px;
+    background: rgba(255,255,255,0.15); border: none; color: #fff;
+    width: 36px; height: 36px; border-radius: 50%; cursor: pointer;
+    font-size: 18px; display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+  }
+  #lightbox-close:hover { background: rgba(255,255,255,0.3); }
+  #lightbox-prev, #lightbox-next {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    background: rgba(255,255,255,0.12); border: none; color: #fff;
+    width: 44px; height: 44px; border-radius: 50%; cursor: pointer;
+    font-size: 28px; display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s; user-select: none;
+  }
+  #lightbox-prev { left: 16px; }
+  #lightbox-next { right: 16px; }
+  #lightbox-prev:hover, #lightbox-next:hover { background: rgba(255,255,255,0.28); }
+  #lightbox-prev.hidden, #lightbox-next.hidden { opacity: 0; pointer-events: none; }
+  #lightbox-counter {
+    position: absolute; bottom: 16px; left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.5); color: #fff; border-radius: 12px;
+    padding: 3px 12px; font-size: 12px; font-family: var(--font-body);
+  }
+  #lightbox-counter.hidden { display: none; }
+
+  /* ── Toast ──────────────────────────────────────────────────────── */
+  #toast {
+    position: fixed; bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(16px);
+    background: var(--text); color: #fff;
+    padding: 7px 16px; border-radius: 20px; font-size: 13px;
+    opacity: 0; transition: all 0.2s; pointer-events: none; z-index: 400;
+    white-space: nowrap;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ── Spinner ────────────────────────────────────────────────────── */
+  .spinner {
+    width: 14px; height: 14px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff;
+    animation: spin 0.6s linear infinite; display: inline-block; vertical-align: middle;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Search bar ─────────────────────────────────────────────────── */
+  #search-bar {
+    display: none; margin-bottom: 12px;
+    position: relative;
+  }
+  #search-bar.visible { display: block; }
+  #search-input {
+    width: 100%; border: 1px solid var(--border); border-radius: 8px;
+    padding: 7px 32px 7px 32px; font-size: 13px;
+    font-family: var(--font-body); background: var(--surface);
+    color: var(--text); outline: none; transition: border-color 0.15s;
+    height: 34px;
+  }
+  #search-input:focus { border-color: var(--accent); }
+  #search-icon {
+    position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+    color: var(--muted); pointer-events: none;
+  }
+  #search-clear {
+    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; color: var(--muted); cursor: pointer;
+    font-size: 14px; display: none; padding: 2px 4px;
+  }
+  #search-clear.visible { display: block; }
+
+  /* ── Empty state ────────────────────────────────────────────────── */
+  .empty-state {
+    text-align: center; padding: 60px 20px; color: var(--muted); font-size: 14px;
+  }
+
+  /* ── Card max-height (set by settings) ─────────────────────────── */
+  .card-content-wrap {
+    overflow: hidden;
+    position: relative;
+  }
+  .card-content-wrap.clamped::after {
+    content: '';
+    position: absolute; bottom: 0; left: 0; right: 0;
+    height: 40px;
+    background: linear-gradient(transparent, var(--surface));
+    pointer-events: none;
+  }
+  .memo-card.hidden-note .card-content-wrap.clamped::after { background: linear-gradient(transparent, var(--hidden-bg)); }
+  .read-more-btn {
+    background: none; border: none; font-size: 12px; color: var(--accent);
+    cursor: pointer; padding: 2px 0 0; font-family: var(--font-body);
+  }
+  .read-more-btn:hover { text-decoration: underline; }
+
+  /* Inline card editor */
+  .card-editing { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .inline-editor-wrap { display: none; flex-direction: column; gap: 0; }
+  .card-editing .inline-editor-wrap { display: flex; }
+  .card-editing .card-content-wrap { display: none; }
+  .card-editing .card-tags { display: none; }
+  .inline-edit-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 12px; border-top: 1px solid var(--border); background: var(--surface-alt);
+  }
+
+  /* ── Card delete button (danger) ───────────────────────────────── */
+  .card-action-btn.danger:hover { background: #fde8e8; color: var(--danger); }
+
+
+
+  /* ── Settings page ──────────────────────────────────────────────── */
+  #settings-page {
+    display: none; padding: 8px 0;
+  }
+  #settings-page.active { display: block; }
+
+  /* ── Tag Cloud / Graph View ──────────────────────────────────────────────── */
+  /* Lives outside <main> as a direct child of the body/app so it fills the full window */
+  #tag-cloud-page {
+    display: none; padding: 0; position: fixed;
+    top: var(--header-h); left: 0; right: 0; bottom: 0;
+    flex-direction: column; gap: 0; overflow: hidden;
+  }
+  #content.sidebar-visible + #tag-cloud-page { left: var(--sidebar-w); }
+  #tag-cloud-page.active { display: flex; }
+  .tc-bar {
+    display: flex; align-items: center; gap: 8px; padding: 8px 16px 10px;
+    flex-wrap: wrap; flex-shrink: 0; background: var(--bg); border-bottom: 1px solid var(--border);
+  }
+  .tc-mode-switch {
+    display: flex; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 3px; gap: 2px;
+  }
+  .tc-mode-btn {
+    padding: 5px 14px; border-radius: 6px; font-size: 13px; font-weight: 500;
+    font-family: var(--font-body); cursor: pointer; border: none;
+    background: transparent; color: var(--text-soft); transition: all 0.2s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .tc-mode-btn.active { background: var(--bg); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+  .tc-mode-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .tc-mode-dot.network { background: #5b9bd5; }
+  .tc-mode-dot.semantic { background: #c49a3c; }
+  .tc-search-wrap {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 7px; padding: 6px 11px;
+    transition: border-color 0.15s;
+  }
+  .tc-search-wrap:focus-within { border-color: var(--accent); }
+  .tc-search-wrap input {
+    background: none; border: none; outline: none; font-size: 13px; color: var(--text);
+    font-family: var(--font-body); width: 150px;
+  }
+  .tc-search-wrap input::placeholder { color: var(--muted); }
+  .tc-zoom-wrap { display: flex; gap: 3px; margin-left: auto; }
+  .tc-zoom-btn {
+    width: 32px; height: 32px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text-soft); font-size: 17px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s; font-family: var(--font-body); line-height: 1;
+  }
+  .tc-zoom-btn:hover { border-color: var(--accent); color: var(--text); }
+  .tc-canvas-wrap {
+    position: relative; background: #0d0f12;
+    overflow: hidden; flex: 1; min-height: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+  .tc-canvas-wrap svg { display: block; cursor: grab; }
+  .tc-canvas-wrap svg:active { cursor: grabbing; }
+  .tc-loader-msg {
+    position: absolute; inset: 0; display: flex; align-items: center;
+    justify-content: center; color: #4a4a4a; font-size: 14px; white-space: pre-line;
+    text-align: center; padding: 20px;
+  }
+  /* Detail panel */
+  .tc-detail-panel {
+    position: absolute; top: 12px; right: 12px; width: 290px;
+    background: #13161b; border: 1px solid #252b35; border-radius: 12px;
+    max-height: calc(100% - 24px); overflow-y: auto; z-index: 10;
+    transform: translateX(320px); transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+  }
+  .tc-detail-panel.open { transform: translateX(0); }
+  .tc-detail-header {
+    padding: 14px 16px 12px; border-bottom: 1px solid #252b35;
+    position: sticky; top: 0; background: #13161b; border-radius: 12px 12px 0 0;
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;
+  }
+  .tc-detail-type {
+    font-size: 10px; font-weight: 500; text-transform: uppercase;
+    letter-spacing: 1px; margin-bottom: 4px; color: #4a4a4a;
+  }
+  .tc-detail-type.tag { color: #5b9bd5; }
+  .tc-detail-type.note { color: #9b7fd4; }
+  .tc-detail-name {
+    font-size: 16px; font-weight: 400; color: #e8e4dc; line-height: 1.3;
+  }
+  .tc-detail-close {
+    background: none; border: none; color: #4a4a4a; cursor: pointer;
+    font-size: 15px; padding: 2px; flex-shrink: 0; transition: color 0.15s;
+  }
+  .tc-detail-close:hover { color: #e8e4dc; }
+  .tc-detail-body { padding: 12px 16px; }
+  .tc-dp-stat {
+    display: flex; justify-content: space-between; font-size: 12px;
+    padding: 5px 0; border-bottom: 1px solid #1a1e25; color: #8a8880;
+  }
+  .tc-dp-stat:last-of-type { border: none; margin-bottom: 10px; }
+  .tc-dp-stat span:last-child { font-family: 'IBM Plex Mono', monospace; color: #4a9e72; }
+  .tc-dp-section {
+    font-size: 10px; font-weight: 500; text-transform: uppercase;
+    letter-spacing: 1px; color: #4a4a4a; margin: 12px 0 7px;
+  }
+  .tc-dp-note {
+    background: #1a1e25; border: 1px solid #252b35; border-radius: 8px;
+    padding: 9px 11px; margin-bottom: 6px; cursor: pointer; transition: border-color 0.15s;
+  }
+  .tc-dp-note:hover { border-color: #4a9e72; }
+  .tc-dp-note-text {
+    font-size: 12px; color: #e8e4dc; line-height: 1.5; margin-bottom: 5px;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .tc-dp-note-tags { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 4px; }
+  .tc-dp-mini-tag {
+    font-size: 10px; background: rgba(91,155,213,0.12); color: #5b9bd5;
+    padding: 1px 6px; border-radius: 10px;
+  }
+  .tc-dp-note-time { font-size: 10px; color: #4a4a4a; font-family: 'IBM Plex Mono', monospace; }
+  .tc-dp-tag {
+    display: inline-flex; align-items: center; background: rgba(91,155,213,0.1);
+    border: 1px solid rgba(91,155,213,0.2); color: #5b9bd5; font-size: 12px;
+    padding: 3px 9px; border-radius: 20px; margin: 0 3px 3px 0;
+    cursor: pointer; transition: background 0.15s;
+  }
+  .tc-dp-tag:hover { background: rgba(91,155,213,0.22); }
+  .tc-dp-open-btn {
+    background: none; border: 1px solid #252b35; border-radius: 6px;
+    color: #8a8880; font-size: 12px; padding: 5px 12px; cursor: pointer;
+    font-family: var(--font-body); transition: all 0.15s;
+  }
+  .tc-dp-open-btn:hover { border-color: #4a9e72; color: #e8e4dc; }
+  /* Legend */
+  .tc-legend {
+    position: absolute; bottom: 14px; left: 14px;
+    background: rgba(19,22,27,0.92); border: 1px solid #252b35; border-radius: 9px;
+    padding: 11px 15px; display: flex; flex-direction: column; gap: 7px; z-index: 5;
+  }
+  .tc-legend-title {
+    font-size: 10px; font-weight: 500; text-transform: uppercase;
+    letter-spacing: 1px; color: #4a4a4a; margin-bottom: 1px;
+  }
+  .tc-legend-item { display: flex; align-items: center; gap: 8px; font-size: 11px; color: #8a8880; }
+  .tc-legend-hint { font-size: 10px; color: #4a4a4a; max-width: 130px; line-height: 1.4; }
+  .tc-lgnd-node { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
+  .tc-lgnd-node.tag     { background: #5b9bd5; box-shadow: 0 0 5px rgba(91,155,213,0.5); }
+  .tc-lgnd-node.note    { background: #9b7fd4; box-shadow: 0 0 4px rgba(155,127,212,0.4); }
+  .tc-lgnd-node.cluster { background: #c49a3c; box-shadow: 0 0 5px rgba(196,154,60,0.4); }
+  .tc-lgnd-line { width: 22px; height: 1px; flex-shrink: 0; }
+  .tc-lgnd-line.strong { background: rgba(74,158,114,0.6); }
+  .tc-lgnd-line.weak   { background: rgba(255,255,255,0.12); }
+  /* Statusbar */
+  .tc-statusbar {
+    height: 26px; background: var(--bg); border-top: 1px solid var(--border);
+    display: flex; align-items: center; padding: 0 14px; gap: 14px;
+    font-size: 11px; font-family: 'IBM Plex Mono', monospace; color: var(--muted); flex-shrink: 0;
+  }
+  .tc-statusbar span { color: var(--accent); }
+  /* ── Embeddings panel ── */
+  .tc-mode-dot.embeddings { background: #56c4a0; }
+  .tc-embed-panel {
+    display: none; flex: 1; min-height: 0; overflow-y: auto;
+    padding: 20px 24px; flex-direction: column; gap: 16px; background: var(--bg);
+  }
+  .tc-embed-status {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px; color: var(--text-soft);
+  }
+  .tc-embed-search-wrap {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 10px; padding: 12px 16px; transition: border-color 0.15s;
+  }
+  .tc-embed-search-wrap:focus-within { border-color: var(--accent); }
+  .tc-embed-search-wrap input {
+    flex: 1; border: none; outline: none; background: none;
+    font-size: 16px; color: var(--text); font-family: var(--font-body);
+  }
+  .tc-embed-search-wrap input::placeholder { color: var(--muted); }
+  .tc-embed-hint { font-size: 13px; color: var(--muted); padding: 4px 0; }
+  .tc-embed-results { display: flex; flex-direction: column; gap: 6px; }
+  .tc-embed-result {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 14px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 9px;
+    cursor: pointer; transition: border-color 0.15s;
+  }
+  .tc-embed-result:hover { border-color: var(--accent); }
+  .tc-embed-result-rank { font-size: 11px; color: var(--muted); font-family: 'IBM Plex Mono', monospace; min-width: 20px; }
+  .tc-embed-result-tag { font-size: 14px; font-weight: 500; color: var(--text); min-width: 140px; }
+  .tc-embed-result-bar-wrap { flex: 1; height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .tc-embed-result-bar { height: 100%; border-radius: 3px; background: var(--accent); }
+  .tc-embed-result-score { font-size: 11px; color: var(--muted); font-family: 'IBM Plex Mono', monospace; min-width: 44px; text-align: right; }
+  .tc-embed-result-count { font-size: 12px; color: var(--text-soft); min-width: 55px; text-align: right; }
+  .tc-embed-graph-btn {
+    flex-shrink: 0; padding: 0 14px; font-size: 18px; border: 1px solid var(--border);
+    background: var(--bg); color: var(--text-soft); border-radius: 6px; cursor: pointer;
+    transition: all 0.15s; align-self: stretch; display: flex; align-items: center;
+    justify-content: center; margin-top: -11px; margin-bottom: -11px; min-width: 44px;
+  }
+  .tc-embed-graph-btn:hover { border-color: var(--accent); color: var(--accent); }
+  /* Ego graph banner */
+  .tc-ego-banner {
+    position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+    background: rgba(13,15,18,0.85); border: 1px solid #252b35; border-radius: 8px;
+    padding: 6px 14px; font-size: 12px; color: #8a8880; white-space: nowrap;
+    font-family: 'IBM Plex Mono', monospace; z-index: 5; pointer-events: auto;
+  }
+  .tc-ego-banner b { color: #4a9e72; }
+  .tc-ego-banner button { background: none; border: none; color: #5b9bd5; cursor: pointer; font-size: 12px; margin-left: 8px; }
+  /* Surprise me */
+  .tc-surprise-btn {
+    background: none; border: 1px solid var(--border); border-radius: 6px;
+    padding: 2px 9px; font-size: 12px; color: var(--accent); cursor: pointer;
+    font-family: var(--font-body); transition: all 0.15s;
+  }
+  .tc-surprise-btn:hover { background: var(--accent-bg); }
+  /* Cluster cards */
+  .tc-cluster-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 14px; margin-bottom: 6px;
+  }
+  .tc-cluster-header {
+    font-size: 13px; font-weight: 600; margin-bottom: 9px;
+    display: flex; align-items: center;
+  }
+  .tc-cluster-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+  .tc-cluster-tag {
+    font-size: 12px; padding: 3px 9px; border-radius: 20px;
+    border: 1px solid; cursor: pointer; transition: opacity 0.15s;
+    background: transparent;
+  }
+  .tc-cluster-tag:hover { opacity: 0.7; }
+  /* SVG node/link styles */
+  .tc-link { stroke: rgba(255,255,255,0.06); stroke-width: 1; fill: none; }
+  .tc-link-strong { stroke: rgba(74,158,114,0.22); stroke-width: 1.5; }
+  .tc-link-highlighted { stroke: #4a9e72 !important; stroke-opacity: 0.6 !important; stroke-width: 2 !important; }
+  .settings-section {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); box-shadow: var(--shadow);
+    margin-bottom: 16px; overflow: hidden;
+  }
+  .settings-section-title {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.6px;
+    text-transform: uppercase; color: var(--muted);
+    padding: 12px 16px 8px;
+  }
+  .settings-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px; border-top: 1px solid var(--border); gap: 16px;
+  }
+  .settings-row:first-of-type { border-top: none; }
+  .settings-label { font-size: 14px; color: var(--text); font-weight: 400; }
+  .settings-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .settings-control { flex-shrink: 0; }
+
+  /* Toggle switch */
+  .toggle {
+    position: relative; width: 40px; height: 22px; cursor: pointer;
+    display: inline-block; flex-shrink: 0;
+  }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-track {
+    position: absolute; inset: 0; border-radius: 11px;
+    background: var(--border); transition: background 0.2s;
+  }
+  .toggle input:checked + .toggle-track { background: var(--accent); }
+  .toggle-thumb {
+    position: absolute; top: 3px; left: 3px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--surface); transition: transform 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .toggle input:checked ~ .toggle-thumb { transform: translateX(18px); }
+
+  /* Range slider */
+  .settings-slider {
+    width: 140px; accent-color: var(--accent);
+  }
+  .slider-val {
+    font-size: 12px; color: var(--muted); min-width: 36px; text-align: right;
+  }
+
+  /* Theme grid */
+  .theme-grid {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    padding: 12px 16px;
+  }
+  .theme-swatch {
+    width: 36px; height: 36px; border-radius: 8px; cursor: pointer;
+    border: 2px solid transparent; transition: all 0.15s;
+    position: relative;
+  }
+  .theme-swatch.active { border-color: var(--text); transform: scale(1.1); }
+  .theme-swatch:hover { transform: scale(1.08); }
+
+  /* API key input */
+  .settings-input {
+    width: 100%; border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 12px; font-size: 13px; font-family: monospace;
+    background: var(--bg); color: var(--text); outline: none;
+    margin-top: 8px;
+  }
+  .settings-input:focus { border-color: var(--accent); }
+  .settings-save-btn {
+    margin-top: 8px; background: var(--accent); color: #fff;
+    border: none; border-radius: 7px; padding: 6px 16px;
+    font-size: 13px; cursor: pointer; font-family: var(--font-body);
+  }
+  .settings-save-btn:hover { background: #a96d32; }
+
+  /* ── Mobile ─────────────────────────────────────────────────────── */
+  @media (max-width: 700px) {
+    :root { font-size: var(--mobile-font-size, 15px); }
+    .card-content { font-size: var(--mobile-font-size, 15px); }
+
+    #editor { font-size: var(--mobile-font-size, 15px); }
+    /* Defensive: ensure content never gets desktop margin on mobile,
+       even if JS briefly applies sidebar-visible due to viewport glitch */
+    #content.sidebar-visible { margin-left: 0; }
+    #sidebar { transform: translateX(-100%); }
+    #sidebar.open { transform: translateX(0); box-shadow: 4px 0 20px rgba(44,40,37,0.15); }
+    #menu-toggle { display: flex; }
+    main { padding: 12px 12px 80px; }
+    .card-actions { opacity: 1; }
+    #sidebar-overlay {
+      display: none; position: fixed; inset: 0; z-index: 49;
+      background: rgba(44,40,37,0.3);
+    }
+    #sidebar-overlay.open { display: block; }
+  }
+
+  /* ── Tracker sidebar ──────────────────────────────────────────────────────── */
+  .tracker-section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 8px 2px; margin-top: 4px;
+  }
+  .tracker-section-header.nav-section-header {
+    padding: 8px 12px 4px; margin-top: 0; cursor: pointer;
+  }
+  .tracker-add-btn {
+    background: none; border: none; cursor: pointer; color: var(--accent);
+    font-size: 18px; line-height: 1; padding: 0 4px; border-radius: 4px;
+    transition: opacity 0.15s;
+  }
+  .tracker-add-btn:hover { opacity: 0.7; }
+  .tracker-nav-item {
+    display: flex; align-items: center; justify-content: space-between;
+    width: 100%; padding: 7px 12px 7px 24px; border: none; background: none;
+    cursor: pointer; border-radius: 8px; font-size: 13.5px; color: var(--text-soft);
+    font-family: var(--font-body); text-align: left; transition: background 0.12s, color 0.12s;
+  }
+  .tracker-nav-item:hover { background: var(--accent-bg); color: var(--accent); }
+  .tracker-nav-item.active { background: var(--accent-bg); color: var(--accent); font-weight: 500; }
+  .tracker-nav-item .tracker-gear {
+    opacity: 0; font-size: 12px; transition: opacity 0.15s; flex-shrink: 0;
+  }
+  .tracker-nav-item:hover .tracker-gear { opacity: 0.6; }
+
+  /* ── Tracker view ─────────────────────────────────────────────────────────── */
+  #tracker-view { display: none; flex-direction: column; flex: 1; max-width: min(var(--feed-max-width, 700px), 100%); width: 100%; margin: 0 auto; padding: 20px 20px 100px; }
+  #tracker-view.active { display: flex; }
+  .tracker-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 0 0 14px; border-bottom: 1px solid var(--border); margin-bottom: 16px;
+  }
+  .tracker-header h2 { font-size: 17px; font-weight: 600; margin: 0; flex: 1; }
+  .tracker-color-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; display: none; }
+
+  /* ── Tracker composer ─────────────────────────────────────────────────────── */
+  .tracker-composer {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 12px 14px; margin-bottom: 16px;
+    box-shadow: var(--shadow);
+  }
+  .tracker-composer textarea {
+    width: 100%; border: none; background: none; resize: none;
+    font-family: var(--font-body); font-size: 14.5px; color: var(--text);
+    outline: none; min-height: 60px; max-height: 160px; line-height: 1.55; overflow-y: auto;
+  }
+  .tracker-composer-footer { display: flex; justify-content: flex-end; margin-top: 8px; }
+
+  /* ── Tracker note cards ───────────────────────────────────────────────────── */
+  .tracker-note-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 14px; margin-bottom: 10px;
+    font-size: 14px; line-height: 1.6; color: var(--text); position: relative;
+  }
+  .tracker-note-card:hover .tracker-note-del { opacity: 1; }
+  .tracker-note-date { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+  .tracker-note-del {
+    position: absolute; top: 8px; right: 8px; opacity: 0;
+    background: none; border: none; cursor: pointer; color: var(--muted);
+    font-size: 14px; transition: opacity 0.15s, color 0.15s; padding: 2px 5px;
+  }
+  .tracker-note-del:hover { color: var(--danger); }
+
+  /* ── AI chat panel ────────────────────────────────────────────────────────── */
+  #tracker-ai-panel {
+    margin-top: 16px; background: var(--surface);
+    border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden;
+  }
+  .tracker-ai-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px; cursor: pointer; user-select: none;
+    background: var(--bg); font-size: 13px; font-weight: 500;
+    border-bottom: 1px solid transparent;
+  }
+  .tracker-ai-header:hover { background: var(--accent-bg); }
+  .tracker-ai-body { display: none; flex-direction: column; }
+  .tracker-ai-body.open { display: flex; border-top: 1px solid var(--border); }
+  .tracker-ai-messages {
+    max-height: 320px; overflow-y: auto; padding: 12px 14px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .ai-msg { max-width: 85%; padding: 8px 12px; border-radius: 10px; font-size: 13.5px; line-height: 1.55; }
+  .ai-msg.user { background: var(--accent-bg); color: var(--accent); align-self: flex-end; border-bottom-right-radius: 3px; }
+  .ai-msg.assistant { background: var(--bg); color: var(--text); align-self: flex-start; border-bottom-left-radius: 3px; white-space: pre-wrap; }
+  .ai-msg.thinking { color: var(--muted); font-style: italic; align-self: flex-start; }
+  .tracker-ai-quick {
+    display: flex; gap: 6px; padding: 8px 14px; flex-wrap: wrap;
+    border-top: 1px solid var(--border);
+  }
+  .tracker-ai-quick button {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 20px;
+    padding: 4px 10px; font-size: 12px; cursor: pointer; color: var(--text-soft);
+    font-family: var(--font-body); transition: background 0.12s;
+  }
+  .tracker-ai-quick button:hover { background: var(--accent-bg); color: var(--accent); border-color: var(--accent); }
+  .tracker-ai-input-row {
+    display: flex; gap: 8px; padding: 8px 14px 12px; border-top: 1px solid var(--border); align-items: flex-end;
+  }
+  .tracker-ai-input-row textarea {
+    flex: 1; border: 1px solid var(--border); border-radius: 8px;
+    padding: 7px 10px; font-size: 13.5px; font-family: var(--font-body);
+    background: var(--bg); color: var(--text); outline: none;
+    resize: none; min-height: 36px; max-height: 120px; line-height: 1.5; overflow-y: auto;
+  }
+  .tracker-ai-input-row textarea:focus { border-color: var(--accent); }
+  .tracker-ai-send-btn {
+    flex-shrink: 0; width: 36px; height: 36px; border-radius: 8px;
+    border: none; background: var(--accent); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: opacity 0.15s;
+  }
+  .tracker-ai-send-btn:hover { opacity: 0.85; }
+  .tracker-ai-send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .tracker-ai-send-btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; pointer-events: none; }
+
+  /* ── Tracker modals ───────────────────────────────────────────────────────── */
+  .tracker-instructions-textarea {
+    width: 100%; min-height: 90px; resize: vertical;
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 10px; font-size: 13px; font-family: var(--font-body);
+    background: var(--bg); color: var(--text); outline: none; line-height: 1.5;
+    box-sizing: border-box;
+  }
+  .tracker-instructions-textarea:focus { border-color: var(--accent); }
+  .tracker-color-picker { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+  .tracker-color-swatch {
+    width: 22px; height: 22px; border-radius: 50%; cursor: pointer;
+    border: 2px solid transparent; transition: border-color 0.15s;
+  }
+  .tracker-color-swatch.selected,
+  .tracker-color-swatch:hover { border-color: var(--text); }
+
+  /* ── Partner token UI ────────────────────────────────────────────────────── */
+  .partner-token-card {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 12px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .partner-token-name { font-size: 13px; font-weight: 500; color: var(--text); }
+  .partner-token-link {
+    display: flex; align-items: center; gap: 6px;
+  }
+  .partner-token-link input {
+    flex: 1; font-size: 11px; font-family: monospace;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; padding: 4px 8px; color: var(--muted);
+    outline: none; cursor: pointer;
+  }
+  .partner-token-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
+  .partner-token-actions button {
+    font-size: 11px; padding: 3px 8px; border-radius: 6px;
+    border: 1px solid var(--border); background: var(--surface);
+    cursor: pointer; color: var(--text-soft); font-family: var(--font-body);
+    transition: all 0.12s;
+  }
+  .partner-token-actions button:hover { background: var(--accent-bg); color: var(--accent); border-color: var(--accent); }
+  .partner-token-actions .btn-danger:hover { background: #fdf0ee; color: var(--danger); border-color: var(--danger); }
+  /* New partner token form */
+  #partner-new-form {
+    background: var(--bg); border: 1px solid var(--accent);
+    border-radius: 8px; padding: 10px 12px;
+    display: none; flex-direction: column; gap: 8px;
+  }
+  #partner-new-form.open { display: flex; }
+  #partner-new-form label { font-size: 12px; color: var(--muted); margin-bottom: 2px; display: block; }
+  #partner-new-form input, #partner-new-form textarea {
+    width: 100%; border: 1px solid var(--border); border-radius: 6px;
+    padding: 6px 8px; font-size: 13px; font-family: var(--font-body);
+    background: var(--surface); color: var(--text); outline: none;
+  }
+  #partner-new-form input:focus, #partner-new-form textarea:focus { border-color: var(--accent); }
+  #partner-new-form textarea { min-height: 60px; resize: vertical; }
+
+
+  /* ── AI message markdown rendering ──────────────────────────────────────── */
+  .ai-msg.assistant { white-space: normal; }
+  .ai-msg.assistant p { margin: 0 0 6px; }
+  .ai-msg.assistant p:last-child { margin-bottom: 0; }
+  .ai-msg.assistant ul, .ai-msg.assistant ol { padding-left: 18px; margin: 4px 0 6px; }
+  .ai-msg.assistant li { margin: 2px 0; }
+  .ai-msg.assistant strong { font-weight: 600; }
+  .ai-msg.assistant em { font-style: italic; }
+  .ai-msg.assistant h1, .ai-msg.assistant h2, .ai-msg.assistant h3 {
+    font-size: 13.5px; font-weight: 600; margin: 8px 0 4px;
+  }
+  .ai-msg.assistant code {
+    background: var(--surface-alt); padding: 1px 4px; border-radius: 3px;
+    font-size: 0.88em; font-family: monospace;
+  }
+  .ai-msg.assistant hr { border: none; border-top: 1px solid var(--border); margin: 8px 0; }
+
+  /* ── Tracker archive/export buttons ─────────────────────────────────────── */
+  .tracker-danger-zone {
+    margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .tracker-action-row {
+    display: flex; gap: 8px; flex-wrap: wrap;
+  }
+
+
+
+  /* Tracker page: always show tracker-view */
+  #tracker-view { display: flex; flex-direction: column; flex: 1;
+    max-width: min(var(--feed-max-width, 700px), 100%); width: 100%;
+    margin: 0 auto; padding: 20px 20px 100px; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <aside id="sidebar"></aside>
+  <div id="sidebar-overlay"></div>
+
+  <div id="content">
+    <header id="header">
+      <button class="mobile-hamburger" id="mobile-hamburger">☰</button>
+      <span id="header-title">Tracker</span>
+    </header>
+
+      <div id="tracker-view">
+        <div class="tracker-header">
+          <div class="tracker-color-dot" id="tracker-color-dot"></div>
+          <h2 id="tracker-title">Tracker</h2>
+        </div>
+        <div class="tracker-composer">
+          <textarea id="tracker-composer-text" placeholder="Log an entry… (Ctrl+Enter to save)"></textarea>
+          <div class="tracker-composer-footer">
+            <button class="btn-primary" id="tracker-save-btn">Save entry</button>
+          </div>
+        </div>
+        <div id="tracker-ai-panel">
+          <div class="tracker-ai-header" id="tracker-ai-toggle">
+            <span>🤖 AI Assistant</span>
+            <span id="tracker-ai-chevron">▼</span>
+          </div>
+          <div class="tracker-ai-body" id="tracker-ai-body">
+            <div class="tracker-ai-messages" id="tracker-ai-messages"></div>
+            <div class="tracker-ai-quick">
+              <button data-prompt="Summarize my recent entries">📋 Summarize</button>
+              <button data-prompt="What patterns do you notice in my entries?">🔍 Patterns</button>
+              <button data-prompt="Ask me a follow-up question based on my recent entries">💬 Follow-up</button>
+            </div>
+            <div class="tracker-ai-input-row">
+              <textarea id="tracker-ai-input" placeholder="Ask the AI…" rows="1"></textarea>
+              <button class="tracker-ai-send-btn" id="tracker-ai-send" title="Send (Ctrl+Enter)">
+                <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div id="tracker-notes-list"></div>
+        <div id="tracker-load-more" style="display:none;text-align:center;padding:10px 0">
+          <button class="btn-secondary" id="tracker-load-more-btn">Load more</button>
+        </div>
+      </div>
+
+
+  </div>
+
+  <!-- Tag Cloud page — outside <main> so it fills full viewport width/height -->
+
+  </div>
+
+<div class="modal-backdrop" id="tracker-settings-modal">
+  <div class="modal">
+    <h3>Tracker Settings</h3>
+    <div class="modal-row">
+      <span class="modal-label">Name</span>
+      <input type="text" id="tracker-settings-name" style="flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font-body);background:var(--bg);color:var(--text);outline:none">
+    </div>
+    <div class="modal-row" style="flex-direction:column;align-items:flex-start;gap:6px">
+      <span class="modal-label">AI Instructions</span>
+      <textarea class="tracker-instructions-textarea" id="tracker-settings-instructions"></textarea>
+    </div>
+    <div class="modal-row">
+      <span class="modal-label">Color</span>
+      <div class="tracker-color-picker" id="tracker-settings-color-picker"></div>
+    </div>
+    <div class="modal-row" style="flex-direction:column;align-items:flex-start;gap:8px;padding-top:10px;border-top:1px solid var(--border)">
+      <div>
+        <span class="modal-label">AI Model</span>
+        <span style="font-size:11px;color:var(--muted);margin-left:6px">Used for tracker conversations</span>
+      </div>
+      <select id="tracker-settings-ai-model-select" style="width:100%;padding:6px 10px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px">
+        <option value="sonnet">claude-sonnet-4-6 — best quality (default)</option>
+        <option value="haiku">claude-haiku-4-5 — faster &amp; cheaper</option>
+      </select>
+    </div>
+    <!-- Partner View section -->
+    <div class="modal-row" style="flex-direction:column;align-items:flex-start;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+      <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
+        <div>
+          <div style="font-size:13px;font-weight:500;color:var(--text)">💜 Partner View</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">Share an AI window into this tracker</div>
+        </div>
+        <button class="btn-secondary" id="tracker-settings-new-token" style="font-size:12px">+ Create link</button>
+      </div>
+      <div id="tracker-partner-tokens" style="width:100%;display:flex;flex-direction:column;gap:8px"></div>
+    </div>
+    <div class="tracker-danger-zone">
+      <div class="tracker-action-row">
+        <button class="btn-secondary" id="tracker-settings-export" title="Download as Markdown file">📥 Export .md</button>
+        <button class="btn-secondary" id="tracker-settings-export-html" title="Download as HTML file">📥 Export .html</button>
+        <button class="btn-secondary" id="tracker-settings-archive-note" title="Save as a note in All Notes">📌 Archive to note</button>
+        <button class="btn-secondary" id="tracker-settings-email" title="Send tracker entries by email">✉️ Send by email</button>
+      </div>
+      <div class="tracker-action-row">
+        <button class="btn-secondary" id="tracker-settings-delete" style="color:var(--danger);border-color:var(--danger)">🗑 Delete tracker</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="tracker-settings-cancel">Cancel</button>
+      <button class="btn-primary" id="tracker-settings-save">Save</button>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<div id="toast"></div>
+<div style="position:fixed;bottom:6px;right:10px;font-size:10px;color:var(--muted);opacity:0.5;pointer-events:none;z-index:1;user-select:none">NoteFlow v1.4</div>
+
+<script>
+
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+const API_BASE = 'https://noteflow-api.jeppesen.cc/api';
+const PAGE_SIZE = 20;
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let _settingsLoaded = false;
+const DISPLAY_PREF_KEYS = ['theme', 'fontFamily', 'feedMaxWidth', 'mobileFontSize'];
+
+let settings = {
+  theme: 'warm', feedMaxWidth: 700, mobileFontSize: 15,
+  fontFamily: "'DM Sans', sans-serif",
+  tagCategories: '', tagPeople: '', voyageApiKey: '',
+  reminderEmail: '', emailMakePublic: false,
+};
+try {
+  const _lsPrefs = JSON.parse(localStorage.getItem('noteflow_display_prefs') || '{}');
+  DISPLAY_PREF_KEYS.forEach(k => { if (_lsPrefs[k] !== undefined) settings[k] = _lsPrefs[k]; });
+} catch(e) {}
+
+// ── Theme application ────────────────────────────────────────────────────────
+const THEMES = [
+  { id:'warm',      bg:'#f7f4ef',surface:'#ffffff',surfaceAlt:'#f2ede5',accent:'#c17f3e',text:'#2c2825',border:'#e8e2d9',muted:'#a89f94' },
+  { id:'arctic',    bg:'#f5f8fc',surface:'#ffffff',surfaceAlt:'#edf2f8',accent:'#2b7fff',text:'#0f1c2e',border:'#d8e4f0',muted:'#7a96b8' },
+  { id:'forest',    bg:'#f0f5f1',surface:'#ffffff',surfaceAlt:'#e8f0ea',accent:'#2e7d4f',text:'#1a2e20',border:'#cfe3d4',muted:'#6e9a7a' },
+  { id:'rose',      bg:'#fdf4f6',surface:'#ffffff',surfaceAlt:'#f8e8ec',accent:'#d63a60',text:'#2d1a20',border:'#f0d0d8',muted:'#b0707e' },
+  { id:'lavender',  bg:'#f4f2fb',surface:'#ffffff',surfaceAlt:'#ece8f8',accent:'#6d4fc4',text:'#231a38',border:'#dcd4f2',muted:'#9880c4' },
+  { id:'sepia',     bg:'#faf6f0',surface:'#fdf9f4',surfaceAlt:'#f2ebe0',accent:'#8b5e3c',text:'#3d2b1a',border:'#e8ddd0',muted:'#a08060' },
+  { id:'stone',     bg:'#f5f4f2',surface:'#ffffff',surfaceAlt:'#eeece8',accent:'#78716c',text:'#1c1917',border:'#e7e5e1',muted:'#a8a29e' },
+  { id:'midnight',  bg:'#0f1117',surface:'#181b24',surfaceAlt:'#1e2130',accent:'#7c8cf8',text:'#e4e8f5',border:'#262c40',muted:'#5c6480' },
+  { id:'obsidian',  bg:'#13131a',surface:'#1c1c26',surfaceAlt:'#222230',accent:'#a78bfa',text:'#e8e4f8',border:'#2a2a3e',muted:'#6060a0' },
+  { id:'ink',       bg:'#161616',surface:'#1e1e1e',surfaceAlt:'#262626',accent:'#e8c547',text:'#f0ede8',border:'#2e2e2e',muted:'#666666' },
+  { id:'charcoal',  bg:'#1e2028',surface:'#272b36',surfaceAlt:'#2e3340',accent:'#4ecdc4',text:'#dde3f0',border:'#363c4e',muted:'#6a7490' },
+  { id:'forest-dk', bg:'#0e1a12',surface:'#152018',surfaceAlt:'#1c2a20',accent:'#4ade80',text:'#d4f0dd',border:'#1e3224',muted:'#4a7a58' },
+  { id:'ember',     bg:'#1a1208',surface:'#241a0e',surfaceAlt:'#2e2010',accent:'#f97316',text:'#fde8cc',border:'#382612',muted:'#7a5530' },
+  { id:'nord',      bg:'#2e3440',surface:'#3b4252',surfaceAlt:'#434c5e',accent:'#88c0d0',text:'#eceff4',border:'#4c566a',muted:'#7b8a9e' },
+  { id:'rose-dk',   bg:'#1a0e12',surface:'#26141a',surfaceAlt:'#301820',accent:'#fb7185',text:'#fde4ea',border:'#3a1c24',muted:'#8a4458' },
+];
+
+function applyTheme(themeId) {
+  const t = THEMES.find(x => x.id === themeId) || THEMES[0];
+  const root = document.documentElement;
+  root.style.setProperty('--bg', t.bg);
+  root.style.setProperty('--surface', t.surface);
+  root.style.setProperty('--surface-alt', t.surfaceAlt);
+  root.style.setProperty('--accent', t.accent);
+  root.style.setProperty('--text', t.text);
+  root.style.setProperty('--border', t.border);
+  root.style.setProperty('--muted', t.muted);
+  root.style.setProperty('--accent-bg', t.accent + '20');
+  root.style.setProperty('--text-soft', t.muted);
+  const hex = t.bg.replace('#','');
+  const r = parseInt(hex.slice(0,2),16), g = parseInt(hex.slice(2,4),16), b = parseInt(hex.slice(4,6),16);
+  root.style.setProperty('--header-bg', `rgba(${r},${g},${b},0.95)`);
+}
+applyTheme(settings.theme);
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+function getCFToken() {
+  const match = document.cookie.match(/CF_Authorization=([^;]+)/);
+  return match ? match[1] : null;
+}
+function authHeaders(extra) {
+  const h = Object.assign({ 'Content-Type': 'application/json' }, extra || {});
+  const token = getCFToken();
+  if (token) h['Authorization'] = 'Bearer ' + token;
+  return h;
+}
+function initAuth() { return true; }
+
+// ── API helpers ───────────────────────────────────────────────────────────────
+async function apiGet(path) {
+  const r = await fetch(API_BASE + path, { credentials: 'omit', headers: authHeaders() });
+  if (!r.ok) throw new Error('GET ' + r.status);
+  return r.json();
+}
+async function apiPost(path, body) {
+  const r = await fetch(API_BASE + path, { method: 'POST', credentials: 'omit', headers: authHeaders(), body: JSON.stringify(body) });
+  if (!r.ok) throw new Error('POST ' + r.status);
+  return r.json();
+}
+async function apiPatch(path, body) {
+  const r = await fetch(API_BASE + path, { method: 'PATCH', credentials: 'omit', headers: authHeaders(), body: JSON.stringify(body) });
+  if (!r.ok) throw new Error('PATCH ' + r.status);
+  return r.json();
+}
+async function apiDelete(path) {
+  const r = await fetch(API_BASE + path, { method: 'DELETE', credentials: 'omit', headers: authHeaders() });
+  if (!r.ok) throw new Error('DELETE ' + r.status);
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._timeout);
+  t._timeout = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── Layout helpers ────────────────────────────────────────────────────────────
+function applyFeedWidth()     { document.documentElement.style.setProperty('--feed-max-width', (settings.feedMaxWidth||700)+'px'); }
+function applyFontFamily()    { document.documentElement.style.setProperty('--font-body', settings.fontFamily || "'DM Sans', sans-serif"); }
+function applyMobileFontSize(){ document.documentElement.style.setProperty('--mobile-font-size', (settings.mobileFontSize||15)+'px'); }
+
+// ── Tracking feature ──────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+
+const TRACKER_COLORS = ['#e05c5c','#e07a2f','#c9a227','#4a9e5c','#3a8fc0','#6c63d1','#b05cb8','#888'];
+let trackers = [];
+let activeTracker = null;
+let trackerNotes = [];
+let trackerNextCursor = null;
+
+// ── Load and render sidebar list ──────────────────────────────────────────────
+async function loadTrackers() {
+  try {
+    const data = await apiGet('/trackers');
+    trackers = data.trackers || [];
+    renderTrackerNav();
+  } catch(e) { console.error('loadTrackers failed', e); }
+}
+
+function renderTrackerNav() {
+  const list = document.getElementById('tracker-nav-list');
+  if (!list) return;
+  list.innerHTML = '';
+  trackers.forEach(tr => {
+    const btn = document.createElement('button');
+    btn.className = 'tracker-nav-item' + (activeTracker?.id === tr.id ? ' active' : '');
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = tr.name;
+    if (tr.color) nameSpan.style.cssText = `display:flex;align-items:center;gap:6px`;
+    const dot = tr.color
+      ? `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${tr.color};flex-shrink:0"></span>`
+      : '';
+    btn.innerHTML = `<span style="display:flex;align-items:center;gap:6px">${dot}${tr.name}</span><span class="tracker-gear" data-id="${tr.id}">⚙</span>`;
+    btn.querySelector('.tracker-gear').addEventListener('click', e => {
+      e.stopPropagation();
+      openTrackerSettings(tr);
+    });
+    btn.addEventListener('click', () => switchToTracker(tr));
+    list.appendChild(btn);
+  });
+}
+
+// ── Switch to / leave tracker view ───────────────────────────────────────────
+async function switchToTracker(tr) {
+  activeTracker = tr;
+  trackerNotes = [];
+  trackerNextCursor = null;
+
+  // In standalone tracker.html the tracker-view is always the main content
+  // No need to hide/show other panels — they don't exist here
+
+  // Update header and tracker title
+  const headerTitle = document.getElementById('header-title');
+  if (headerTitle) headerTitle.textContent = tr.name;
+  const trackerTitle = document.getElementById('tracker-title');
+  if (trackerTitle) trackerTitle.textContent = tr.name;
+  const dot = document.getElementById('tracker-color-dot');
+  if (dot) {
+    if (tr.color) { dot.style.background = tr.color; dot.style.display = 'block'; }
+    else { dot.style.display = 'none'; }
+  }
+
+  // Highlight active tracker in sidebar
+  renderTrackerNav();
+
+  // Update URL so link/refresh stays on this tracker
+  const url = new URL(location.href);
+  url.searchParams.set('id', tr.id);
+  history.replaceState(null, '', url.toString());
+
+  // Close mobile sidebar
+  document.getElementById('sidebar')?.classList.remove('open');
+  document.getElementById('sidebar-overlay')?.classList.remove('open');
+
+  await loadTrackerNotes(false);
+  await loadTrackerConversation();
+}
+
+function leaveTrackerView() {
+  if (!activeTracker) return;
+  activeTracker = null;
+  // In standalone tracker.html there's nothing to navigate back to
+  // — navigation happens via sidebar links
+}
+
+// ── Tracker notes ─────────────────────────────────────────────────────────────
+async function loadTrackerNotes(append = false) {
+  if (!activeTracker) return;
+  try {
+    const qs = new URLSearchParams({ pageSize: 20 });
+    if (append && trackerNextCursor) qs.set('cursor', trackerNextCursor);
+    const data = await apiGet('/trackers/' + activeTracker.id + '/notes?' + qs);
+    const fetched = data.notes || [];
+    trackerNotes = append ? trackerNotes.concat(fetched) : fetched;
+    trackerNextCursor = data.nextCursor || null;
+    renderTrackerNotes(append);
+  } catch(e) { toast('Failed to load tracker entries'); }
+}
+
+function renderTrackerNotes(append = false) {
+  const list = document.getElementById('tracker-notes-list');
+  if (!list) return;
+  const toRender = append ? trackerNotes.slice(list.children.length) : trackerNotes;
+  if (!append) list.innerHTML = '';
+  toRender.forEach(note => {
+    const card = document.createElement('div');
+    card.className = 'tracker-note-card';
+    card.dataset.id = note.id;
+    const d = new Date(note.created_at * 1000);
+    const dateStr = d.toLocaleDateString('da-DK', {
+      day: 'numeric', month: 'short',
+      year: d.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined,
+      hour: '2-digit', minute: '2-digit'
+    });
+    card.innerHTML = `
+      <div class="tracker-note-date">${dateStr}</div>
+      <div class="tracker-note-content">${escapeTrackerHtml(note.content)}</div>
+      <button class="tracker-note-del" title="Delete">✕</button>
+    `;
+    card.querySelector('.tracker-note-del').addEventListener('click', () => deleteTrackerNote(note.id));
+    list.appendChild(card);
+  });
+  const loadMoreEl = document.getElementById('tracker-load-more');
+  if (loadMoreEl) loadMoreEl.style.display = trackerNextCursor ? 'block' : 'none';
+}
+
+function escapeTrackerHtml(s) {
+  if (!s) return '';
+  return s.split('&').join('&amp;').split('<').join('&lt;').split('>').join('&gt;').split('\n').join('<br>');
+}
+
+async function saveTrackerNote() {
+  const ta = document.getElementById('tracker-composer-text');
+  const content = (ta.value || '').trim();
+  if (!content || !activeTracker) return;
+  const btn = document.getElementById('tracker-save-btn');
+  if (btn) btn.disabled = true;
+  try {
+    const data = await apiPost('/trackers/' + activeTracker.id + '/notes', { content });
+    trackerNotes.unshift(data.note);
+    ta.value = ''; ta.style.height = 'auto';
+    renderTrackerNotes(false);
+    // If instructions set, open AI panel and poll for the auto-reply
+    if (activeTracker.instructions) {
+      document.getElementById('tracker-ai-body')?.classList.add('open');
+      const chevron = document.getElementById('tracker-ai-chevron');
+      if (chevron) chevron.textContent = '▲';
+      const thinkingEl = addAIMessage('thinking', '🤖 Thinking…');
+      scrollAIMessages();
+      // Poll until a new assistant message appears (max 30s)
+      const prevCount = document.getElementById('tracker-ai-messages')?.children.length || 0;
+      let attempts = 0;
+      const poll = setInterval(async () => {
+        attempts++;
+        try {
+          const convData = await apiGet('/trackers/' + activeTracker.id + '/conversation');
+          const msgs = (convData.conversation || []).filter(m => !m.content.startsWith('[Auto]'));
+          const newAssistantCount = msgs.filter(m => m.role === 'assistant').length;
+          const currentAssistantEls = document.getElementById('tracker-ai-messages')
+            ?.querySelectorAll('.ai-msg.assistant').length || 0;
+          if (newAssistantCount > currentAssistantEls || attempts >= 15) {
+            clearInterval(poll);
+            if (thinkingEl.parentNode) thinkingEl.remove();
+            // Re-render full conversation to show new reply
+            const msgContainer = document.getElementById('tracker-ai-messages');
+            if (msgContainer) msgContainer.innerHTML = '';
+            msgs.forEach(msg => addAIMessage(msg.role, msg.content));
+            scrollAIMessages();
+          }
+        } catch(e) {
+          if (attempts >= 15) { clearInterval(poll); if (thinkingEl.parentNode) thinkingEl.remove(); }
+        }
+      }, 2000);
+    }
+  } catch(e) { toast('Failed to save entry'); }
+  if (btn) btn.disabled = false;
+}
+
+async function deleteTrackerNote(noteId) {
+  if (!confirm('Delete this entry?')) return;
+  try {
+    await apiDelete('/trackers/' + activeTracker.id + '/notes/' + noteId);
+    trackerNotes = trackerNotes.filter(n => n.id !== noteId);
+    renderTrackerNotes(false);
+  } catch(e) { toast('Failed to delete entry'); }
+}
+
+// ── AI chat ───────────────────────────────────────────────────────────────────
+async function loadTrackerConversation() {
+  if (!activeTracker) return;
+  try {
+    const data = await apiGet('/trackers/' + activeTracker.id + '/conversation');
+    const msgs = document.getElementById('tracker-ai-messages');
+    if (!msgs) return;
+    msgs.innerHTML = '';
+    (data.conversation || []).forEach(msg => {
+      // Filter out auto-generated internal messages
+      if (!msg.content.startsWith('[Auto]')) addAIMessage(msg.role, msg.content);
+    });
+    scrollAIMessages();
+  } catch(e) { /* silent */ }
+}
+
+function addAIMessage(role, content) {
+  const msgs = document.getElementById('tracker-ai-messages');
+  if (!msgs) return null;
+  const el = document.createElement('div');
+  el.className = 'ai-msg ' + role;
+  if (role === 'assistant' && typeof marked !== 'undefined') {
+    el.innerHTML = marked.parse(content);
+  } else {
+    // Preserve newlines in user messages
+    el.innerHTML = content
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/\n/g,'<br>');
+  }
+  msgs.appendChild(el);
+  return el;
+}
+
+function scrollAIMessages() {
+  const msgs = document.getElementById('tracker-ai-messages');
+  if (msgs) msgs.scrollTop = msgs.scrollHeight;
+}
+
+async function sendTrackerAI(message) {
+  if (!activeTracker || !message.trim()) return;
+  const input = document.getElementById('tracker-ai-input');
+  const sendBtn = document.getElementById('tracker-ai-send');
+  if (input) { input.value = ''; input.style.height = 'auto'; }
+  if (input) input.disabled = true;
+  if (sendBtn) sendBtn.disabled = true;
+
+  // Open panel
+  document.getElementById('tracker-ai-body')?.classList.add('open');
+  const chevron = document.getElementById('tracker-ai-chevron');
+  if (chevron) chevron.textContent = '▲';
+
+  addAIMessage('user', message);
+  const thinkingEl = addAIMessage('thinking', '🤖 Thinking…');
+  scrollAIMessages();
+
+  try {
+    const data = await apiPost('/trackers/' + activeTracker.id + '/ai', { message });
+    if (thinkingEl?.parentNode) thinkingEl.remove();
+    addAIMessage('assistant', data.reply);
+    scrollAIMessages();
+  } catch(e) {
+    if (thinkingEl?.parentNode) thinkingEl.remove();
+    addAIMessage('assistant', 'Sorry, something went wrong. Please try again.');
+  }
+
+  if (input) { input.disabled = false; input.focus(); }
+  if (sendBtn) sendBtn.disabled = false;
+}
+
+// ── New tracker modal ─────────────────────────────────────────────────────────
+function openNewTrackerModal() {
+  const nameEl = document.getElementById('tracker-new-name');
+  const instrEl = document.getElementById('tracker-new-instructions');
+  if (nameEl) nameEl.value = '';
+  if (instrEl) instrEl.value = '';
+  renderColorPicker('tracker-new-color-picker', null, 'trackerNewColor');
+  document.getElementById('tracker-new-modal')?.classList.add('open');
+  setTimeout(() => nameEl?.focus(), 50);
+}
+
+function renderColorPicker(containerId, selectedColor, stateKey) {
+  window[stateKey] = selectedColor || null;
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = '';
+  TRACKER_COLORS.forEach(c => {
+    const sw = document.createElement('div');
+    sw.className = 'tracker-color-swatch' + (c === selectedColor ? ' selected' : '');
+    sw.style.background = c;
+    sw.title = c;
+    sw.addEventListener('click', () => {
+      window[stateKey] = c;
+      el.querySelectorAll('.tracker-color-swatch').forEach(s => s.classList.remove('selected'));
+      sw.classList.add('selected');
+    });
+    el.appendChild(sw);
+  });
+}
+
+async function saveNewTracker() {
+  const name = (document.getElementById('tracker-new-name')?.value || '').trim();
+  if (!name) { document.getElementById('tracker-new-name')?.focus(); return; }
+  const instructions = (document.getElementById('tracker-new-instructions')?.value || '').trim();
+  const color = window.trackerNewColor || null;
+  try {
+    const data = await apiPost('/trackers', { name, instructions, color });
+    trackers.push(data.tracker);
+    renderTrackerNav();
+    document.getElementById('tracker-new-modal')?.classList.remove('open');
+    switchToTracker(data.tracker);
+  } catch(e) { toast('Failed to create tracker'); }
+}
+
+// ── Tracker settings modal ────────────────────────────────────────────────────
+let _editingTrackerId = null;
+
+function openTrackerSettings(tr) {
+  _editingTrackerId = tr.id;
+  const nameEl = document.getElementById('tracker-settings-name');
+  const instrEl = document.getElementById('tracker-settings-instructions');
+  if (nameEl) nameEl.value = tr.name || '';
+  if (instrEl) instrEl.value = tr.instructions || '';
+  renderColorPicker('tracker-settings-color-picker', tr.color, 'trackerSettingsColor');
+  populateTrackerAISelectors(tr.ai_model || 'sonnet');
+  document.getElementById('tracker-settings-modal')?.classList.add('open');
+}
+
+async function saveTrackerSettings() {
+  const name = (document.getElementById('tracker-settings-name')?.value || '').trim();
+  if (!name) return;
+  const instructions = (document.getElementById('tracker-settings-instructions')?.value || '').trim();
+  const color = window.trackerSettingsColor || null;
+  const aiModelVal = document.getElementById('tracker-settings-ai-model-select')?.value || 'sonnet';
+  const ai_model = aiModelVal;
+  try {
+    const data = await apiPatch('/trackers/' + _editingTrackerId, { name, instructions, color, ai_model });
+    const idx = trackers.findIndex(t => t.id === _editingTrackerId);
+    if (idx >= 0) trackers[idx] = data.tracker;
+    renderTrackerNav();
+    if (activeTracker?.id === _editingTrackerId) {
+      activeTracker = data.tracker;
+      document.getElementById('tracker-title').textContent = data.tracker.name;
+      const dot = document.getElementById('tracker-color-dot');
+      if (data.tracker.color) { dot.style.background = data.tracker.color; dot.style.display = 'block'; }
+      else dot.style.display = 'none';
+      const headerTitle = document.getElementById('header-title');
+      if (headerTitle) headerTitle.textContent = data.tracker.name;
+    }
+    document.getElementById('tracker-settings-modal')?.classList.remove('open');
+  } catch(e) { toast('Failed to save settings'); }
+}
+
+async function deleteCurrentTracker() {
+  if (!confirm('Delete this tracker and all its entries? This cannot be undone.')) return;
+  try {
+    await apiDelete('/trackers/' + _editingTrackerId);
+    trackers = trackers.filter(t => t.id !== _editingTrackerId);
+    renderTrackerNav();
+    if (activeTracker?.id === _editingTrackerId) {
+      leaveTrackerView();
+      switchView('all');
+    }
+    document.getElementById('tracker-settings-modal')?.classList.remove('open');
+  } catch(e) { toast('Failed to delete tracker'); }
+}
+
+
+// ── Tracker export + archive ──────────────────────────────────────────────────
+
+async function buildTrackerMarkdown(trackerId) {
+  const tr = trackers.find(t => t.id === trackerId);
+  if (!tr) return null;
+
+  // Use the /export endpoint to get everything in one call
+  const exportData = await apiGet('/trackers/' + trackerId + '/export');
+  const allNotes = exportData.notes || [];      // already in chronological (ASC) order
+  const conversation = exportData.conversation || [];
+
+  // Merge notes and AI conversation into a single chronological timeline
+  const dateStr = (ts) => new Date(ts * 1000).toLocaleDateString('da-DK', {
+    year: 'numeric', month: 'long', day: 'numeric',
+    hour: '2-digit', minute: '2-digit'
+  });
+
+  const timeline = [
+    ...allNotes.map(n => ({ ts: n.created_at, type: 'entry', content: n.content })),
+    ...conversation.map(m => ({ ts: m.created_at, type: m.role, content: m.content }))
+  ].sort((a, b) => a.ts - b.ts);
+
+  let md = '';
+  md += '# ' + tr.name + '\n\n';
+  md += '*Exported from NoteFlow \u2014 ' + new Date().toLocaleDateString('da-DK', { year:'numeric', month:'long', day:'numeric' }) + '*\n\n';
+
+  if (tr.instructions) {
+    md += '---\n\n## About this tracker\n\n' + tr.instructions + '\n\n';
+  }
+
+  if (tr.context_summary) {
+    md += '---\n\n## Historical summary\n\n*Entries older than 30 days (summarised)*\n\n' + tr.context_summary + '\n\n';
+  }
+
+  md += '---\n\n';
+
+  if (timeline.length === 0) {
+    md += '*No entries yet.*\n\n';
+  } else {
+    timeline.forEach(item => {
+      if (item.type === 'entry') {
+        md += '### \ud83d\udcdd ' + dateStr(item.ts) + '\n\n' + item.content + '\n\n';
+      } else if (item.type === 'assistant') {
+        md += '> \ud83e\udd16 *AI \u2014 ' + dateStr(item.ts) + '*\n>\n';
+        item.content.split('\n').forEach(line => { md += '> ' + line + '\n'; });
+        md += '\n';
+      } else if (item.type === 'user') {
+        md += '**You** *(' + dateStr(item.ts) + ')*\n\n' + item.content + '\n\n';
+      }
+    });
+  }
+
+  return md;
+}
+
+async function exportTrackerMarkdown() {
+  const tr = trackers.find(t => t.id === _editingTrackerId);
+  if (!tr) return;
+  const btn = document.getElementById('tracker-settings-export');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Building…'; }
+  try {
+    const md = await buildTrackerMarkdown(_editingTrackerId);
+    if (!md) return;
+    const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = tr.name.replace(/[^a-z0-9æøå ]/gi, '_').replace(/\s+/g, '_') + '.md';
+    a.click();
+    URL.revokeObjectURL(url);
+    document.getElementById('tracker-settings-modal')?.classList.remove('open');
+  } catch(e) { toast('Export failed'); }
+  if (btn) { btn.disabled = false; btn.textContent = '📥 Export .md'; }
+}
+
+async function buildTrackerHtml(trackerId) {
+  const tr = trackers.find(t => t.id === trackerId);
+  if (!tr) return null;
+  const exportData = await apiGet('/trackers/' + trackerId + '/export');
+  const allNotes = exportData.notes || [];
+  const conversation = exportData.conversation || [];
+
+  const dateStr = ts => new Date(ts * 1000).toLocaleDateString('da-DK', {
+    year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit'
+  });
+
+  const timeline = [
+    ...allNotes.map(n => ({ ts: n.created_at, type:'entry', content: n.content })),
+    ...conversation.map(m => ({ ts: m.created_at, type: m.role, content: m.content }))
+  ].sort((a, b) => a.ts - b.ts);
+
+  const md2html = txt => (typeof marked !== 'undefined') ? marked.parse(txt || '') : (txt || '').replace(/\n/g, '<br>');
+  const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+  let rows = '';
+  if (timeline.length === 0) {
+    rows = '<p class="empty">No entries yet.</p>';
+  } else {
+    timeline.forEach(item => {
+      if (item.type === 'entry') {
+        rows += '<div class="entry"><div class="entry-date">' + esc(dateStr(item.ts)) + '</div><div class="entry-body">' + md2html(item.content) + '</div></div>';
+      } else if (item.type === 'assistant') {
+        rows += '<div class="ai-reply"><div class="ai-label">AI \u2014 ' + esc(dateStr(item.ts)) + '</div><div class="ai-body">' + md2html(item.content) + '</div></div>';
+      } else if (item.type === 'user') {
+        rows += '<div class="you-msg"><div class="you-label">You \u2014 ' + esc(dateStr(item.ts)) + '</div><div class="you-body">' + esc(item.content).replace(/\n/g, '<br>') + '</div></div>';
+      }
+    });
+  }
+
+  const about = tr.instructions ? '<section><h2>About this tracker</h2><p>' + esc(tr.instructions).replace(/\n/g,'<br>') + '</p></section>' : '';
+  const summary = tr.context_summary ? '<section><h2>Historical summary</h2><p class="note">Entries older than 30 days (summarised)</p>' + md2html(tr.context_summary) + '</section>' : '';
+  const exportDate = new Date().toLocaleDateString('da-DK', { year:'numeric', month:'long', day:'numeric' });
+
+  return '<!DOCTYPE html>\n<html lang="da">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width,initial-scale=1">\n<title>' + esc(tr.name) + '</title>\n<style>\n*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}\nbody{font-family:Georgia,serif;background:#f9f7f3;color:#2c2825;line-height:1.7}\n.page{max-width:720px;margin:0 auto;padding:48px 32px 80px}\nh1{font-size:2em;font-weight:400;margin-bottom:6px}\n.meta{font-size:13px;color:#888;margin-bottom:40px}\nsection{margin-bottom:36px;padding-bottom:36px;border-bottom:1px solid #e8e2d9}\nsection:last-child{border-bottom:none}\nh2{font-size:.9em;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#888;margin-bottom:14px}\n.note{font-size:12px;color:#aaa;font-style:italic;margin-bottom:10px}\n.timeline{display:flex;flex-direction:column;gap:28px}\n.entry{background:#fff;border-radius:10px;padding:20px 24px;border:1px solid #e8e2d9}\n.entry-date{font-size:12px;font-weight:700;color:#c17f3e;margin-bottom:10px;letter-spacing:.02em}\n.entry-body{font-size:15px}\n.entry-body p{margin-bottom:8px}\n.entry-body p:last-child{margin-bottom:0}\n.entry-body ul,.entry-body ol{padding-left:20px;margin-bottom:8px}\n.entry-body code{background:#f0ece6;padding:1px 5px;border-radius:3px;font-size:.88em}\n.entry-body blockquote{border-left:3px solid #e8e2d9;padding-left:12px;color:#666}\n.ai-reply{background:#f5f2ff;border-radius:10px;padding:16px 20px;border:1px solid #ddd8f5;margin-left:32px}\n.ai-label{font-size:11px;font-weight:700;color:#7c6f9e;margin-bottom:8px;letter-spacing:.04em}\n.ai-body{font-size:14px;color:#3a3550}\n.ai-body p{margin-bottom:8px}\n.ai-body p:last-child{margin-bottom:0}\n.ai-body ul,.ai-body ol{padding-left:20px;margin-bottom:8px}\n.you-msg{padding:12px 16px;border-left:3px solid #c17f3e;margin-left:32px}\n.you-label{font-size:11px;font-weight:700;color:#c17f3e;margin-bottom:6px}\n.you-body{font-size:14px;color:#555}\n.empty{color:#aaa;font-style:italic}\n@media(max-width:600px){.page{padding:28px 18px 60px}.ai-reply,.you-msg{margin-left:0}}\n@media print{body{background:white}.page{padding:20px}}\n</style>\n</head>\n<body>\n<div class="page">\n<h1>' + esc(tr.name) + '</h1>\n<p class="meta">Exported from NoteFlow \u2014 ' + exportDate + '</p>\n' + about + summary + '<section><h2>Journal</h2><div class="timeline">' + rows + '</div></section>\n</div>\n</body>\n</html>';
+}
+
+async function exportTrackerHtml() {
+  const tr = trackers.find(t => t.id === _editingTrackerId);
+  if (!tr) return;
+  const btn = document.getElementById('tracker-settings-export-html');
+  if (btn) { btn.disabled = true; btn.textContent = 'Building...'; }
+  try {
+    const html = await buildTrackerHtml(_editingTrackerId);
+    if (!html) return;
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = tr.name.replace(/[^\w\u00e6\u00f8\u00e5 ]/gi, '_').replace(/\s+/g, '_') + '.html';
+    a.click();
+    URL.revokeObjectURL(url);
+    document.getElementById('tracker-settings-modal')?.classList.remove('open');
+  } catch(e) { toast('Export failed'); }
+  if (btn) { btn.disabled = false; btn.textContent = 'Export .html'; }
+}
+
+
+async function archiveTrackerToNote() {
+  const tr = trackers.find(t => t.id === _editingTrackerId);
+  if (!tr) return;
+  if (!confirm(`Archive "${tr.name}" as a note in All Notes? The tracker itself will remain.`)) return;
+  const btn = document.getElementById('tracker-settings-archive-note');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Archiving…'; }
+  try {
+    const md = await buildTrackerMarkdown(_editingTrackerId);
+    if (!md) return;
+    // Create a note with the markdown content
+    await apiPost('/notes', {
+      content: md,
+      visibility: 'PRIVATE'
+    });
+    // Mark tracker as archived
+    await apiPatch('/trackers/' + _editingTrackerId, { archived: 1 });
+    const idx = trackers.findIndex(t => t.id === _editingTrackerId);
+    if (idx >= 0) trackers[idx].archived = 1;
+    toast('✓ Archived to All Notes');
+    document.getElementById('tracker-settings-modal')?.classList.remove('open');
+    // Reload memos so the new note appears
+    loadMemos();
+  } catch(e) { toast('Archive failed'); }
+  if (btn) { btn.disabled = false; btn.textContent = '📌 Archive to note'; }
+}
+
+
+// ── Partner View (tracker share tokens) ──────────────────────────────────────
+
+const PARTNER_BASE = 'https://noteflow-api.jeppesen.cc';
+
+async function loadPartnerTokens(trackerId) {
+  const container = document.getElementById('tracker-partner-tokens');
+  if (!container) return;
+  container.innerHTML = '<div style="font-size:12px;color:var(--muted)">Loading…</div>';
+  try {
+    const data = await apiGet('/trackers/' + trackerId + '/partner-tokens');
+    renderPartnerTokens(trackerId, data.tokens || []);
+  } catch(e) {
+    container.innerHTML = '<div style="font-size:12px;color:var(--muted)">Could not load links</div>';
+  }
+}
+
+function renderPartnerTokens(trackerId, tokens) {
+  const container = document.getElementById('tracker-partner-tokens');
+  if (!container) return;
+  container.innerHTML = '';
+
+  // "New link" form
+  const form = document.createElement('div');
+  form.id = 'partner-new-form';
+  form.innerHTML = '<div style="font-size:12px;font-weight:500;color:var(--accent);margin-bottom:4px">New partner link</div>'
+    + '<label>Partner name (shown in the chat)</label>'
+    + '<input type="text" id="partner-new-name" placeholder="e.g. Lotte" maxlength="40">'
+    + '<label style="margin-top:4px">Response language</label>'
+    + '<select id="partner-new-language" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font-body);background:var(--surface);color:var(--text);outline:none">'
+    + '<option value="da">Danish (Dansk)</option>'
+    + '<option value="en">English</option>'
+    + '<option value="de">German (Deutsch)</option>'
+    + '<option value="sv">Swedish (Svenska)</option>'
+    + '<option value="no">Norwegian (Norsk)</option>'
+    + '</select>'
+    + '<label style="margin-top:4px">Note to AI <span style="font-weight:400">(optional — guidance for how the AI should talk about you)</span></label>'
+    + '<textarea id="partner-new-instructions" placeholder="E.g. Help her understand why I go quiet when stressed. Do not mention the work situation yet."></textarea>'
+    + '<div style="display:flex;gap:8px;margin-top:4px">'
+    + '<button class="btn-primary" id="partner-new-save" style="font-size:12px">Create link</button>'
+    + '<button class="btn-secondary" id="partner-new-cancel" style="font-size:12px">Cancel</button>'
+    + '</div>';
+  container.appendChild(form);
+
+  form.querySelector('#partner-new-save').addEventListener('click', async () => {
+    const name = (form.querySelector('#partner-new-name').value || '').trim() || 'Partner';
+    const instr = (form.querySelector('#partner-new-instructions').value || '').trim();
+    const lang = form.querySelector('#partner-new-language')?.value || 'da';
+    try {
+      await apiPost('/trackers/' + trackerId + '/partner-tokens', { partner_name: name, partner_instructions: instr, partner_language: lang });
+      form.classList.remove('open');
+      await loadPartnerTokens(trackerId);
+    } catch(e) { toast('Failed to create link'); }
+  });
+  form.querySelector('#partner-new-cancel').addEventListener('click', () => form.classList.remove('open'));
+
+  // Wire the "Create link" button
+  const newBtn = document.getElementById('tracker-settings-new-token');
+  if (newBtn) {
+    // Clone to remove old listeners
+    const fresh = newBtn.cloneNode(true);
+    newBtn.parentNode.replaceChild(fresh, newBtn);
+    fresh.addEventListener('click', () => {
+      form.classList.toggle('open');
+      if (form.classList.contains('open')) form.querySelector('#partner-new-name').focus();
+    });
+  }
+
+  if (tokens.length === 0) {
+    const empty = document.createElement('div');
+    empty.style.cssText = 'font-size:12px;color:var(--muted);padding:4px 0';
+    empty.textContent = 'No partner links yet. Create one to share access.';
+    container.appendChild(empty);
+    return;
+  }
+
+  tokens.forEach(tok => {
+    const partnerUrl = PARTNER_BASE + '/partner?token=' + tok.token;
+    const card = document.createElement('div');
+    card.className = 'partner-token-card';
+    const lastUsed = tok.last_used_at
+      ? 'Last used ' + new Date(tok.last_used_at * 1000).toLocaleDateString('da-DK')
+      : 'Never opened';
+    const langLabel = { da: '🇩🇰 Danish', en: '🇬🇧 English', de: '🇩🇪 German', sv: '🇸🇪 Swedish', no: '🇳🇴 Norwegian' }[tok.partner_language || 'da'] || tok.partner_language;
+    card.innerHTML = '<div class="partner-token-name">💜 ' + (tok.partner_name || 'Partner') + '</div>'
+      + '<div class="partner-token-link">'
+      + '<input type="text" value="' + partnerUrl + '" readonly onclick="this.select()" title="Click to select">'
+      + '<button class="btn-secondary" style="font-size:11px;padding:3px 8px;white-space:nowrap" data-copy="' + partnerUrl + '">Copy</button>'
+      + '</div>'
+      + '<div style="font-size:11px;color:var(--muted)">' + lastUsed + ' · ' + langLabel + '</div>'
+      + '<div class="partner-token-actions">'
+      + '<button data-open="' + partnerUrl + '">↗ Open</button>'
+      + '<button data-revoke="' + tok.id + '">Revoke link</button>'
+      + '</div>';
+
+    card.querySelector('[data-copy]').addEventListener('click', function() {
+      navigator.clipboard.writeText(this.dataset.copy).then(() => { this.textContent = 'Copied!'; setTimeout(() => this.textContent = 'Copy', 1500); }).catch(() => toast('Copy failed'));
+    });
+    card.querySelector('[data-open]').addEventListener('click', function() { window.open(this.dataset.open, '_blank'); });
+    card.querySelector('[data-revoke]').addEventListener('click', async function() {
+      if (!confirm('Revoke this partner link? The link will stop working immediately.')) return;
+      try {
+        await apiDelete('/trackers/' + trackerId + '/partner-tokens/' + this.dataset.revoke);
+        await loadPartnerTokens(trackerId);
+      } catch(e) { toast('Failed to revoke'); }
+    });
+    container.appendChild(card);
+  });
+}
+
+// Patch openTrackerSettings to load partner tokens
+const _origOpenTrackerSettings = openTrackerSettings;
+openTrackerSettings = function(tr) {
+  _origOpenTrackerSettings(tr);
+  loadPartnerTokens(tr.id);
+};
+
+// ── Tracker AI selector ───────────────────────────────────────────────────────
+
+function populateTrackerAISelectors(aiModel) {
+  const sel = document.getElementById('tracker-settings-ai-model-select');
+  if (!sel) return;
+  // Resolve legacy formats to haiku/sonnet
+  let val = 'sonnet';
+  if (aiModel && (aiModel.includes('haiku') || aiModel === 'haiku')) val = 'haiku';
+  sel.value = val;
+}
+
+// ── Event wiring ──────────────────────────────────────────────────────────────
+document.getElementById('tracker-add-btn')?.addEventListener('click', openNewTrackerModal);
+document.getElementById('tracker-new-cancel')?.addEventListener('click', () => document.getElementById('tracker-new-modal')?.classList.remove('open'));
+document.getElementById('tracker-new-save')?.addEventListener('click', saveNewTracker);
+document.getElementById('tracker-new-name')?.addEventListener('keydown', e => { if (e.key === 'Enter') saveNewTracker(); });
+
+document.getElementById('tracker-settings-cancel')?.addEventListener('click', () => document.getElementById('tracker-settings-modal')?.classList.remove('open'));
+document.getElementById('tracker-settings-save')?.addEventListener('click', saveTrackerSettings);
+document.getElementById('tracker-settings-email')?.addEventListener('click', async () => {
+  if (!activeTracker) return;
+  const to = prompt('Send tracker to email address:', settings.reminderEmail || '');
+  if (!to || !to.trim()) return;
+  const btn = document.getElementById('tracker-settings-email');
+  if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+  try {
+    await apiPost('/email/send', { tracker_id: activeTracker.id, to: to.trim() });
+    toast('Email sent ✓');
+    document.getElementById('tracker-settings-modal')?.classList.remove('open');
+  } catch(e) {
+    toast('Email failed: ' + e.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '✉️ Send by email'; }
+  }
+});
+document.getElementById('tracker-settings-delete')?.addEventListener('click', deleteCurrentTracker);
+document.getElementById('tracker-settings-export')?.addEventListener('click', exportTrackerMarkdown);
+document.getElementById('tracker-settings-export-html')?.addEventListener('click', exportTrackerHtml);
+document.getElementById('tracker-settings-archive-note')?.addEventListener('click', archiveTrackerToNote);
+
+document.getElementById('tracker-save-btn')?.addEventListener('click', saveTrackerNote);
+document.getElementById('tracker-composer-text')?.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') saveTrackerNote();
+});
+document.getElementById('tracker-composer-text')?.addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 160) + 'px';
+});
+
+document.getElementById('tracker-load-more-btn')?.addEventListener('click', () => loadTrackerNotes(true));
+
+document.getElementById('tracker-ai-toggle')?.addEventListener('click', () => {
+  const body = document.getElementById('tracker-ai-body');
+  const chevron = document.getElementById('tracker-ai-chevron');
+  const isOpen = body?.classList.toggle('open');
+  if (chevron) chevron.textContent = isOpen ? '▲' : '▼';
+  if (isOpen) scrollAIMessages();
+});
+
+document.getElementById('tracker-ai-send')?.addEventListener('click', () => {
+  sendTrackerAI(document.getElementById('tracker-ai-input')?.value || '');
+});
+document.getElementById('tracker-ai-input')?.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); sendTrackerAI(document.getElementById('tracker-ai-input')?.value || ''); }
+});
+document.getElementById('tracker-ai-input')?.addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+});
+document.querySelectorAll('.tracker-ai-quick button').forEach(btn => {
+  btn.addEventListener('click', () => sendTrackerAI(btn.dataset.prompt));
+});
+
+// switchView patch not needed on standalone tracker page
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+(async () => {
+  try {
+    const boot = await apiGet('/boot');
+    if (boot.settings) Object.assign(settings, boot.settings);
+    _settingsLoaded = true;
+    applyFeedWidth(); applyFontFamily(); applyMobileFontSize();
+    applyTheme(settings.theme);
+
+    // Render tracker nav in sidebar
+    trackers = boot.trackers || [];
+    renderTrackerNav();
+
+    // Sidebar via nav.js
+    trackers = boot.trackers || [];  // set global first — renderTrackerNav() reads it
+    renderTrackerNav();
+    renderProjectsNav(boot.projectTags || []);
+    initCollapsibleSections();
+
+    // Open tracker from URL param
+    const params = new URLSearchParams(location.search);
+    const trackerId = params.get('id');
+    if (trackerId) {
+      const tr = trackers.find(t => t.id === trackerId);
+      if (tr) switchToTracker(tr);
+      else toast('Tracker not found');
+    }
+    // Open new tracker modal if ?new=1
+    if (params.get('new') === '1') {
+      openNewTrackerModal();
+    }
+  } catch(e) {
+    console.error('Boot failed:', e);
+    toast('Failed to load — check your connection');
+  }
+})();
+
+// Sidebar toggle handled by nav.js
+
+</script>
+
+<script>window.NAV_PAGE = 'tracker';</script>
+<script src="/nav.js"></script>
+</body>
+</html>

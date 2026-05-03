@@ -1,0 +1,21 @@
+name = "noteflow-api"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+account_id = "98b26d7882ddf77fcd45529f35b11202"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "noteflow"
+database_id = "075788a4-1d08-458e-9622-e10c561ee481"
+
+[[r2_buckets]]
+binding = "ATTACHMENTS"
+bucket_name = "noteflow-attachments"
+
+# Secrets — set via: npx wrangler secret put <NAME>
+# TEAM_DOMAIN   = https://hadus.cloudflareaccess.com
+# POLICY_AUD    = 3ec90fd4d44c80d81b5b2e35387ed0160410ea878adb234279738b647bba19b5
+# ANTHROPIC_KEY = sk-ant-...
+# VOYAGE_KEY    = pa-...    (Voyage AI — for tag embeddings)
+# RESEND_KEY    = re_...    (email feature)
+# RESEND_FROM   = NoteFlow <noteflow@jeppesen.cc>

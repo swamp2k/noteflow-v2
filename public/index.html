@@ -1,0 +1,4174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script>
+// Apply saved theme immediately to prevent flash of default theme
+(function(){
+  var THEME_VARS = {
+    'warm':      {bg:'#f7f4ef',surface:'#ffffff',surfaceAlt:'#f2ede5',accent:'#c17f3e',text:'#2c2825',border:'#e8e2d9',muted:'#a89f94'},
+    'arctic':    {bg:'#f5f8fc',surface:'#ffffff',surfaceAlt:'#edf2f8',accent:'#2b7fff',text:'#0f1c2e',border:'#d8e4f0',muted:'#7a96b8'},
+    'forest':    {bg:'#f0f5f1',surface:'#ffffff',surfaceAlt:'#e8f0ea',accent:'#2e7d4f',text:'#1a2e20',border:'#cfe3d4',muted:'#6e9a7a'},
+    'rose':      {bg:'#fdf4f6',surface:'#ffffff',surfaceAlt:'#f8e8ec',accent:'#d63a60',text:'#2d1a20',border:'#f0d0d8',muted:'#b0707e'},
+    'lavender':  {bg:'#f4f2fb',surface:'#ffffff',surfaceAlt:'#ece8f8',accent:'#6d4fc4',text:'#231a38',border:'#dcd4f2',muted:'#9880c4'},
+    'sepia':     {bg:'#faf6f0',surface:'#fdf9f4',surfaceAlt:'#f2ebe0',accent:'#8b5e3c',text:'#3d2b1a',border:'#e8ddd0',muted:'#a08060'},
+    'stone':     {bg:'#f5f4f2',surface:'#ffffff',surfaceAlt:'#eeece8',accent:'#78716c',text:'#1c1917',border:'#e7e5e1',muted:'#a8a29e'},
+    'midnight':  {bg:'#0f1117',surface:'#181b24',surfaceAlt:'#1e2130',accent:'#7c8cf8',text:'#e4e8f5',border:'#262c40',muted:'#5c6480'},
+    'obsidian':  {bg:'#13131a',surface:'#1c1c26',surfaceAlt:'#222230',accent:'#a78bfa',text:'#e8e4f8',border:'#2a2a3e',muted:'#6060a0'},
+    'ink':       {bg:'#161616',surface:'#1e1e1e',surfaceAlt:'#262626',accent:'#e8c547',text:'#f0ede8',border:'#2e2e2e',muted:'#666666'},
+    'charcoal':  {bg:'#1e2028',surface:'#272b36',surfaceAlt:'#2e3340',accent:'#4ecdc4',text:'#dde3f0',border:'#363c4e',muted:'#6a7490'},
+    'forest-dk': {bg:'#0e1a12',surface:'#152018',surfaceAlt:'#1c2a20',accent:'#4ade80',text:'#d4f0dd',border:'#1e3224',muted:'#4a7a58'},
+    'ember':     {bg:'#1a1208',surface:'#241a0e',surfaceAlt:'#2e2010',accent:'#f97316',text:'#fde8cc',border:'#382612',muted:'#7a5530'},
+    'nord':      {bg:'#2e3440',surface:'#3b4252',surfaceAlt:'#434c5e',accent:'#88c0d0',text:'#eceff4',border:'#4c566a',muted:'#7b8a9e'},
+    'rose-dk':   {bg:'#1a0e12',surface:'#26141a',surfaceAlt:'#301820',accent:'#fb7185',text:'#fde4ea',border:'#3a1c24',muted:'#8a4458'},
+  };
+  try {
+    var saved = localStorage.getItem('noteflow_display_prefs');
+    var themeId = saved ? JSON.parse(saved).theme : null;
+    var t = THEME_VARS[themeId] || THEME_VARS['warm'];
+    var r = document.documentElement;
+    r.style.setProperty('--bg', t.bg);
+    r.style.setProperty('--surface', t.surface);
+    r.style.setProperty('--surface-alt', t.surfaceAlt);
+    r.style.setProperty('--accent', t.accent);
+    r.style.setProperty('--text', t.text);
+    r.style.setProperty('--border', t.border);
+    r.style.setProperty('--muted', t.muted);
+    r.style.setProperty('--accent-bg', t.accent + '20');
+    r.style.setProperty('--text-soft', t.muted);
+    var hex = t.bg.replace('#','');
+    r.style.setProperty('--header-bg', 'rgba('+parseInt(hex.slice(0,2),16)+','+parseInt(hex.slice(2,4),16)+','+parseInt(hex.slice(4,6),16)+',0.95)');
+    var isDark = (parseInt(hex.slice(0,2),16)+parseInt(hex.slice(2,4),16)+parseInt(hex.slice(4,6),16)) < 300;
+    r.style.setProperty('--hidden-bg',     isDark ? 'rgba(124,111,158,0.15)' : '#f0edf8');
+    r.style.setProperty('--hidden-border', isDark ? 'rgba(124,111,158,0.35)' : '#c4b8e8');
+  } catch(e) {}
+})();
+</script>
+  <link rel="manifest" href="https://noteflow-api.jeppesen.cc/pwa/manifest.json" crossorigin="anonymous">
+  <meta name="theme-color" content="#5b6af0">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="NoteFlow">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="icon" href="favicon.png" type="image/png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>NoteFlow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&display=swap"></noscript>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:           #f7f4ef;
+    --surface:      #ffffff;
+    --border:       #e8e2d9;
+    --muted:        #a89f94;
+    --text:         #2c2825;
+    --text-soft:    #6b6560;
+    --accent:       #c17f3e;
+    --accent-bg:    #fdf3e7;
+    --star:         #e8a020;
+    --danger:       #c0392b;
+    --hidden-bg:    #f0edf8;
+    --hidden-border:#c4b8e8;
+    --sidebar-w:    220px;
+    --header-h:     52px;
+    --radius:       12px;
+    --shadow:       0 1px 3px rgba(44,40,37,0.07), 0 4px 12px rgba(44,40,37,0.05);
+    --font-body:    'DM Sans', sans-serif;
+    --font-serif:   'Lora', serif;
+    --surface-alt:  var(--surface-alt);
+  }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.4;
+  }
+
+  /* ── App shell ──────────────────────────────────────────────────── */
+  /* Not display:flex — sidebar is position:fixed so no flex needed.
+     Using flex caused Blink to occasionally treat the fixed sidebar as
+     in-flow during large DOM insertions (infinite scroll), pushing
+     #content 220px to the right. */
+  #app { min-height: 100vh; }
+
+  /* ── Sidebar ────────────────────────────────────────────────────── */
+  #sidebar {
+    width: var(--sidebar-w);
+    min-height: 100vh;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    position: fixed; left: 0; top: 0; bottom: 0;
+    z-index: 50;
+    transition: transform 0.2s;
+  }
+
+  .sidebar-logo {
+    padding: 16px 18px 12px;
+    font-family: var(--font-serif);
+    font-size: 19px; font-weight: 500;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+    letter-spacing: -0.3px;
+  }
+
+  .sidebar-nav { flex: 1; padding: 10px 8px; display: flex; flex-direction: column; }
+  .sidebar-nav .nav-spacer { flex: 1; min-height: 16px; }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px; border-radius: 8px;
+    cursor: pointer; font-size: 14px; color: var(--text-soft);
+    transition: all 0.12s; user-select: none; border: none;
+    background: none; width: 100%; text-align: left;
+    font-family: var(--font-body);
+  }
+  .nav-item:hover { background: var(--accent-bg); color: var(--accent); }
+  .nav-item.active { background: var(--accent-bg); color: var(--accent); font-weight: 500; }
+  .nav-item svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; pointer-events: none; }
+  .nav-item.active svg { stroke: var(--accent); }
+
+  .nav-section-label {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.8px;
+    color: var(--muted); text-transform: uppercase;
+    padding: 12px 12px 4px;
+  }
+
+  /* ── Collapsible sidebar sections ───────────────────────────────── */
+  .nav-section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 12px 4px; cursor: pointer; user-select: none;
+  }
+  .nav-section-header:hover .nav-section-label-text { color: var(--text-soft); }
+  .nav-section-label-text {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.8px;
+    color: var(--muted); text-transform: uppercase; transition: color 0.15s;
+  }
+  .nav-section-chevron {
+    font-size: 9px; color: var(--muted); transition: transform 0.2s;
+  }
+  .nav-section-header.collapsed .nav-section-chevron { transform: rotate(-90deg); }
+  .nav-section-body { overflow: hidden; }
+  .nav-section-body.collapsed { display: none; }
+
+  /* ── Project popover ─────────────────────────────────────────────── */
+  .project-popover {
+    position: absolute; z-index: 200;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    padding: 6px; min-width: 180px; max-width: 240px;
+  }
+  .project-popover-item {
+    display: block; width: 100%; text-align: left;
+    background: none; border: none; border-radius: 6px;
+    padding: 7px 10px; font-size: 13px; font-family: var(--font-body);
+    color: var(--text); cursor: pointer; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
+  }
+  .project-popover-item:hover { background: var(--accent-bg); color: var(--accent); }
+  .project-popover-item.active-project { color: var(--accent); font-weight: 500; }
+  .project-popover-divider { height: 1px; background: var(--border); margin: 4px 0; }
+  .project-popover-new {
+    display: flex; align-items: center; gap: 6px;
+    padding: 4px 6px;
+  }
+  .project-popover-new input {
+    flex: 1; border: 1px solid var(--border); border-radius: 6px;
+    padding: 5px 8px; font-size: 12px; font-family: var(--font-body);
+    background: var(--bg); color: var(--text); outline: none;
+  }
+  .project-popover-new input:focus { border-color: var(--accent); }
+  .project-popover-new button {
+    background: var(--accent); color: #fff; border: none;
+    border-radius: 6px; padding: 5px 9px; font-size: 12px;
+    font-family: var(--font-body); cursor: pointer; white-space: nowrap;
+  }
+
+  /* ── Main content ───────────────────────────────────────────────── */
+  #content {
+    display: flex; flex-direction: column;
+    min-height: 100vh;
+    margin-left: 0;
+  }
+  #content.sidebar-visible {
+    margin-left: var(--sidebar-w);
+  }
+
+  header {
+    position: sticky; top: 0; z-index: 40;
+    background: var(--header-bg, rgba(247,244,239,0.95));
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 20px;
+    height: var(--header-h);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+
+  .header-title {
+    font-size: 15px; font-weight: 500; color: var(--text);
+  }
+
+  .header-right { display: flex; gap: 8px; align-items: center; }
+
+  .icon-btn {
+    width: 32px; height: 32px; border-radius: 7px;
+    border: 1px solid var(--border); background: var(--surface);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    color: var(--text-soft); transition: all 0.15s;
+  }
+  .icon-btn:hover { background: var(--accent-bg); color: var(--accent); border-color: var(--accent); }
+  .icon-btn svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+
+  /* hamburger for mobile */
+  #menu-toggle { display: none; }
+
+  main {
+    flex: 1;
+    max-width: min(var(--feed-max-width, 700px), 100%);
+    width: 100%;
+    margin: 0 auto;
+    padding: 20px 20px 100px;
+  }
+
+  /* ── Composer ───────────────────────────────────────────────────── */
+  #composer {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+
+  /* Card display collapsibles */
+  .card-content details { border: 1px solid var(--border); border-radius: 6px; margin: 6px 0; }
+  .card-content details summary { padding: 6px 10px; font-weight: 600; cursor: pointer; color: var(--accent); }
+  .card-content details > *:not(summary) { padding: 6px 10px; }
+
+  /* ── Native markdown toolbar ──────────────────────────────────────────────── */
+  .md-toolbar {
+    display: flex; flex-wrap: wrap; gap: 2px; align-items: center;
+    padding: 5px 8px; background: var(--surface-alt);
+    border-bottom: 1px solid var(--border);
+  }
+  .md-btn {
+    height: 26px; min-width: 26px; padding: 0 5px;
+    border: none; background: none; border-radius: 4px;
+    cursor: pointer; color: var(--text-soft);
+    font-family: var(--font-body); font-size: 12px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.12s; white-space: nowrap;
+  }
+  .md-btn:hover { background: var(--accent-bg); color: var(--accent); }
+  .md-btn svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+  .md-sep { width: 1px; background: var(--border); margin: 3px 2px; height: 18px; }
+  .md-textarea {
+    width: 100%; border: none; outline: none; resize: none;
+    font-family: var(--font-body); font-size: 14.5px; line-height: 1.6;
+    color: var(--text); background: var(--surface);
+    padding: 10px 14px; min-height: 44px; max-height: 280px;
+    overflow-y: auto; display: block; box-sizing: border-box;
+    transition: min-height 0.15s;
+  }
+  .md-textarea::placeholder { color: var(--muted); }
+  .md-textarea:focus { outline: none; }
+  #composer .md-toolbar { display: none; }
+  #composer.expanded .md-toolbar { display: flex; }
+  #composer.expanded .md-textarea { min-height: 90px; }
+  /* Inline card editing */
+  .inline-md-wrap .md-toolbar { display: flex; border-radius: 6px 6px 0 0; }
+  .inline-md-wrap .md-textarea {
+    min-height: 90px; max-height: 320px; border: 1px solid var(--border);
+    border-top: none; border-radius: 0 0 6px 6px; font-size: 14px; overflow-y: auto;
+  }
+
+  .composer-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 7px 12px; border-top: 1px solid var(--border); background: var(--surface-alt);
+  }
+  .composer-left { display: flex; gap: 6px; align-items: center; }
+
+  .attach-btn {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 12px; color: var(--muted);
+    background: none; border: none; cursor: pointer; padding: 4px 6px;
+    border-radius: 6px; transition: all 0.12s; font-family: var(--font-body);
+  }
+  .attach-btn:hover { background: var(--accent-bg); color: var(--accent); }
+  .attach-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; pointer-events: none; }
+
+  #image-preview-area { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 12px 10px; }
+  .img-preview-wrap { position: relative; width: 68px; height: 68px; }
+  .img-preview-wrap img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); }
+  .img-remove {
+    position: absolute; top: -5px; right: -5px;
+    width: 17px; height: 17px; border-radius: 50%;
+    background: var(--danger); color: #fff; border: none; cursor: pointer;
+    font-size: 10px; display: flex; align-items: center; justify-content: center;
+  }
+  .ocr-badge {
+    position: absolute; bottom: 2px; left: 2px; right: 2px;
+    background: rgba(0,0,0,0.55); color: #fff; font-size: 9px;
+    text-align: center; border-radius: 0 0 6px 6px; padding: 1px 2px;
+  }
+
+  .save-btn {
+    background: var(--accent); color: #fff; border: none; border-radius: 8px;
+    padding: 6px 18px; font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: all 0.15s; font-family: var(--font-body);
+  }
+  .save-btn:hover { background: #a96d32; }
+  .save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ── Feed ───────────────────────────────────────────────────────── */
+  #feed { display: flex; flex-direction: column; gap: 10px; }
+
+  .memo-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 12px 14px; transition: box-shadow 0.15s; position: relative;
+  }
+  .memo-card:hover { box-shadow: 0 2px 8px rgba(44,40,37,0.1), 0 6px 20px rgba(44,40,37,0.07); }
+  .memo-card.starred { border-left: 3px solid var(--star); }
+  .memo-card.hidden-note { border-left: 3px solid var(--hidden-border); background: var(--hidden-bg); }
+  .memo-card.pinned { border-top: 2px solid var(--accent); }
+  @keyframes tc-note-flash { 0%,100% { box-shadow: var(--shadow); } 30% { box-shadow: 0 0 0 3px var(--accent); } }
+  .memo-card.tc-highlight { animation: tc-note-flash 1.4s ease; }
+
+  .card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .card-meta { display: flex; align-items: center; gap: 7px; }
+  .card-date { font-size: 11.5px; color: var(--muted); }
+  .card-badges { display: flex; gap: 4px; }
+  .badge { font-size: 10px; padding: 1px 6px; border-radius: 10px; font-weight: 500; }
+  .badge-pinned { background: var(--accent-bg); color: var(--accent); }
+  .badge-hidden { background: var(--hidden-bg); color: #7c5cbf; border: 1px solid var(--hidden-border); }
+
+  .card-actions {
+    display: flex; gap: 2px; opacity: 0; transition: opacity 0.15s;
+  }
+  .memo-card:hover .card-actions,
+  .memo-card .card-actions:focus-within { opacity: 1; }
+
+  .card-action-btn {
+    width: 26px; height: 26px; border-radius: 6px; border: none;
+    background: none; cursor: pointer; color: var(--muted);
+    display: flex; align-items: center; justify-content: center; transition: all 0.12s;
+  }
+  .card-action-btn:hover { background: var(--accent-bg); color: var(--accent); }
+  .card-action-btn.star-active { color: var(--star); }
+  .card-action-btn.star-active svg { fill: var(--star); }
+  .card-action-btn svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+
+  /* ── Card content ───────────────────────────────────────────────── */
+  .card-content {
+    font-size: 14.5px; line-height: 1.65; color: var(--text); word-break: break-word;
+  }
+  .card-content p { margin: 0 0 8px; }
+  .card-content p:last-child { margin-bottom: 0; }
+  .card-content h1 { font-family: var(--font-serif); font-size: 1.25em; font-weight: 500; line-height: 1.3; margin: 6px 0 4px; }
+  .card-content h2 { font-family: var(--font-serif); font-size: 1.1em; font-weight: 500; line-height: 1.3; margin: 5px 0 3px; }
+  .card-content h3 { font-size: 1em; font-weight: 600; line-height: 1.3; margin: 4px 0 2px; }
+  .card-content code { background: var(--surface-alt); padding: 1px 4px; border-radius: 3px; font-size: 0.87em; font-family: monospace; }
+  .card-content pre { background: var(--surface-alt); padding: 8px 12px; border-radius: 8px; overflow-x: auto; margin: 6px 0; }
+  .card-content blockquote { border-left: 3px solid var(--accent); padding-left: 10px; color: var(--text-soft); margin: 6px 0; }
+  .card-content ul, .card-content ol { padding-left: 18px; margin: 4px 0 8px; }
+  .card-content li { margin: 2px 0; }
+  .card-content a { color: var(--accent); }
+  .card-content hr { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
+  .card-content details { margin-top: 8px; }
+  .card-content details summary { cursor: pointer; color: var(--muted); font-size: 12px; user-select: none; }
+
+  .card-images { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; align-items: flex-start; }
+  .file-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: var(--accent-bg); color: var(--accent);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 5px 10px; font-size: 12px; text-decoration: none;
+    transition: all 0.12s; max-width: 200px; cursor: pointer;
+    font-family: var(--font-body);
+  }
+  .file-chip:hover { background: var(--accent); color: #fff; }
+  .file-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .file-chip-indexing::after { content: ' ⏳'; font-size: 10px; opacity: 0.6; }
+  /* Rich previews */
+  .att-preview-pdf { width: 100%; height: 320px; border: none; border-radius: 8px; margin-top: 6px; background: var(--bg-alt); display: block; }
+  .att-preview-video { width: 100%; max-height: 320px; border-radius: 8px; margin-top: 6px; display: block; background: #000; }
+  .att-preview-audio { width: 100%; margin-top: 6px; border-radius: 8px; }
+  .att-preview-text { font-family: monospace; font-size: 12px; line-height: 1.5; color: var(--muted); background: var(--bg-alt); border-radius: 8px; padding: 10px 12px; margin-top: 6px; max-height: 160px; overflow-y: auto; white-space: pre-wrap; word-break: break-word; }
+  .att-preview-indexed { font-size: 12px; line-height: 1.5; color: var(--muted); background: var(--bg-alt); border-radius: 8px; padding: 10px 12px; margin-top: 6px; max-height: 120px; overflow-y: auto; font-style: italic; }
+  .att-preview-indexed::before { content: '📄 '; }
+
+  /* Attachments gallery view */
+  .att-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
+  .att-gallery-item {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden; cursor: pointer;
+    transition: box-shadow 0.15s; position: relative;
+  }
+  .att-gallery-item:hover { box-shadow: 0 4px 16px rgba(44,40,37,0.12); }
+  .att-gallery-img { width: 100%; height: 120px; object-fit: cover; display: block; background: var(--bg); }
+  .att-gallery-icon {
+    width: 100%; height: 120px; display: flex; align-items: center;
+    justify-content: center; font-size: 36px; background: var(--accent-bg);
+  }
+  .att-gallery-meta {
+    padding: 7px 10px; border-top: 1px solid var(--border);
+  }
+  .att-gallery-name { font-size: 12px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .att-gallery-link { font-size: 11px; color: var(--accent); margin-top: 2px; cursor: pointer; }
+  .att-gallery-link:hover { text-decoration: underline; }
+  .card-images img {
+    max-width: 180px; max-height: 140px; border-radius: 7px;
+    border: 1px solid var(--border); object-fit: cover; cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .card-images img:hover { transform: scale(1.02); }
+
+  .card-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+  body.hide-tags .card-tags { display: none; }
+  .tag-pill {
+    font-size: 11px; padding: 2px 7px;
+    background: var(--accent-bg); color: var(--accent);
+    border-radius: 10px; cursor: pointer; transition: all 0.12s; font-weight: 500;
+  }
+  .tag-pill:hover { background: var(--accent); color: #fff; }
+
+  /* ── Share modal ────────────────────────────────────────────────── */
+  .modal-backdrop {
+    display: none; position: fixed; inset: 0; z-index: 200;
+    background: rgba(44,40,37,0.4); backdrop-filter: blur(4px);
+    align-items: center; justify-content: center;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    background: var(--surface); border-radius: var(--radius);
+    border: 1px solid var(--border); box-shadow: 0 8px 40px rgba(44,40,37,0.18);
+    padding: 24px; width: 380px; max-width: 90vw;
+  }
+  .modal h3 { font-size: 15px; font-weight: 600; margin-bottom: 14px; }
+  .modal-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; }
+  .modal-label { font-size: 12px; color: var(--muted); min-width: 60px; }
+  .modal input[type=text] {
+    flex: 1; border: 1px solid var(--border); border-radius: 7px;
+    padding: 6px 10px; font-size: 13px; font-family: var(--font-body);
+    background: var(--bg); color: var(--text); outline: none;
+  }
+  .modal input[type=text]:focus { border-color: var(--accent); }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+  .btn-ghost {
+    background: none; border: 1px solid var(--border); border-radius: 7px;
+    padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--text-soft);
+    font-family: var(--font-body); transition: all 0.12s;
+  }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-primary {
+    background: var(--accent); color: #fff; border: none; border-radius: 7px;
+    padding: 6px 14px; font-size: 13px; cursor: pointer; font-family: var(--font-body);
+    transition: all 0.12s;
+  }
+  .btn-primary:hover { background: #a96d32; }
+  .share-link-row {
+    display: flex; gap: 6px; margin-top: 10px;
+  }
+  .share-link-row input {
+    flex: 1; border: 1px solid var(--border); border-radius: 7px;
+    padding: 6px 10px; font-size: 12px; font-family: monospace;
+    background: var(--bg); color: var(--text-soft); outline: none;
+  }
+  .copy-btn {
+    background: var(--accent-bg); color: var(--accent); border: 1px solid var(--accent);
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer;
+    font-family: var(--font-body); transition: all 0.12s; white-space: nowrap;
+  }
+  .copy-btn:hover { background: var(--accent); color: #fff; }
+
+  /* ── Load more ──────────────────────────────────────────────────── */
+  #load-more { text-align: center; padding: 16px 0; }
+  .load-more-btn {
+    background: none; border: 1px solid var(--border); border-radius: 8px;
+    padding: 7px 20px; font-size: 13px; color: var(--muted);
+    cursor: pointer; transition: all 0.15s; font-family: var(--font-body);
+  }
+  .load-more-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
+
+  /* ── Lightbox ───────────────────────────────────────────────────── */
+  #lightbox {
+    display: none; position: fixed; inset: 0; z-index: 300;
+    background: rgba(0,0,0,0.9); align-items: center; justify-content: center;
+  }
+  #lightbox.open { display: flex; }
+  #lightbox img { max-width: 88vw; max-height: 88vh; border-radius: 8px; user-select: none; touch-action: none; transform-origin: center center; cursor: zoom-in; }
+  #lightbox-content { display: none; }
+  #lightbox-content.open { display: flex !important; }
+  .lb-file-header { padding: 14px 18px; font-size: 13px; font-weight: 600; color: var(--text); background: var(--surface-alt); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .lb-file-body { flex: 1; overflow: hidden; position: relative; }
+  .lb-file-body iframe { width: 100%; height: 100%; border: none; display: block; }
+  .lb-file-body video, .lb-file-body audio { width: 100%; padding: 20px; box-sizing: border-box; }
+  .lb-file-body .lb-text { padding: 20px; font-family: monospace; font-size: 13px; line-height: 1.6; white-space: pre-wrap; overflow-y: auto; height: 100%; box-sizing: border-box; color: #333; }
+  .lb-file-body .lb-indexed { padding: 20px; font-size: 14px; line-height: 1.7; overflow-y: auto; height: 100%; box-sizing: border-box; color: #444; }
+  .lb-file-body .lb-indexed h3 { font-size: 13px; color: #999; font-weight: normal; margin: 0 0 12px; }
+  .lb-loading { display: flex; align-items: center; justify-content: center; height: 100%; color: #999; font-size: 14px; }
+  #lightbox-close {
+    position: absolute; top: 16px; right: 16px;
+    background: rgba(255,255,255,0.15); border: none; color: #fff;
+    width: 36px; height: 36px; border-radius: 50%; cursor: pointer;
+    font-size: 18px; display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+  }
+  #lightbox-close:hover { background: rgba(255,255,255,0.3); }
+  #lightbox-prev, #lightbox-next {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    background: rgba(255,255,255,0.12); border: none; color: #fff;
+    width: 44px; height: 44px; border-radius: 50%; cursor: pointer;
+    font-size: 28px; display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s; user-select: none;
+  }
+  #lightbox-prev { left: 16px; }
+  #lightbox-next { right: 16px; }
+  #lightbox-prev:hover, #lightbox-next:hover { background: rgba(255,255,255,0.28); }
+  #lightbox-prev.hidden, #lightbox-next.hidden { opacity: 0; pointer-events: none; }
+  #lightbox-counter {
+    position: absolute; bottom: 16px; left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.5); color: #fff; border-radius: 12px;
+    padding: 3px 12px; font-size: 12px; font-family: var(--font-body);
+  }
+  #lightbox-counter.hidden { display: none; }
+
+  /* ── Toast ──────────────────────────────────────────────────────── */
+  #toast {
+    position: fixed; bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(16px);
+    background: var(--text); color: #fff;
+    padding: 7px 16px; border-radius: 20px; font-size: 13px;
+    opacity: 0; transition: all 0.2s; pointer-events: none; z-index: 400;
+    white-space: nowrap;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ── Spinner ────────────────────────────────────────────────────── */
+  .spinner {
+    width: 14px; height: 14px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff;
+    animation: spin 0.6s linear infinite; display: inline-block; vertical-align: middle;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Search bar ─────────────────────────────────────────────────── */
+  #search-bar {
+    display: none; margin-bottom: 12px;
+    position: relative;
+  }
+  #search-bar.visible { display: block; }
+  #search-input {
+    width: 100%; border: 1px solid var(--border); border-radius: 8px;
+    padding: 7px 32px 7px 32px; font-size: 13px;
+    font-family: var(--font-body); background: var(--surface);
+    color: var(--text); outline: none; transition: border-color 0.15s;
+    height: 34px;
+  }
+  #search-input:focus { border-color: var(--accent); }
+  #search-icon {
+    position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+    color: var(--muted); pointer-events: none;
+  }
+  #search-clear {
+    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; color: var(--muted); cursor: pointer;
+    font-size: 14px; display: none; padding: 2px 4px;
+  }
+  #search-clear.visible { display: block; }
+
+  /* ── Empty state ────────────────────────────────────────────────── */
+  .empty-state {
+    text-align: center; padding: 60px 20px; color: var(--muted); font-size: 14px;
+  }
+
+  /* ── Card max-height (set by settings) ─────────────────────────── */
+  .card-content-wrap {
+    overflow: hidden;
+    position: relative;
+  }
+  .card-content-wrap.clamped::after {
+    content: '';
+    position: absolute; bottom: 0; left: 0; right: 0;
+    height: 40px;
+    background: linear-gradient(transparent, var(--surface));
+    pointer-events: none;
+  }
+  .memo-card.hidden-note .card-content-wrap.clamped::after { background: linear-gradient(transparent, var(--hidden-bg)); }
+  .read-more-btn {
+    background: none; border: none; font-size: 12px; color: var(--accent);
+    cursor: pointer; padding: 2px 0 0; font-family: var(--font-body);
+  }
+  .read-more-btn:hover { text-decoration: underline; }
+
+  /* Inline card editor */
+  .card-editing { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .inline-editor-wrap { display: none; flex-direction: column; gap: 0; }
+  .card-editing .inline-editor-wrap { display: flex; }
+  .card-editing .card-content-wrap { display: none; }
+  .card-editing .card-tags { display: none; }
+  .inline-edit-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 12px; border-top: 1px solid var(--border); background: var(--surface-alt);
+  }
+
+  /* ── Card delete button (danger) ───────────────────────────────── */
+  .card-action-btn.danger:hover { background: #fde8e8; color: var(--danger); }
+
+
+
+  /* ── Settings page ──────────────────────────────────────────────── */
+  #settings-page {
+    display: none; padding: 8px 0;
+  }
+  #settings-page.active { display: block; }
+
+  /* ── Tag Cloud / Graph View ──────────────────────────────────────────────── */
+  /* Lives outside <main> as a direct child of the body/app so it fills the full window */
+  #tag-cloud-page {
+    display: none; padding: 0; position: fixed;
+    top: var(--header-h); left: 0; right: 0; bottom: 0;
+    flex-direction: column; gap: 0; overflow: hidden;
+  }
+  #content.sidebar-visible + #tag-cloud-page { left: var(--sidebar-w); }
+  #tag-cloud-page.active { display: flex; }
+  .tc-bar {
+    display: flex; align-items: center; gap: 8px; padding: 8px 16px 10px;
+    flex-wrap: wrap; flex-shrink: 0; background: var(--bg); border-bottom: 1px solid var(--border);
+  }
+  .tc-mode-switch {
+    display: flex; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 3px; gap: 2px;
+  }
+  .tc-mode-btn {
+    padding: 5px 14px; border-radius: 6px; font-size: 13px; font-weight: 500;
+    font-family: var(--font-body); cursor: pointer; border: none;
+    background: transparent; color: var(--text-soft); transition: all 0.2s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .tc-mode-btn.active { background: var(--bg); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+  .tc-mode-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .tc-mode-dot.network { background: #5b9bd5; }
+  .tc-mode-dot.semantic { background: #c49a3c; }
+  .tc-search-wrap {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 7px; padding: 6px 11px;
+    transition: border-color 0.15s;
+  }
+  .tc-search-wrap:focus-within { border-color: var(--accent); }
+  .tc-search-wrap input {
+    background: none; border: none; outline: none; font-size: 13px; color: var(--text);
+    font-family: var(--font-body); width: 150px;
+  }
+  .tc-search-wrap input::placeholder { color: var(--muted); }
+  .tc-zoom-wrap { display: flex; gap: 3px; margin-left: auto; }
+  .tc-zoom-btn {
+    width: 32px; height: 32px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text-soft); font-size: 17px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s; font-family: var(--font-body); line-height: 1;
+  }
+  .tc-zoom-btn:hover { border-color: var(--accent); color: var(--text); }
+  .tc-canvas-wrap {
+    position: relative; background: #0d0f12;
+    overflow: hidden; flex: 1; min-height: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+  .tc-canvas-wrap svg { display: block; cursor: grab; }
+  .tc-canvas-wrap svg:active { cursor: grabbing; }
+  .tc-loader-msg {
+    position: absolute; inset: 0; display: flex; align-items: center;
+    justify-content: center; color: #4a4a4a; font-size: 14px; white-space: pre-line;
+    text-align: center; padding: 20px;
+  }
+  /* Detail panel */
+  .tc-detail-panel {
+    position: absolute; top: 12px; right: 12px; width: 290px;
+    background: #13161b; border: 1px solid #252b35; border-radius: 12px;
+    max-height: calc(100% - 24px); overflow-y: auto; z-index: 10;
+    transform: translateX(320px); transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+  }
+  .tc-detail-panel.open { transform: translateX(0); }
+  .tc-detail-header {
+    padding: 14px 16px 12px; border-bottom: 1px solid #252b35;
+    position: sticky; top: 0; background: #13161b; border-radius: 12px 12px 0 0;
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;
+  }
+  .tc-detail-type {
+    font-size: 10px; font-weight: 500; text-transform: uppercase;
+    letter-spacing: 1px; margin-bottom: 4px; color: #4a4a4a;
+  }
+  .tc-detail-type.tag { color: #5b9bd5; }
+  .tc-detail-type.note { color: #9b7fd4; }
+  .tc-detail-name {
+    font-size: 16px; font-weight: 400; color: #e8e4dc; line-height: 1.3;
+  }
+  .tc-detail-close {
+    background: none; border: none; color: #4a4a4a; cursor: pointer;
+    font-size: 15px; padding: 2px; flex-shrink: 0; transition: color 0.15s;
+  }
+  .tc-detail-close:hover { color: #e8e4dc; }
+  .tc-detail-body { padding: 12px 16px; }
+  .tc-dp-stat {
+    display: flex; justify-content: space-between; font-size: 12px;
+    padding: 5px 0; border-bottom: 1px solid #1a1e25; color: #8a8880;
+  }
+  .tc-dp-stat:last-of-type { border: none; margin-bottom: 10px; }
+  .tc-dp-stat span:last-child { font-family: 'IBM Plex Mono', monospace; color: #4a9e72; }
+  .tc-dp-section {
+    font-size: 10px; font-weight: 500; text-transform: uppercase;
+    letter-spacing: 1px; color: #4a4a4a; margin: 12px 0 7px;
+  }
+  .tc-dp-note {
+    background: #1a1e25; border: 1px solid #252b35; border-radius: 8px;
+    padding: 9px 11px; margin-bottom: 6px; cursor: pointer; transition: border-color 0.15s;
+  }
+  .tc-dp-note:hover { border-color: #4a9e72; }
+  .tc-dp-note-text {
+    font-size: 12px; color: #e8e4dc; line-height: 1.5; margin-bottom: 5px;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .tc-dp-note-tags { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 4px; }
+  .tc-dp-mini-tag {
+    font-size: 10px; background: rgba(91,155,213,0.12); color: #5b9bd5;
+    padding: 1px 6px; border-radius: 10px;
+  }
+  .tc-dp-note-time { font-size: 10px; color: #4a4a4a; font-family: 'IBM Plex Mono', monospace; }
+  .tc-dp-tag {
+    display: inline-flex; align-items: center; background: rgba(91,155,213,0.1);
+    border: 1px solid rgba(91,155,213,0.2); color: #5b9bd5; font-size: 12px;
+    padding: 3px 9px; border-radius: 20px; margin: 0 3px 3px 0;
+    cursor: pointer; transition: background 0.15s;
+  }
+  .tc-dp-tag:hover { background: rgba(91,155,213,0.22); }
+  .tc-dp-open-btn {
+    background: none; border: 1px solid #252b35; border-radius: 6px;
+    color: #8a8880; font-size: 12px; padding: 5px 12px; cursor: pointer;
+    font-family: var(--font-body); transition: all 0.15s;
+  }
+  .tc-dp-open-btn:hover { border-color: #4a9e72; color: #e8e4dc; }
+  /* Legend */
+  .tc-legend {
+    position: absolute; bottom: 14px; left: 14px;
+    background: rgba(19,22,27,0.92); border: 1px solid #252b35; border-radius: 9px;
+    padding: 11px 15px; display: flex; flex-direction: column; gap: 7px; z-index: 5;
+  }
+  .tc-legend-title {
+    font-size: 10px; font-weight: 500; text-transform: uppercase;
+    letter-spacing: 1px; color: #4a4a4a; margin-bottom: 1px;
+  }
+  .tc-legend-item { display: flex; align-items: center; gap: 8px; font-size: 11px; color: #8a8880; }
+  .tc-legend-hint { font-size: 10px; color: #4a4a4a; max-width: 130px; line-height: 1.4; }
+  .tc-lgnd-node { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
+  .tc-lgnd-node.tag     { background: #5b9bd5; box-shadow: 0 0 5px rgba(91,155,213,0.5); }
+  .tc-lgnd-node.note    { background: #9b7fd4; box-shadow: 0 0 4px rgba(155,127,212,0.4); }
+  .tc-lgnd-node.cluster { background: #c49a3c; box-shadow: 0 0 5px rgba(196,154,60,0.4); }
+  .tc-lgnd-line { width: 22px; height: 1px; flex-shrink: 0; }
+  .tc-lgnd-line.strong { background: rgba(74,158,114,0.6); }
+  .tc-lgnd-line.weak   { background: rgba(255,255,255,0.12); }
+  /* Statusbar */
+  .tc-statusbar {
+    height: 26px; background: var(--bg); border-top: 1px solid var(--border);
+    display: flex; align-items: center; padding: 0 14px; gap: 14px;
+    font-size: 11px; font-family: 'IBM Plex Mono', monospace; color: var(--muted); flex-shrink: 0;
+  }
+  .tc-statusbar span { color: var(--accent); }
+  /* ── Embeddings panel ── */
+  .tc-mode-dot.embeddings { background: #56c4a0; }
+  .tc-embed-panel {
+    display: none; flex: 1; min-height: 0; overflow-y: auto;
+    padding: 20px 24px; flex-direction: column; gap: 16px; background: var(--bg);
+  }
+  .tc-embed-status {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px; color: var(--text-soft);
+  }
+  .tc-embed-search-wrap {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 10px; padding: 12px 16px; transition: border-color 0.15s;
+  }
+  .tc-embed-search-wrap:focus-within { border-color: var(--accent); }
+  .tc-embed-search-wrap input {
+    flex: 1; border: none; outline: none; background: none;
+    font-size: 16px; color: var(--text); font-family: var(--font-body);
+  }
+  .tc-embed-search-wrap input::placeholder { color: var(--muted); }
+  .tc-embed-hint { font-size: 13px; color: var(--muted); padding: 4px 0; }
+  .tc-embed-results { display: flex; flex-direction: column; gap: 6px; }
+  .tc-embed-result {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 14px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 9px;
+    cursor: pointer; transition: border-color 0.15s;
+  }
+  .tc-embed-result:hover { border-color: var(--accent); }
+  .tc-embed-result-rank { font-size: 11px; color: var(--muted); font-family: 'IBM Plex Mono', monospace; min-width: 20px; }
+  .tc-embed-result-tag { font-size: 14px; font-weight: 500; color: var(--text); min-width: 140px; }
+  .tc-embed-result-bar-wrap { flex: 1; height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .tc-embed-result-bar { height: 100%; border-radius: 3px; background: var(--accent); }
+  .tc-embed-result-score { font-size: 11px; color: var(--muted); font-family: 'IBM Plex Mono', monospace; min-width: 44px; text-align: right; }
+  .tc-embed-result-count { font-size: 12px; color: var(--text-soft); min-width: 55px; text-align: right; }
+  .tc-embed-graph-btn {
+    flex-shrink: 0; padding: 0 14px; font-size: 18px; border: 1px solid var(--border);
+    background: var(--bg); color: var(--text-soft); border-radius: 6px; cursor: pointer;
+    transition: all 0.15s; align-self: stretch; display: flex; align-items: center;
+    justify-content: center; margin-top: -11px; margin-bottom: -11px; min-width: 44px;
+  }
+  .tc-embed-graph-btn:hover { border-color: var(--accent); color: var(--accent); }
+  /* Ego graph banner */
+  .tc-ego-banner {
+    position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+    background: rgba(13,15,18,0.85); border: 1px solid #252b35; border-radius: 8px;
+    padding: 6px 14px; font-size: 12px; color: #8a8880; white-space: nowrap;
+    font-family: 'IBM Plex Mono', monospace; z-index: 5; pointer-events: auto;
+  }
+  .tc-ego-banner b { color: #4a9e72; }
+  .tc-ego-banner button { background: none; border: none; color: #5b9bd5; cursor: pointer; font-size: 12px; margin-left: 8px; }
+  /* Surprise me */
+  .tc-surprise-btn {
+    background: none; border: 1px solid var(--border); border-radius: 6px;
+    padding: 2px 9px; font-size: 12px; color: var(--accent); cursor: pointer;
+    font-family: var(--font-body); transition: all 0.15s;
+  }
+  .tc-surprise-btn:hover { background: var(--accent-bg); }
+  /* Cluster cards */
+  .tc-cluster-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 14px; margin-bottom: 6px;
+  }
+  .tc-cluster-header {
+    font-size: 13px; font-weight: 600; margin-bottom: 9px;
+    display: flex; align-items: center;
+  }
+  .tc-cluster-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+  .tc-cluster-tag {
+    font-size: 12px; padding: 3px 9px; border-radius: 20px;
+    border: 1px solid; cursor: pointer; transition: opacity 0.15s;
+    background: transparent;
+  }
+  .tc-cluster-tag:hover { opacity: 0.7; }
+  /* SVG node/link styles */
+  .tc-link { stroke: rgba(255,255,255,0.06); stroke-width: 1; fill: none; }
+  .tc-link-strong { stroke: rgba(74,158,114,0.22); stroke-width: 1.5; }
+  .tc-link-highlighted { stroke: #4a9e72 !important; stroke-opacity: 0.6 !important; stroke-width: 2 !important; }
+  .settings-section {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); box-shadow: var(--shadow);
+    margin-bottom: 16px; overflow: hidden;
+  }
+  .settings-section-title {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.6px;
+    text-transform: uppercase; color: var(--muted);
+    padding: 12px 16px 8px;
+  }
+  .settings-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px; border-top: 1px solid var(--border); gap: 16px;
+  }
+  .settings-row:first-of-type { border-top: none; }
+  .settings-label { font-size: 14px; color: var(--text); font-weight: 400; }
+  .settings-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .settings-control { flex-shrink: 0; }
+
+  /* Toggle switch */
+  .toggle {
+    position: relative; width: 40px; height: 22px; cursor: pointer;
+    display: inline-block; flex-shrink: 0;
+  }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-track {
+    position: absolute; inset: 0; border-radius: 11px;
+    background: var(--border); transition: background 0.2s;
+  }
+  .toggle input:checked + .toggle-track { background: var(--accent); }
+  .toggle-thumb {
+    position: absolute; top: 3px; left: 3px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--surface); transition: transform 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .toggle input:checked ~ .toggle-thumb { transform: translateX(18px); }
+
+  /* Range slider */
+  .settings-slider {
+    width: 140px; accent-color: var(--accent);
+  }
+  .slider-val {
+    font-size: 12px; color: var(--muted); min-width: 36px; text-align: right;
+  }
+
+  /* Theme grid */
+  .theme-grid {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    padding: 12px 16px;
+  }
+  .theme-swatch {
+    width: 36px; height: 36px; border-radius: 8px; cursor: pointer;
+    border: 2px solid transparent; transition: all 0.15s;
+    position: relative;
+  }
+  .theme-swatch.active { border-color: var(--text); transform: scale(1.1); }
+  .theme-swatch:hover { transform: scale(1.08); }
+
+  /* API key input */
+  .settings-input {
+    width: 100%; border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 12px; font-size: 13px; font-family: monospace;
+    background: var(--bg); color: var(--text); outline: none;
+    margin-top: 8px;
+  }
+  .settings-input:focus { border-color: var(--accent); }
+  .settings-save-btn {
+    margin-top: 8px; background: var(--accent); color: #fff;
+    border: none; border-radius: 7px; padding: 6px 16px;
+    font-size: 13px; cursor: pointer; font-family: var(--font-body);
+  }
+  .settings-save-btn:hover { background: #a96d32; }
+
+  /* ── Mobile ─────────────────────────────────────────────────────── */
+  @media (max-width: 700px) {
+    :root { font-size: var(--mobile-font-size, 15px); }
+    .card-content { font-size: var(--mobile-font-size, 15px); }
+
+    #editor { font-size: var(--mobile-font-size, 15px); }
+    /* Defensive: ensure content never gets desktop margin on mobile,
+       even if JS briefly applies sidebar-visible due to viewport glitch */
+    #content.sidebar-visible { margin-left: 0; }
+    #sidebar { transform: translateX(-100%); }
+    #sidebar.open { transform: translateX(0); box-shadow: 4px 0 20px rgba(44,40,37,0.15); }
+    #menu-toggle { display: flex; }
+    main { padding: 12px 12px 80px; }
+    .card-actions { opacity: 1; }
+    #sidebar-overlay {
+      display: none; position: fixed; inset: 0; z-index: 49;
+      background: rgba(44,40,37,0.3);
+    }
+    #sidebar-overlay.open { display: block; }
+  }
+
+  /* ── Tracker sidebar ──────────────────────────────────────────────────────── */
+  .tracker-section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 8px 2px; margin-top: 4px;
+  }
+  .tracker-section-header.nav-section-header {
+    padding: 8px 12px 4px; margin-top: 0; cursor: pointer;
+  }
+  .tracker-add-btn {
+    background: none; border: none; cursor: pointer; color: var(--accent);
+    font-size: 18px; line-height: 1; padding: 0 4px; border-radius: 4px;
+    transition: opacity 0.15s;
+  }
+  .tracker-add-btn:hover { opacity: 0.7; }
+  .tracker-nav-item {
+    display: flex; align-items: center; justify-content: space-between;
+    width: 100%; padding: 7px 12px 7px 24px; border: none; background: none;
+    cursor: pointer; border-radius: 8px; font-size: 13.5px; color: var(--text-soft);
+    font-family: var(--font-body); text-align: left; transition: background 0.12s, color 0.12s;
+  }
+  .tracker-nav-item:hover { background: var(--accent-bg); color: var(--accent); }
+  .tracker-nav-item.active { background: var(--accent-bg); color: var(--accent); font-weight: 500; }
+  .tracker-nav-item .tracker-gear {
+    opacity: 0; font-size: 12px; transition: opacity 0.15s; flex-shrink: 0;
+  }
+  .tracker-nav-item:hover .tracker-gear { opacity: 0.6; }
+
+  /* ── Tracker view ─────────────────────────────────────────────────────────── */
+  #tracker-view { display: none; flex-direction: column; flex: 1; max-width: min(var(--feed-max-width, 700px), 100%); width: 100%; margin: 0 auto; padding: 20px 20px 100px; }
+  #tracker-view.active { display: flex; }
+  .tracker-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 0 0 14px; border-bottom: 1px solid var(--border); margin-bottom: 16px;
+  }
+  .tracker-header h2 { font-size: 17px; font-weight: 600; margin: 0; flex: 1; }
+  .tracker-color-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; display: none; }
+
+  /* ── Tracker composer ─────────────────────────────────────────────────────── */
+  .tracker-composer {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 12px 14px; margin-bottom: 16px;
+    box-shadow: var(--shadow);
+  }
+  .tracker-composer textarea {
+    width: 100%; border: none; background: none; resize: none;
+    font-family: var(--font-body); font-size: 14.5px; color: var(--text);
+    outline: none; min-height: 60px; max-height: 160px; line-height: 1.55; overflow-y: auto;
+  }
+  .tracker-composer-footer { display: flex; justify-content: flex-end; margin-top: 8px; }
+
+  /* ── Tracker note cards ───────────────────────────────────────────────────── */
+  .tracker-note-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 14px; margin-bottom: 10px;
+    font-size: 14px; line-height: 1.6; color: var(--text); position: relative;
+  }
+  .tracker-note-card:hover .tracker-note-del { opacity: 1; }
+  .tracker-note-date { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+  .tracker-note-del {
+    position: absolute; top: 8px; right: 8px; opacity: 0;
+    background: none; border: none; cursor: pointer; color: var(--muted);
+    font-size: 14px; transition: opacity 0.15s, color 0.15s; padding: 2px 5px;
+  }
+  .tracker-note-del:hover { color: var(--danger); }
+
+  /* ── AI chat panel ────────────────────────────────────────────────────────── */
+  #tracker-ai-panel {
+    margin-top: 16px; background: var(--surface);
+    border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden;
+  }
+  .tracker-ai-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px; cursor: pointer; user-select: none;
+    background: var(--bg); font-size: 13px; font-weight: 500;
+    border-bottom: 1px solid transparent;
+  }
+  .tracker-ai-header:hover { background: var(--accent-bg); }
+  .tracker-ai-body { display: none; flex-direction: column; }
+  .tracker-ai-body.open { display: flex; border-top: 1px solid var(--border); }
+  .tracker-ai-messages {
+    max-height: 320px; overflow-y: auto; padding: 12px 14px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .ai-msg { max-width: 85%; padding: 8px 12px; border-radius: 10px; font-size: 13.5px; line-height: 1.55; }
+  .ai-msg.user { background: var(--accent-bg); color: var(--accent); align-self: flex-end; border-bottom-right-radius: 3px; }
+  .ai-msg.assistant { background: var(--bg); color: var(--text); align-self: flex-start; border-bottom-left-radius: 3px; white-space: pre-wrap; }
+  .ai-msg.thinking { color: var(--muted); font-style: italic; align-self: flex-start; }
+  .tracker-ai-quick {
+    display: flex; gap: 6px; padding: 8px 14px; flex-wrap: wrap;
+    border-top: 1px solid var(--border);
+  }
+  .tracker-ai-quick button {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 20px;
+    padding: 4px 10px; font-size: 12px; cursor: pointer; color: var(--text-soft);
+    font-family: var(--font-body); transition: background 0.12s;
+  }
+  .tracker-ai-quick button:hover { background: var(--accent-bg); color: var(--accent); border-color: var(--accent); }
+  .tracker-ai-input-row {
+    display: flex; gap: 8px; padding: 8px 14px 12px; border-top: 1px solid var(--border); align-items: flex-end;
+  }
+  .tracker-ai-input-row textarea {
+    flex: 1; border: 1px solid var(--border); border-radius: 8px;
+    padding: 7px 10px; font-size: 13.5px; font-family: var(--font-body);
+    background: var(--bg); color: var(--text); outline: none;
+    resize: none; min-height: 36px; max-height: 120px; line-height: 1.5; overflow-y: auto;
+  }
+  .tracker-ai-input-row textarea:focus { border-color: var(--accent); }
+  .tracker-ai-send-btn {
+    flex-shrink: 0; width: 36px; height: 36px; border-radius: 8px;
+    border: none; background: var(--accent); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: opacity 0.15s;
+  }
+  .tracker-ai-send-btn:hover { opacity: 0.85; }
+  .tracker-ai-send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .tracker-ai-send-btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; pointer-events: none; }
+
+  /* ── Tracker modals ───────────────────────────────────────────────────────── */
+  .tracker-instructions-textarea {
+    width: 100%; min-height: 90px; resize: vertical;
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 10px; font-size: 13px; font-family: var(--font-body);
+    background: var(--bg); color: var(--text); outline: none; line-height: 1.5;
+    box-sizing: border-box;
+  }
+  .tracker-instructions-textarea:focus { border-color: var(--accent); }
+  .tracker-color-picker { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+  .tracker-color-swatch {
+    width: 22px; height: 22px; border-radius: 50%; cursor: pointer;
+    border: 2px solid transparent; transition: border-color 0.15s;
+  }
+  .tracker-color-swatch.selected,
+  .tracker-color-swatch:hover { border-color: var(--text); }
+
+  /* ── Partner token UI ────────────────────────────────────────────────────── */
+  .partner-token-card {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 12px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .partner-token-name { font-size: 13px; font-weight: 500; color: var(--text); }
+  .partner-token-link {
+    display: flex; align-items: center; gap: 6px;
+  }
+  .partner-token-link input {
+    flex: 1; font-size: 11px; font-family: monospace;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; padding: 4px 8px; color: var(--muted);
+    outline: none; cursor: pointer;
+  }
+  .partner-token-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
+  .partner-token-actions button {
+    font-size: 11px; padding: 3px 8px; border-radius: 6px;
+    border: 1px solid var(--border); background: var(--surface);
+    cursor: pointer; color: var(--text-soft); font-family: var(--font-body);
+    transition: all 0.12s;
+  }
+  .partner-token-actions button:hover { background: var(--accent-bg); color: var(--accent); border-color: var(--accent); }
+  .partner-token-actions .btn-danger:hover { background: #fdf0ee; color: var(--danger); border-color: var(--danger); }
+  /* New partner token form */
+  #partner-new-form {
+    background: var(--bg); border: 1px solid var(--accent);
+    border-radius: 8px; padding: 10px 12px;
+    display: none; flex-direction: column; gap: 8px;
+  }
+  #partner-new-form.open { display: flex; }
+  #partner-new-form label { font-size: 12px; color: var(--muted); margin-bottom: 2px; display: block; }
+  #partner-new-form input, #partner-new-form textarea {
+    width: 100%; border: 1px solid var(--border); border-radius: 6px;
+    padding: 6px 8px; font-size: 13px; font-family: var(--font-body);
+    background: var(--surface); color: var(--text); outline: none;
+  }
+  #partner-new-form input:focus, #partner-new-form textarea:focus { border-color: var(--accent); }
+  #partner-new-form textarea { min-height: 60px; resize: vertical; }
+
+
+  /* ── AI message markdown rendering ──────────────────────────────────────── */
+  .ai-msg.assistant { white-space: normal; }
+  .ai-msg.assistant p { margin: 0 0 6px; }
+  .ai-msg.assistant p:last-child { margin-bottom: 0; }
+  .ai-msg.assistant ul, .ai-msg.assistant ol { padding-left: 18px; margin: 4px 0 6px; }
+  .ai-msg.assistant li { margin: 2px 0; }
+  .ai-msg.assistant strong { font-weight: 600; }
+  .ai-msg.assistant em { font-style: italic; }
+  .ai-msg.assistant h1, .ai-msg.assistant h2, .ai-msg.assistant h3 {
+    font-size: 13.5px; font-weight: 600; margin: 8px 0 4px;
+  }
+  .ai-msg.assistant code {
+    background: var(--surface-alt); padding: 1px 4px; border-radius: 3px;
+    font-size: 0.88em; font-family: monospace;
+  }
+  .ai-msg.assistant hr { border: none; border-top: 1px solid var(--border); margin: 8px 0; }
+
+  /* ── Tracker archive/export buttons ─────────────────────────────────────── */
+  .tracker-danger-zone {
+    margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .tracker-action-row {
+    display: flex; gap: 8px; flex-wrap: wrap;
+  }
+
+
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- Sidebar -->
+  <aside id="sidebar"></aside>
+  <div id="sidebar-overlay"></div>
+
+  <!-- Main content -->
+  <div id="content">
+    <header>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="icon-btn" id="menu-toggle">
+          <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;pointer-events:none"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <span class="header-title" id="header-title">All notes</span>
+      </div>
+      <div class="header-right">
+        <button class="icon-btn" id="btn-search" title="Search" style="display:none">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main>
+      <!-- Composer (only shown for relevant views) -->
+      <div id="composer">
+        <div class="md-toolbar" id="composer-toolbar">
+          <button class="md-btn" data-md="bold" title="Bold"><b>B</b></button>
+          <button class="md-btn" data-md="italic" title="Italic"><i>I</i></button>
+          <button class="md-btn" data-md="strike" title="Strikethrough"><s>S</s></button>
+          <div class="md-sep"></div>
+          <button class="md-btn" data-md="h2" title="Heading">H2</button>
+          <button class="md-btn" data-md="h3" title="Subheading">H3</button>
+          <div class="md-sep"></div>
+          <button class="md-btn" data-md="ul" title="Bullet list"><svg viewBox="0 0 24 24"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1.5" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1.5" fill="currentColor" stroke="none"/></svg></button>
+          <button class="md-btn" data-md="ol" title="Numbered list"><svg viewBox="0 0 24 24"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4" stroke="currentColor"/><path d="M4 10h2" stroke="currentColor"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1" stroke="currentColor"/></svg></button>
+          <div class="md-sep"></div>
+          <button class="md-btn" data-md="quote" title="Quote"><svg viewBox="0 0 24 24"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg></button>
+          <button class="md-btn" data-md="code" title="Code"><svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></button>
+          <button class="md-btn" data-md="link" title="Link"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
+        </div>
+        <textarea id="composer-textarea" class="md-textarea" placeholder="What's on your mind?"></textarea>
+        <div id="image-preview-area"></div>
+        <div class="composer-footer">
+          <div class="composer-left">
+            <button class="attach-btn" id="attach-btn">
+              <svg viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+              Attach file
+            </button>
+            <input type="file" id="file-input" accept="*/*" multiple style="display:none">
+          </div>
+          <button class="save-btn" id="save-btn">Save</button>
+        </div>
+      </div>
+
+      <!-- Search bar -->
+      <div id="search-bar" class="visible">
+        <svg id="search-icon" viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="search-input" placeholder="Search notes…" autocomplete="off">
+        <button id="search-clear">✕</button>
+      </div>
+
+      <div id="feed"></div>
+      <div id="load-more" style="display:none">
+        <button class="load-more-btn" id="load-more-btn">Load more</button>
+      </div>
+      <div id="infinite-sentinel" style="height:1px"></div>
+
+      <!-- Settings page -->
+      <div id="settings-page">
+        <div class="settings-section">
+          <div class="settings-section-title">Account</div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Signed in as</div>
+              <div class="settings-desc" id="account-jwt-email" style="font-family:monospace">—</div>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Data account</div>
+              <div class="settings-desc" id="account-user-id" style="font-family:monospace">—</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-title">Feed</div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Infinite scroll</div>
+              <div class="settings-desc">Automatically load more notes when scrolling</div>
+            </div>
+            <div class="settings-control">
+              <label class="toggle">
+                <input type="checkbox" id="setting-infinite-scroll">
+                <div class="toggle-track"></div>
+                <div class="toggle-thumb"></div>
+              </label>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Note max height</div>
+              <div class="settings-desc">Clamp long notes — tap to expand</div>
+            </div>
+            <div class="settings-control" style="display:flex;align-items:center;gap:8px">
+              <input type="range" class="settings-slider" id="setting-max-height" min="0" max="800" step="50" value="0">
+              <span class="slider-val" id="setting-max-height-val">Off</span>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Note column width</div>
+              <div class="settings-desc">Max width of the feed — scales down on smaller screens</div>
+            </div>
+            <div class="settings-control" style="display:flex;align-items:center;gap:8px">
+              <input type="range" class="settings-slider" id="setting-feed-width" min="400" max="1000" step="50" value="700">
+              <span class="slider-val" id="setting-feed-width-val">700px</span>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Mobile text size</div>
+              <div class="settings-desc">Base font size on phones and tablets (12–22px)</div>
+            </div>
+            <div class="settings-control" style="display:flex;align-items:center;gap:8px">
+              <input type="range" class="settings-slider" id="setting-mobile-font" min="12" max="22" step="1" value="15">
+              <span class="slider-val" id="setting-mobile-font-val">15px</span>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Font</div>
+              <div class="settings-desc">Body font used throughout the app</div>
+            </div>
+            <div class="settings-control">
+              <select id="setting-font-family" style="border:1px solid var(--border);border-radius:7px;padding:6px 10px;font-size:13px;font-family:var(--font-body);background:var(--bg);color:var(--text);outline:none;cursor:pointer">
+                <option value="'DM Sans', sans-serif">DM Sans (default)</option>
+                <option value="system-ui, sans-serif">System UI</option>
+                <option value="Georgia, serif">Georgia</option>
+                <option value="'Lora', serif">Lora (serif)</option>
+                <option value="monospace">Monospace</option>
+              </select>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Attachments per page</div>
+              <div class="settings-desc">Max items shown in Attachments view</div>
+            </div>
+            <div class="settings-control" style="display:flex;align-items:center;gap:8px">
+              <input type="range" class="settings-slider" id="setting-att-per-page" min="9" max="100" step="3" value="27">
+              <span class="slider-val" id="setting-att-per-page-val">27</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-title">Theme</div>
+          <div class="theme-grid" id="theme-grid"></div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-title">Offline</div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Cache notes for offline</div>
+              <div class="settings-desc">Fetch and store notes from the last N days when online</div>
+            </div>
+            <div class="settings-control" style="display:flex;align-items:center;gap:8px">
+              <input type="range" class="settings-slider" id="setting-offline-days" min="0" max="30" step="1" value="7">
+              <span class="slider-val" id="setting-offline-days-val">7 days</span>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Cache images offline</div>
+              <div class="settings-desc">Pre-fetch image attachments so they load without a connection</div>
+            </div>
+            <div class="settings-control">
+              <label class="toggle">
+                <input type="checkbox" id="setting-offline-attachments">
+                <div class="toggle-track"></div>
+                <div class="toggle-thumb"></div>
+              </label>
+            </div>
+          </div>
+          <div class="settings-row" style="flex-direction:column;align-items:flex-start;gap:6px">
+            <button id="btn-refresh-offline-cache" style="font-size:13px;padding:6px 14px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text);cursor:pointer">Refresh offline cache now</button>
+            <div class="settings-desc" id="offline-cache-status"></div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-title">AI</div>
+          <div class="settings-desc" style="font-size:13px;color:var(--muted);margin-bottom:12px">
+            NoteFlow uses Anthropic (Claude) for all AI features. The model used for tracker
+            conversations can be set per tracker. Tagging and document indexing always use the built-in key.
+          </div>
+          <div class="settings-row" style="flex-direction:column;align-items:flex-start;gap:6px">
+          <div class="settings-row" style="flex-direction:column;align-items:flex-start;gap:6px">
+            <div class="settings-label">Voyage AI key</div>
+            <div class="settings-desc">The Voyage AI key is now stored as a Cloudflare Worker secret (<code>VOYAGE_KEY</code>) and no longer needs to be entered here. Set it with: <code>npx wrangler secret put VOYAGE_KEY</code></div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-title">Email</div>
+          <div class="settings-desc" style="font-size:13px;color:var(--muted);margin-bottom:12px">
+            Send notes to yourself via email. Uses the NoteFlow server — no setup needed beyond a recipient address.
+          </div>
+          <div class="settings-row" style="flex-direction:column;align-items:flex-start;gap:6px">
+            <div class="settings-label">Recipient address</div>
+            <div class="settings-desc">Where note emails are sent when you click the envelope icon on a note.</div>
+            <input type="email" id="setting-reminder-email" placeholder="you@example.com"
+              style="width:100%;padding:6px 10px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;box-sizing:border-box">
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Make public when sending</div>
+              <div class="settings-desc">If on, the note is made public and a view link is included in the email.</div>
+            </div>
+            <div class="settings-control">
+              <label class="toggle">
+                <input type="checkbox" id="setting-email-make-public">
+                <div class="toggle-track"></div>
+                <div class="toggle-thumb"></div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-title">Tags</div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Show tags on notes</div>
+              <div class="settings-desc">Display tag chips below each note card</div>
+            </div>
+            <div class="settings-control">
+              <label class="toggle">
+                <input type="checkbox" id="setting-show-tags" checked>
+                <div class="toggle-track"></div>
+                <div class="toggle-thumb"></div>
+              </label>
+            </div>
+          </div>
+          <div class="settings-row" style="flex-direction:column;align-items:flex-start;gap:6px">
+            <div class="settings-label">Tag categories</div>
+            <div class="settings-desc">Comma-separated top-level categories fed to the AI tagger (e.g. Work, Private, Family)</div>
+            <input type="text" id="setting-tag-categories" placeholder="Work, Private, Family"
+              style="width:100%;padding:6px 10px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;box-sizing:border-box">
+          </div>
+          <div class="settings-row" style="flex-direction:column;align-items:flex-start;gap:6px">
+            <div class="settings-label">People</div>
+            <div class="settings-desc">Comma-separated names the AI should recognise as tags (e.g. Randi, Balder)</div>
+            <input type="text" id="setting-tag-people" placeholder="Randi, Balder"
+              style="width:100%;padding:6px 10px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;box-sizing:border-box">
+          </div>
+          <div class="settings-row" style="flex-direction:column;align-items:flex-start;gap:6px">
+            <div class="settings-label">Bulk auto-tag</div>
+            <div class="settings-desc">Run AI tagging on all notes that currently have no tags</div>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <button id="btn-tag-all-untagged" style="font-size:13px;padding:6px 14px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text);cursor:pointer">Tag all untagged notes</button>
+              <span id="tag-all-status" style="font-size:12px;color:var(--muted)"></span>
+            </div>
+          </div>
+        </div>
+
+
+      </div>
+      </div><!-- /settings-page -->
+
+    </main>
+
+      <!-- Tracker view (shown via .active class, same pattern as settings-page) -->
+</div>
+
+<!-- Share modal -->
+<div class="modal-backdrop" id="share-modal">
+  <div class="modal">
+    <h3>Share note</h3>
+    <div id="share-current-vis" style="font-size:12px;color:var(--muted);margin-bottom:12px"></div>
+    <div class="modal-row">
+      <span class="modal-label">Visibility</span>
+      <select id="share-vis" style="flex:1;border:1px solid var(--border);border-radius:7px;padding:6px 10px;font-size:13px;font-family:var(--font-body);background:var(--bg);color:var(--text);outline:none">
+        <option value="PRIVATE">Private</option>
+        <option value="PUBLIC">Public</option>
+      </select>
+    </div>
+    <div id="share-link-wrap" style="display:none">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Share link</div>
+      <div class="share-link-row">
+        <input type="text" id="share-link-input" readonly>
+        <button class="copy-btn" id="copy-link-btn">Copy</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="share-cancel">Cancel</button>
+      <button class="btn-primary" id="share-save">Update</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Lightbox -->
+<div id="lightbox">
+  <button id="lightbox-close">✕</button>
+  <button id="lightbox-prev">&#8249;</button>
+  <img id="lightbox-img" src="index.html" alt="" style="display:none">
+  <div id="lightbox-content" style="display:none;width:90vw;max-width:960px;height:85vh;background:var(--surface);border-radius:12px;overflow:hidden;flex-direction:column;"></div>
+  <button id="lightbox-next">&#8250;</button>
+  <div id="lightbox-counter"></div>
+</div>
+
+<!-- Toast -->
+
+<!-- New tracker modal -->
+<div class="modal-backdrop" id="tracker-new-modal">
+  <div class="modal">
+    <h3>New Tracker</h3>
+    <div class="modal-row">
+      <span class="modal-label">Name</span>
+      <input type="text" id="tracker-new-name" placeholder="e.g. Back pain, Sleep, Mood…" style="flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font-body);background:var(--bg);color:var(--text);outline:none">
+    </div>
+    <div class="modal-row" style="flex-direction:column;align-items:flex-start;gap:6px">
+      <span class="modal-label">AI Instructions</span>
+      <textarea class="tracker-instructions-textarea" id="tracker-new-instructions" placeholder="Tell the AI what this tracker is about. E.g: I am tracking lower back pain. When I log, ask me about pain level (1-10), activity, and sleep if I have not mentioned them. Flag worsening patterns."></textarea>
+    </div>
+    <div class="modal-row">
+      <span class="modal-label">Color</span>
+      <div class="tracker-color-picker" id="tracker-new-color-picker"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="tracker-new-cancel">Cancel</button>
+      <button class="btn-primary" id="tracker-new-save">Create</button>
+    </div>
+  </div>
+</div>
+
+
+<div id="toast"></div>
+<div style="position:fixed;bottom:6px;right:10px;font-size:10px;color:var(--muted);opacity:0.5;pointer-events:none;z-index:1;user-select:none">NoteFlow v1.4</div>
+
+<script>
+// Configure marked to treat single newlines as <br> (matches Memos default rendering)
+marked.use({ breaks: true, gfm: true });
+
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+const API_BASE      = 'https://noteflow-api.jeppesen.cc/api';
+const SHARE_BASE    = 'https://notes.jeppesen.cc';
+
+const PAGE_SIZE     = 20;
+const SPECIAL_TAGS  = ['hidden', 'starred'];
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let allMemos      = [];
+let nextCursor    = null;  // NoteFlow v2 uses cursor (created_at timestamp), not pageToken
+let currentView   = 'all';
+let currentTag    = null;  // active tag filter (used by project nav)
+let pendingImages = [];
+let shareTargetMemo = null;
+let editTargetMemo  = null;
+let searchQuery     = '';
+let searchResults   = null; // null = not in search mode; array = server search results
+
+// ── Settings (DB-backed per account) ─────────────────────────────────────────
+let settings = {
+  infiniteScroll: false,
+  maxHeight: 0,
+  theme: 'warm',
+  attachmentsPerPage: 27,
+  feedMaxWidth: 700,
+  mobileFontSize: 15,
+  fontFamily: "'DM Sans', sans-serif",
+  offlineDays: 7,
+  offlineCacheAttachments: false,
+  showTags: true,
+  tagCategories: '',
+  tagPeople: '',
+  voyageApiKey:    '',  // kept for migration — no longer used (key moved to VOYAGE_KEY worker secret)
+  reminderEmail:   '',
+  emailMakePublic: false,
+  _semanticCoords: null,
+};
+// Read ONLY display preferences from localStorage for instant boot theming.
+// Sensitive keys (voyageApiKey etc.) live in D1 only and are never touched here.
+const DISPLAY_PREF_KEYS = ['theme', 'fontFamily', 'feedMaxWidth', 'mobileFontSize'];
+try {
+  const _lsPrefs = JSON.parse(localStorage.getItem('noteflow_display_prefs') || '{}');
+  DISPLAY_PREF_KEYS.forEach(k => { if (_lsPrefs[k] !== undefined) settings[k] = _lsPrefs[k]; });
+} catch(e) {}
+
+// Block saveSettings() from firing until loadSettings() has completed
+let _settingsLoaded = false;
+
+let _saveSettingsTimer = null;
+function saveSettings() {
+  if (!_settingsLoaded) return; // don't overwrite D1 with defaults before loadSettings completes
+  // Cache only non-sensitive display prefs to localStorage for boot theming
+  try {
+    const prefs = {};
+    DISPLAY_PREF_KEYS.forEach(k => { prefs[k] = settings[k]; });
+    localStorage.setItem('noteflow_display_prefs', JSON.stringify(prefs));
+  } catch(e) {}
+  clearTimeout(_saveSettingsTimer);
+  _saveSettingsTimer = setTimeout(async () => {
+    try {
+      await fetch(API_BASE + '/user/settings', {
+        method: 'PUT', credentials: 'omit',
+        headers: authHeaders(),
+        body: JSON.stringify(settings)
+      });
+    } catch(e) { console.warn('Settings save failed:', e.message); }
+  }, 800);
+}
+function saveSettingsNow() {
+  if (!_settingsLoaded) return Promise.resolve();
+  try {
+    const prefs = {};
+    DISPLAY_PREF_KEYS.forEach(k => { prefs[k] = settings[k]; });
+    localStorage.setItem('noteflow_display_prefs', JSON.stringify(prefs));
+  } catch(e) {}
+  clearTimeout(_saveSettingsTimer);
+  return fetch(API_BASE + '/user/settings', {
+    method: 'PUT', credentials: 'omit',
+    headers: authHeaders(),
+    body: JSON.stringify(settings)
+  }).catch(e => console.warn('Settings save failed:', e.message));
+}
+
+async function loadSettings() {
+  try {
+    const data = await apiGet('/user/settings');
+    if (data && typeof data === 'object') {
+      Object.assign(settings, data);
+      // Keep display prefs cache fresh
+      try {
+        const prefs = {};
+        DISPLAY_PREF_KEYS.forEach(k => { prefs[k] = settings[k]; });
+        localStorage.setItem('noteflow_display_prefs', JSON.stringify(prefs));
+      } catch(e) {}
+    }
+  } catch(e) { /* use defaults */ }
+  _settingsLoaded = true; // now safe to save
+  applyFeedWidth();
+  applyFontFamily();
+  applyTheme(settings.theme);
+  applyMobileFontSize();
+  applyShowTags();
+  syncSettingsControls();
+}
+
+function applyMobileFontSize() {
+  document.documentElement.style.setProperty('--mobile-font-size', (settings.mobileFontSize || 15) + 'px');
+}
+function applyFeedWidth() {
+  document.documentElement.style.setProperty('--feed-max-width', (settings.feedMaxWidth || 700) + 'px');
+}
+function applyFontFamily() {
+  document.documentElement.style.setProperty('--font-body', settings.fontFamily || "'DM Sans', sans-serif");
+}
+// ── API ───────────────────────────────────────────────────────────────────────
+// Auth: read CF_Authorization cookie and forward as header to cross-subdomain API
+function getCFToken() {
+  const match = document.cookie.match(/CF_Authorization=([^;]+)/);
+  return match ? match[1] : null;
+}
+function authHeaders(extra) {
+  const h = Object.assign({ 'Content-Type': 'application/json' }, extra || {});
+  const token = getCFToken();
+  if (token) h['Authorization'] = 'Bearer ' + token;
+  return h;
+}
+
+async function apiGet(path) {
+  const r = await fetch(API_BASE + path, {
+    credentials: 'omit',
+    headers: authHeaders()
+  });
+  if (!r.ok) throw new Error('GET ' + path + ' ' + r.status);
+  return r.json();
+}
+async function apiPatch(path, body) {
+  const r = await fetch(API_BASE + path, {
+    method: 'PATCH', credentials: 'omit',
+    headers: authHeaders(),
+    body: JSON.stringify(body)
+  });
+  if (!r.ok) throw new Error('PATCH ' + r.status);
+  return r.json();
+}
+async function apiPost(path, body) {
+  const r = await fetch(API_BASE + path, {
+    method: 'POST', credentials: 'omit',
+    headers: authHeaders(),
+    body: JSON.stringify(body)
+  });
+  if (!r.ok) throw new Error('POST ' + r.status);
+  return r.json();
+}
+async function apiDelete(path) {
+  const r = await fetch(API_BASE + path, {
+    method: 'DELETE', credentials: 'omit',
+    headers: authHeaders()
+  });
+  if (!r.ok) throw new Error('DELETE ' + r.status);
+  return r.json();
+}
+async function uploadAttachment(file, noteId) {
+  const base64 = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+  return apiPost('/attachments', {
+    note_id:  noteId,
+    filename: file.name,
+    type:     file.type || 'application/octet-stream',
+    content:  base64,
+  });
+}
+
+// Build the serving URL for a NoteFlow v2 attachment
+// Structure: { id: "a_abc123", filename: "image.png", mime_type: "image/png" }
+// Served at: /api/attachments/:id
+function attachmentUrl(att) {
+  if (!att) return '';
+  return API_BASE + '/attachments/' + att.id;
+}
+
+// Check if an attachment is an image based on its MIME type or filename
+function isImageAttachment(att) {
+  if (!att) return false;
+  const mime = (att.mime_type || att.type || '').toLowerCase();
+  if (mime && mime.startsWith('image/')) return true;
+  const fn = (att.filename || '').toLowerCase();
+  return /\.(jpg|jpeg|png|gif|webp|svg|bmp|avif)$/.test(fn);
+}
+
+
+// ── AI helpers ────────────────────────────────────────────────────────────────
+// Unified entry point used by save flow and bulk tagger.
+// Calls the worker which uses the server-side Anthropic key.
+async function aiTags(content) {
+  const stripped = (content || '').replace(/#[\w\u00C0-\u024F-]+/g, '').replace(/<[^>]+>/g, '').trim();
+  if (stripped.length < 15) return [];
+  const categories = (settings.tagCategories || '').split(',').map(s => s.trim()).filter(Boolean);
+  const people     = (settings.tagPeople     || '').split(',').map(s => s.trim()).filter(Boolean);
+  const data = await apiPost('/notes/autotag', { content: stripped.slice(0, 2000), categories, people });
+  return Array.isArray(data.tags) ? data.tags : [];
+}
+
+// ── Image handling ────────────────────────────────────────────────────────────
+function fileToBase64(file) {
+  return new Promise((res, rej) => {
+    const reader = new FileReader();
+    reader.onloadend = () => res({ base64: reader.result.split(',')[1], mediaType: file.type || 'image/jpeg' });
+    reader.onerror = rej;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function addFile(file) {
+  const { base64, mediaType } = await fileToBase64(file);
+  const entry = { file, base64, mediaType, ocrText: null, ocrLoading: false };
+  if (mediaType.startsWith('image/')) {
+    entry.ocrLoading = true;
+    pendingImages.push(entry);
+    renderImagePreviews();
+    try {
+      entry.ocrText = await claudeVision(base64, mediaType) || null;
+    } catch(e) { entry.ocrText = null; }
+    entry.ocrLoading = false;
+    renderImagePreviews();
+  } else {
+    pendingImages.push(entry);
+    renderImagePreviews();
+  }
+}
+
+function renderImagePreviews() {
+  const area = document.getElementById('image-preview-area');
+  area.innerHTML = '';
+  pendingImages.forEach((img, i) => {
+    const wrap = document.createElement('div');
+    const isImage = img.mediaType.startsWith('image/');
+    if (isImage) {
+      wrap.className = 'img-preview-wrap';
+      const el = document.createElement('img');
+      el.src = 'data:' + img.mediaType + ';base64,' + img.base64;
+      wrap.appendChild(el);
+      const badge = document.createElement('div');
+      badge.className = 'ocr-badge';
+      badge.textContent = img.ocrLoading ? '…' : (img.ocrText ? '✓' : '');
+      if (img.ocrLoading || img.ocrText) wrap.appendChild(badge);
+    } else {
+      wrap.className = 'img-preview-wrap';
+      wrap.style.cssText = 'display:flex;align-items:center;justify-content:center;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;width:auto;height:auto;padding:6px 10px;gap:6px;font-size:13px;max-width:180px';
+      const icon = document.createElement('span');
+      icon.textContent = fileIcon(img.mediaType);
+      const name = document.createElement('span');
+      name.textContent = img.file.name;
+      name.style.cssText = 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px';
+      wrap.appendChild(icon);
+      wrap.appendChild(name);
+    }
+    const rm = document.createElement('button');
+    rm.className = 'img-remove'; rm.textContent = '✕';
+    rm.onclick = () => { pendingImages.splice(i, 1); renderImagePreviews(); };
+    wrap.appendChild(rm);
+    area.appendChild(wrap);
+  });
+}
+
+// ── Native markdown toolbar ───────────────────────────────────────────────────
+function mdInsert(ta, cmd) {
+  const start = ta.selectionStart, end = ta.selectionEnd;
+  const sel = ta.value.slice(start, end);
+  const before = ta.value.slice(0, start);
+  const after = ta.value.slice(end);
+  const lineStart = before.lastIndexOf('\n') + 1;
+  const linePrefix = before.slice(lineStart);
+
+  let newText, cursorOffset, selOffset;
+  switch (cmd) {
+    case 'bold':    newText = '**' + (sel || 'bold text') + '**'; cursorOffset = sel ? newText.length : 2; selOffset = sel ? 0 : newText.length - 4; break;
+    case 'italic':  newText = '*' + (sel || 'italic text') + '*'; cursorOffset = sel ? newText.length : 1; selOffset = sel ? 0 : newText.length - 2; break;
+    case 'strike':  newText = '~~' + (sel || 'text') + '~~'; cursorOffset = sel ? newText.length : 2; selOffset = sel ? 0 : newText.length - 4; break;
+    case 'code':    newText = '`' + (sel || 'code') + '`'; cursorOffset = sel ? newText.length : 1; selOffset = sel ? 0 : newText.length - 2; break;
+    case 'link': {
+      const url = sel && sel.startsWith('http') ? sel : 'https://';
+      const label = sel && !sel.startsWith('http') ? sel : 'link text';
+      newText = '[' + label + '](' + url + ')';
+      cursorOffset = 1; selOffset = label.length; break;
+    }
+    case 'h2':    newText = (linePrefix ? '\n' : '') + '## ' + (sel || 'Heading'); cursorOffset = newText.length; selOffset = 0; break;
+    case 'h3':    newText = (linePrefix ? '\n' : '') + '### ' + (sel || 'Heading'); cursorOffset = newText.length; selOffset = 0; break;
+    case 'quote': newText = (linePrefix ? '\n' : '') + '> ' + (sel || 'quote'); cursorOffset = newText.length; selOffset = 0; break;
+    case 'ul':    newText = (linePrefix ? '\n' : '') + '- ' + (sel || 'item'); cursorOffset = newText.length; selOffset = 0; break;
+    case 'ol':    newText = (linePrefix ? '\n' : '') + '1. ' + (sel || 'item'); cursorOffset = newText.length; selOffset = 0; break;
+    default: return;
+  }
+
+  ta.value = before + newText + after;
+  ta.selectionStart = start + cursorOffset - (selOffset > 0 ? cursorOffset - (start + newText.length - after.length - (before + newText).length + start) : 0);
+  // Simpler: just place cursor sensibly
+  if (selOffset > 0) {
+    ta.selectionStart = start + cursorOffset;
+    ta.selectionEnd = start + cursorOffset + selOffset;
+  } else {
+    ta.selectionStart = ta.selectionEnd = start + cursorOffset;
+  }
+  ta.focus();
+  ta.dispatchEvent(new Event('input'));
+}
+
+function attachMdToolbar(toolbar, textarea) {
+  toolbar.addEventListener('mousedown', e => {
+    const btn = e.target.closest('.md-btn');
+    if (!btn) return;
+    e.preventDefault(); // prevent blur on textarea
+    mdInsert(textarea, btn.dataset.md);
+  });
+}
+
+// Composer setup
+let composerEditor = null; // kept for API compat — points to the textarea
+let _pendingShareContent = null;
+
+(function setupComposer() {
+  const ta = document.getElementById('composer-textarea');
+  const tb = document.getElementById('composer-toolbar');
+  if (!ta || !tb) { setTimeout(setupComposer, 50); return; }
+  composerEditor = ta; // "composerEditor" now IS the textarea
+  attachMdToolbar(tb, ta);
+  ta.addEventListener('focus', () => {
+    document.getElementById('composer').classList.add('expanded');
+  });
+  ta.addEventListener('blur', () => {
+    setTimeout(() => {
+      if (!ta.value.trim() && !document.getElementById('composer').matches(':focus-within')) {
+        document.getElementById('composer').classList.remove('expanded');
+      }
+    }, 200);
+  });
+  // Auto-grow
+  ta.addEventListener('input', () => {
+    ta.style.height = 'auto';
+    ta.style.height = Math.min(ta.scrollHeight, 280) + 'px';
+  });
+  if (_pendingShareContent) {
+    ta.value = _pendingShareContent;
+    ta.focus();
+    _pendingShareContent = null;
+  }
+})();
+
+// Shim: composerEditor.value() — used throughout save/clear code
+// We keep composerEditor as the textarea itself, so we just need
+// to ensure all .value() calls work. We'll patch that in save handler.
+
+
+// ── Save ──────────────────────────────────────────────────────────────────────
+document.getElementById('save-btn').addEventListener('click', async () => {
+  if (!composerEditor) return;
+  const content_raw = composerEditor.value.trim();
+  if (!content_raw) return;
+
+  const saveBtn = document.getElementById('save-btn');
+  saveBtn.disabled = true;
+  saveBtn.innerHTML = '<span class="spinner"></span>';
+
+  // Offline: queue note and return early
+  if (!navigator.onLine) {
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: 'QUEUE_MEMO',
+        payload: { content: content_raw, token: getCFToken() }
+      });
+      composerEditor.value = '';
+      composerEditor.style.height = 'auto';
+      pendingImages = [];
+      renderImagePreviews();
+      toast('📥 Saved offline — will sync when reconnected');
+    } else {
+      toast('You\'re offline — note could not be saved');
+    }
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Save';
+    return;
+  }
+
+  try {
+    let content = content_raw;
+
+    // Extract inline hashtags and view tags synchronously
+    const inlineHashtags = (content.match(/#[\w\u00C0-\u024F-]+/g) || [])
+      .map(t => t.slice(1).toLowerCase()).filter(t => !SPECIAL_TAGS.includes(t));
+    const viewTags = [];
+    if (currentView === 'starred') viewTags.push('starred');
+    if (currentView === 'hidden')  viewTags.push('hidden');
+    const initialTags = [...new Set([...inlineHashtags, ...viewTags])];
+
+    // Save immediately — don't wait for AI tags
+    const result = await apiPost('/notes', { content: content.trim(), visibility: 'PRIVATE', tags: initialTags });
+    const newMemo = result.note;
+
+    // Update UI right away so user can continue
+    allMemos.unshift(newMemo);
+    saveNotesCache(allMemos);  // keep offline cache in sync
+    const snapshotImages = [...pendingImages];
+    composerEditor.value = '';
+    composerEditor.style.height = 'auto';
+    pendingImages = [];
+    renderImagePreviews();
+    renderFeed();
+    toast('Saved ✓');
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Save';
+
+    // Attachments + AI tagging run in background
+    (async () => {
+      for (const img of snapshotImages) {
+        try {
+          const attResult = await uploadAttachment(img.file || img, newMemo.id);
+          if (attResult.attachment) {
+            if (!newMemo.attachments) newMemo.attachments = [];
+            attResult.attachment._indexed = attResult.indexed;
+            newMemo.attachments.push(attResult.attachment);
+          }
+        } catch(e) { console.warn('Upload failed:', e); }
+      }
+      if (snapshotImages.length > 0 && !document.querySelector('.card-editing')) renderFeed();
+      try {
+        const aiTagList = await aiTags(content);
+        if (aiTagList.length > 0) {
+          const merged = [...new Set([...initialTags, ...aiTagList])];
+          await apiPatch('/notes/' + newMemo.id, { tags: merged });
+          const idx = allMemos.findIndex(m => m.id === newMemo.id);
+          if (idx !== -1) { allMemos[idx].tags = merged; updateCard(allMemos[idx]); }
+        }
+      } catch(e) { console.error('AI tagging failed (compose):', e.message); }
+    })();
+    return;
+  } catch(err) {
+    console.error(err);
+    toast('Error: ' + err.message);
+  }
+
+  saveBtn.disabled = false;
+  saveBtn.textContent = 'Save';
+});
+
+// ── Offline cache ─────────────────────────────────────────────────────────────
+const NOTES_CACHE_KEY     = 'noteflow_notes_cache';
+const NOTES_CACHE_VERSION = 'noteflow_cache_version';
+const ATT_CACHE_NAME      = 'noteflow-attachments-v1';
+
+function getCachedVersion() {
+  try { return parseInt(localStorage.getItem(NOTES_CACHE_VERSION) || '0', 10); } catch(e) { return 0; }
+}
+function setCachedVersion(v) {
+  try { localStorage.setItem(NOTES_CACHE_VERSION, String(v)); } catch(e) {}
+}
+function clearNotesCache() {
+  try { localStorage.removeItem(NOTES_CACHE_KEY); localStorage.removeItem(NOTES_CACHE_VERSION); } catch(e) {}
+}
+// Run in background after boot — if server version differs, wipe stale cache
+async function checkCacheVersion() {
+  try {
+    const data = await apiGet('/notes/version');
+    const serverVersion = data.version || 0;
+    const localVersion  = getCachedVersion();
+    if (serverVersion !== localVersion) {
+      clearNotesCache();
+      setCachedVersion(serverVersion);
+    }
+  } catch(e) { /* silent — version check is best-effort */ }
+}
+
+function saveNotesCache(notes, serverVersion) {
+  try {
+    localStorage.setItem(NOTES_CACHE_KEY, JSON.stringify(notes));
+    if (serverVersion !== undefined) setCachedVersion(serverVersion);
+  } catch(e) {}
+}
+function loadNotesCache() {
+  try { return JSON.parse(localStorage.getItem(NOTES_CACHE_KEY)) || []; } catch(e) { return []; }
+}
+
+// Fetch image blob — checks offline cache first, then network (and caches if setting enabled)
+async function getAttachmentBlob(att, url) {
+  const cacheKey = new Request('/offline-att/' + att.id);
+  try {
+    const cache = await caches.open(ATT_CACHE_NAME);
+    const cached = await cache.match(cacheKey);
+    if (cached) return cached.blob();
+    const res = await fetch(url, { credentials: 'omit', headers: authHeaders() });
+    if (!res.ok) throw new Error(res.status);
+    if (settings.offlineCacheAttachments) cache.put(cacheKey, res.clone());
+    return res.blob();
+  } catch(e) {
+    throw e;
+  }
+}
+
+// Background: fetch all notes within offlineDays window and optionally pre-cache attachments
+let _prefetchRunning = false;
+async function prefetchOfflineCache() {
+  if (_prefetchRunning || !settings.offlineDays || !navigator.onLine) return;
+  _prefetchRunning = true;
+  try {
+    const cutoffSecs = Math.floor(Date.now() / 1000) - settings.offlineDays * 86400;
+    const allNotes = [];
+    let cursor = null;
+    let done = false;
+    while (!done) {
+      const qs = new URLSearchParams({ pageSize: 100 });
+      if (cursor) qs.set('cursor', cursor);
+      const data = await apiGet('/notes?' + qs);
+      const notes = data.notes || [];
+      for (const note of notes) {
+        if ((note.created_at || 0) < cutoffSecs) { done = true; break; }
+        allNotes.push(note);
+      }
+      cursor = data.nextCursor || null;
+      if (!cursor) done = true;
+    }
+    saveNotesCache(allNotes);
+    // Record the max updated_at so checkCacheVersion knows this cache is fresh
+    if (allNotes.length > 0) {
+      const maxVersion = Math.max(...allNotes.map(n => n.updated_at || 0));
+      setCachedVersion(maxVersion);
+    }
+
+    if (settings.offlineCacheAttachments) {
+      const cache = await caches.open(ATT_CACHE_NAME);
+      for (const note of allNotes) {
+        for (const att of (note.attachments || [])) {
+          if (!att.id || !isImageAttachment(att)) continue;
+          const cacheKey = new Request('/offline-att/' + att.id);
+          if (await cache.match(cacheKey)) continue; // already cached
+          try {
+            const res = await fetch(attachmentUrl(att), { credentials: 'omit', headers: authHeaders() });
+            if (res.ok) cache.put(cacheKey, res);
+          } catch(e) {}
+        }
+      }
+    }
+  } catch(e) {
+    console.warn('Offline prefetch failed:', e);
+  } finally {
+    _prefetchRunning = false;
+  }
+}
+
+// ── Load notes ────────────────────────────────────────────────────────────────
+async function loadMemos(append = false) {
+  try {
+    const qs = new URLSearchParams({ pageSize: PAGE_SIZE });
+    if (currentView === 'archived') qs.set('filter', 'archived');
+    else if (currentView === 'starred') qs.set('filter', 'starred');
+    else if (currentView === 'hidden')  qs.set('filter', 'hidden');
+    else if (currentView === 'shared')  qs.set('filter', 'shared');
+    if (currentView === 'tag' && currentTag) qs.set('tag', currentTag);
+    if (append && nextCursor) qs.set('cursor', nextCursor);
+
+    const data = await apiGet('/notes?' + qs);
+    const fetched = data.notes || [];
+    if (append) {
+      const existingIds = new Set(allMemos.map(m => m.id));
+      allMemos = allMemos.concat(fetched.filter(m => !existingIds.has(m.id)));
+    } else {
+      allMemos = fetched;
+    }
+    nextCursor = data.nextCursor || null;
+    document.getElementById('load-more').style.display = nextCursor ? 'block' : 'none';
+    renderFeed(append);
+    if (!append) renderProjectsNav();
+    // Trigger background prefetch of the full offline cache (debounced — only on first page load)
+    if (!append && currentView === 'all') setTimeout(prefetchOfflineCache, 2000);
+  } catch(err) {
+    console.error(err);
+    if (!append && currentView === 'all') {
+      const cached = loadNotesCache();
+      if (cached.length) {
+        allMemos = cached;
+        nextCursor = null;
+        document.getElementById('load-more').style.display = 'none';
+        renderFeed();
+        toast('📵 Showing cached notes');
+        return;
+      }
+    }
+    toast('Failed to load notes');
+  }
+}
+
+// Fetch all notes (used by Attachments view)
+async function fetchAllMemos() {
+  const all = [];
+  let cursor = null;
+  do {
+    const qs = new URLSearchParams({ pageSize: 50 });
+    if (cursor) qs.set('cursor', cursor);
+    const data = await apiGet('/notes?' + qs);
+    all.push(...(data.notes || []));
+    cursor = data.nextCursor || null;
+  } while (cursor);
+  return all;
+}
+
+// ── Render feed ───────────────────────────────────────────────────────────────
+function getViewTitle(view) {
+  return { all:'All notes', starred:'Starred', hidden:'Hidden', archived:'Archive', shared:'Shared', attachments:'Attachments' }[view] || 'Notes';
+}
+
+// ── Archive / Delete ──────────────────────────────────────────────────────────
+async function sendNoteByEmail(memo) {
+  if (!settings.reminderEmail) {
+    toast('Add a recipient address in Settings → Email first');
+    return;
+  }
+  const btn = document.querySelector(`.memo-card[data-id="${memo.id}"] .card-actions button[title="Email note"]`);
+  if (btn) { btn.disabled = true; btn.textContent = '…'; }
+  try {
+    // Optionally make public first
+    if (settings.emailMakePublic && memo.visibility !== 'PUBLIC') {
+      const r = await apiPatch('/notes/' + memo.id, { visibility: 'PUBLIC' });
+      memo.visibility = 'PUBLIC';
+      const idx = allMemos.findIndex(m => m.id === memo.id);
+      if (idx !== -1) allMemos[idx].visibility = 'PUBLIC';
+    }
+    await apiPost('/email/send', {
+      note_id:         memo.id,
+      to:              settings.reminderEmail,
+      make_public:     settings.emailMakePublic,
+    });
+    toast('Email sent ✓');
+  } catch(e) {
+    toast('Email failed: ' + e.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;pointer-events:none"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>';
+    }
+  }
+}
+
+async function toggleArchive(memo) {
+  const isArchived = memo.archived === 1;
+  try {
+    const result = await apiPatch('/notes/' + memo.id, { archived: !isArchived });
+    const updated = result.note;
+    const idx = allMemos.findIndex(m => m.id === memo.id);
+    if (idx !== -1) {
+      if (!isArchived) { allMemos.splice(idx, 1); removeCard(memo.id); }
+      else { allMemos[idx] = updated; updateCard(updated); }
+    }
+    toast(isArchived ? 'Restored from archive' : 'Archived');
+  } catch(err) { toast('Error: ' + err.message); }
+}
+
+async function confirmDelete(memo) {
+  if (!confirm('Permanently delete this note? This cannot be undone.')) return;
+  try {
+    await apiDelete('/notes/' + memo.id);
+    allMemos = allMemos.filter(m => m.id !== memo.id);
+    removeCard(memo.id);
+    toast('Deleted');
+  } catch(err) { toast('Error: ' + err.message); }
+}
+
+async function deleteAllArchived() {
+  const count = allMemos.length;
+  if (!confirm('Permanently delete all ' + count + ' archived notes? This cannot be undone.')) return;
+  toast('Deleting…');
+  let deleted = 0;
+  for (const memo of [...allMemos]) {
+    try {
+      await apiDelete('/notes/' + memo.id);
+      allMemos = allMemos.filter(m => m.id !== memo.id);
+      deleted++;
+    } catch(e) {}
+  }
+  renderFeed();
+  toast('Deleted ' + deleted + ' notes');
+}
+
+// Inline editing — handled per-card in buildCard
+
+function renderFeed(appendMode = false) {
+  const feed = document.getElementById('feed');
+
+  if (!appendMode) {
+    feed.innerHTML = '';
+
+    // Hide composer on non-writing views
+    const showComposer = ['all', 'starred', 'hidden'].includes(currentView);
+    document.getElementById('composer').style.display = showComposer ? '' : 'none';
+
+    // Archive view: inject "Delete all" toolbar
+    const existingDeleteAll = document.getElementById('delete-all-bar');
+    if (existingDeleteAll) existingDeleteAll.remove();
+    if (currentView === 'archived' && allMemos.length > 0) {
+      const bar = document.createElement('div');
+      bar.id = 'delete-all-bar';
+      bar.style.cssText = 'display:flex;justify-content:flex-end;margin-bottom:10px';
+      const btn = document.createElement('button');
+      btn.style.cssText = 'background:none;border:1px solid var(--danger);color:var(--danger);border-radius:8px;padding:6px 14px;font-size:12px;cursor:pointer;font-family:var(--font-body);transition:all 0.15s';
+      btn.textContent = '🗑 Delete all archived';
+      btn.addEventListener('mouseenter', () => { btn.style.background = 'var(--danger)'; btn.style.color = '#fff'; });
+      btn.addEventListener('mouseleave', () => { btn.style.background = 'none'; btn.style.color = 'var(--danger)'; });
+      btn.addEventListener('click', deleteAllArchived);
+      bar.appendChild(btn);
+      document.getElementById('feed').before(bar);
+    }
+  }
+
+  // Server search results override the normal feed
+  if (searchResults !== null) {
+    feed.innerHTML = '';
+    const lm = document.getElementById('load-more'); if (lm) lm.style.display = 'none';
+    if (searchResults.length === 0) {
+      feed.innerHTML = '<div class="empty-state">No notes found.</div>';
+      return;
+    }
+    searchResults.forEach(memo => {
+      const isHidden = (memo.tags || []).includes('hidden');
+      if (isHidden) {
+        // Render a scrambled placeholder — content hidden until user clicks Reveal
+        const placeholder = document.createElement('div');
+        placeholder.className = 'memo-card hidden-note search-hidden-card';
+        placeholder.style.cssText = 'position:relative;overflow:hidden;cursor:default;user-select:none';
+        const scramble = (s) => (s || '').replace(/[^\s]/g, () => 'abcdefghijklmnopqrstuvwxyz'[Math.floor(Math.random()*26)]);
+        const preview = scramble((memo.content || '').slice(0, 120));
+        placeholder.innerHTML = `
+          <div style="filter:blur(4px);pointer-events:none;color:var(--text-soft);font-size:14px;line-height:1.6;margin-bottom:28px">${preview}…</div>
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px">
+            <span style="font-size:12px;color:var(--muted)">🔒 Hidden note</span>
+            <button class="btn-secondary reveal-hidden-btn" style="font-size:12px;padding:4px 14px">Reveal</button>
+          </div>`;
+        placeholder.querySelector('.reveal-hidden-btn').addEventListener('click', function() {
+          placeholder.replaceWith(buildCard(memo));
+        });
+        feed.appendChild(placeholder);
+      } else {
+        feed.appendChild(buildCard(memo));
+      }
+    });
+    return;
+  }
+
+  // Deduplicate by memo name (guards against double-appends from pagination)
+  const _seen = new Set();
+  const _deduped = allMemos.filter(m => {
+    if (_seen.has(m.id)) return false;
+    _seen.add(m.id);
+    return true;
+  });
+
+  let visible = _deduped.filter(m => {
+    const tags = m.tags || [];
+    const isHidden  = tags.includes('hidden');
+    const isStarred = tags.includes('starred');
+    const isShared  = m.visibility === 'PUBLIC' || m.visibility === 'PROTECTED';
+    const hasAttachments = m.attachments && m.attachments.length > 0;
+
+    if (currentView === 'all')              { if (isHidden) return false; }
+    else if (currentView === 'starred')     { if (!isStarred) return false; }
+    else if (currentView === 'hidden')      { if (!isHidden) return false; }
+    else if (currentView === 'archived')    { /* filtered by API */ }
+    else if (currentView === 'shared')      { if (!isShared) return false; }
+    else if (currentView === 'attachments') { if (!hasAttachments) return false; }
+
+    return true;
+  });
+
+  if (currentView === 'attachments') {
+    renderAttachmentsGallery(feed, visible);
+    const lm = document.getElementById('load-more');
+    if (lm) lm.style.display = (nextCursor && !settings.infiniteScroll) ? 'block' : 'none';
+    return;
+  }
+
+  if (!appendMode && visible.length === 0) {
+    feed.innerHTML = '<div class="empty-state">No notes here yet.</div>';
+    return;
+  }
+
+  // In append mode, only render the new cards (those not already in the DOM)
+  const existingIds = new Set([...feed.querySelectorAll('[data-memo-name]')].map(el => el.dataset.memoName));
+  const toRender = appendMode ? visible.filter(m => !existingIds.has(m.id)) : visible;
+  toRender.forEach(memo => feed.appendChild(buildCard(memo)));
+
+  const lm = document.getElementById('load-more');
+  if (lm) lm.style.display = (nextCursor && !settings.infiniteScroll) ? 'block' : 'none';
+}
+
+// ── Build card ────────────────────────────────────────────────────────────────
+// ── Apply max height to card content ─────────────────────────────────────────
+function applyMaxHeight(wrap) {
+  if (!settings.maxHeight || settings.maxHeight === 0) {
+    wrap.style.maxHeight = '';
+    wrap.classList.remove('clamped');
+    const existing = wrap.parentNode?.querySelector('.read-more-btn');
+    if (existing) existing.remove();
+    return;
+  }
+  wrap.style.maxHeight = settings.maxHeight + 'px';
+  requestAnimationFrame(() => {
+    const inner = wrap.querySelector('.card-content');
+    // Temporarily open all <details> so scrollHeight reflects full expanded content
+    const detailsEls = inner ? [...inner.querySelectorAll('details')] : [];
+    const wasOpen = detailsEls.map(d => d.open);
+    detailsEls.forEach(d => { d.open = true; });
+    const fullHeight = inner ? inner.scrollHeight : 0;
+    detailsEls.forEach((d, i) => { d.open = wasOpen[i]; });
+    if (inner && fullHeight > settings.maxHeight) {
+      wrap.classList.add('clamped');
+      if (!wrap.parentNode?.querySelector('.read-more-btn')) {
+        const btn = document.createElement('button');
+        btn.className = 'read-more-btn';
+        btn.textContent = 'Show more';
+        btn.addEventListener('click', e => {
+          e.stopPropagation();
+          wrap.style.maxHeight = '';
+          wrap.classList.remove('clamped');
+          btn.remove();
+        });
+        wrap.insertAdjacentElement('afterend', btn);
+      }
+    }
+  });
+}
+
+function renderAttachmentsGallery(feed, memos) {
+  if (!memos.length) {
+    feed.innerHTML = '<div class="empty-state">No attachments found.</div>';
+    return;
+  }
+  const gallery = document.createElement('div');
+  gallery.className = 'att-gallery';
+  // Flatten all attachments and apply per-page limit
+  const _allAtts = [];
+  memos.forEach(memo => { (memo.attachments || []).forEach(att => { if (att.id) _allAtts.push({ att, memo }); }); });
+  const _limit = settings.attachmentsPerPage || 27;
+  _allAtts.slice(0, _limit).forEach(({ att, memo }) => {
+      if (!att.id) return;
+      const url = attachmentUrl(att);
+      const fname = att.filename || att.id || 'file';
+      const mime = att.mime_type || att.type || '';
+      const item = document.createElement('div');
+      item.className = 'att-gallery-item';
+
+      if (isImageAttachment(att)) {
+        const img = document.createElement('img');
+        img.className = 'att-gallery-img';
+        img.alt = fname;
+        img.style.opacity = '0.4';
+        getAttachmentBlob(att, url)
+          .then(blob => { img.src = URL.createObjectURL(blob); img.style.opacity = '1'; img._blobUrl = img.src; })
+          .catch(() => { img.style.opacity = '0.3'; });
+        img.addEventListener('click', () => { if (img._blobUrl) openLightbox(img._blobUrl, [img._blobUrl]); });
+        item.appendChild(img);
+      } else {
+        const icon = document.createElement('div');
+        icon.className = 'att-gallery-icon';
+        // Show emoji icon + filename hint
+        const mimeIcon = fileIcon(mime);
+        icon.innerHTML = '<div style="font-size:36px">' + mimeIcon + '</div><div style="font-size:10px;color:var(--muted);margin-top:4px;padding:0 6px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%">' + escHtml(fname) + '</div>';
+        icon.style.cssText = 'cursor:pointer;flex-direction:column';
+        icon.title = 'Download ' + fname;
+        icon.addEventListener('click', async () => {
+          const ext = fname.split('.').pop().toLowerCase();
+          const isPdf   = mime === 'application/pdf' || ext === 'pdf';
+          const isVideo = mime.startsWith('video/') || ['mp4','webm','mov','mkv'].includes(ext);
+          const isAudio = mime.startsWith('audio/') || ['mp3','ogg','wav','flac','m4a'].includes(ext);
+          const isText  = mime.startsWith('text/') || ['txt','md','csv','json','xml','html','js','css'].includes(ext);
+          const isIndexed = ['docx','doc','xlsx','xls','odt','ods','odp'].includes(ext);
+          if (isPdf || isVideo || isAudio || isText || isIndexed) {
+            openFilePreview(att, fname, mime, url, isPdf, isVideo, isAudio, isText, isIndexed);
+          } else {
+            try {
+              icon.style.opacity = '0.6';
+              const r = await fetch(url, { credentials: 'omit', headers: authHeaders() });
+              if (!r.ok) throw new Error('Download failed');
+              const blob = await r.blob();
+              const blobUrl = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = blobUrl; a.download = fname; a.click();
+              setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+            } catch(e) { toast('Download failed: ' + e.message); }
+            finally { icon.style.opacity = '1'; }
+          }
+        });
+        item.appendChild(icon);
+      }
+
+      const meta = document.createElement('div');
+      meta.className = 'att-gallery-meta';
+      const name = document.createElement('div');
+      name.className = 'att-gallery-name';
+      name.title = fname;
+      name.textContent = fname;
+      meta.appendChild(name);
+
+      // Link back to originating note
+      const noteDate = formatDate(memo.created_at ? new Date(memo.created_at * 1000).toISOString() : null);
+      const link = document.createElement('div');
+      link.className = 'att-gallery-link';
+      link.textContent = '↗ Note from ' + noteDate;
+      link.addEventListener('click', e => {
+        e.stopPropagation();
+        // Switch to all notes view and scroll to the memo
+        switchView('all');
+        setTimeout(() => {
+          const el = document.querySelector('[data-memo-name="' + memo.id + '"]');
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 600);
+      });
+      meta.appendChild(link);
+      item.appendChild(meta);
+      gallery.appendChild(item);
+  });
+  feed.appendChild(gallery);
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function fileIcon(mime) {
+  if (mime.startsWith('image/'))  return '🖼️';
+  if (mime.startsWith('video/'))  return '🎥';
+  if (mime.startsWith('audio/'))  return '🎵';
+  if (mime.startsWith('text/'))   return '📝';
+  if (mime.includes('pdf'))       return '📄';
+  if (mime.includes('wordprocessingml') || mime.includes('msword'))          return '📝';
+  if (mime.includes('spreadsheetml') || mime.includes('excel'))              return '📊';
+  if (mime.includes('presentationml') || mime.includes('powerpoint'))        return '📊';
+  if (mime.includes('opendocument.text'))                                     return '📝';
+  if (mime.includes('opendocument.spreadsheet'))                              return '📊';
+  if (mime.includes('opendocument.presentation'))                             return '📊';
+  if (mime.includes('zip') || mime.includes('archive') || mime.includes('compressed')) return '🗜️';
+  return '📎';
+}
+function buildCard(memo) {
+
+// ── Targeted card update — replace a single card without rebuilding the feed ──
+function updateCard(memo) {
+  const existing = document.querySelector(`.memo-card[data-id="${memo.id}"]`);
+  if (!existing) return false; // card not in DOM — fall back to renderFeed
+  const newCard = buildCard(memo);
+  existing.replaceWith(newCard);
+  return true;
+}
+
+// ── Remove a card from DOM without rebuilding ─────────────────────────────────
+function removeCard(memoId) {
+  const existing = document.querySelector(`.memo-card[data-id="${memoId}"]`);
+  if (existing) existing.remove();
+}
+  const tags     = memo.tags || [];
+  const isStarred = tags.includes('starred');
+  const isHidden  = tags.includes('hidden');
+  const isPinned  = memo.pinned;
+  const isShared  = memo.visibility === 'PUBLIC';
+
+  const card = document.createElement('div');
+  card.className = 'memo-card' +
+    (isStarred ? ' starred' : '') +
+    (isHidden  ? ' hidden-note' : '') +
+    (isPinned  ? ' pinned' : '');
+  card.dataset.memoName = memo.id;
+
+  // Header
+  const header = document.createElement('div');
+  header.className = 'card-header';
+
+  const meta = document.createElement('div');
+  meta.className = 'card-meta';
+  const date = document.createElement('span');
+  date.className = 'card-date';
+  date.textContent = formatDate(memo.created_at ? new Date(memo.created_at * 1000).toISOString() : null);
+  meta.appendChild(date);
+
+  const badges = document.createElement('div');
+  badges.className = 'card-badges';
+  if (isPinned) badges.innerHTML += '<span class="badge badge-pinned">📌</span>';
+  if (isShared) badges.innerHTML += '<span class="badge badge-pinned">🔗</span>';
+  meta.appendChild(badges);
+  header.appendChild(meta);
+
+  // Action buttons
+  const actions = document.createElement('div');
+  actions.className = 'card-actions';
+
+  // Project filing button (replaces star)
+  const projectBtn = makeActionBtn(
+    '<svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>',
+    'Add to project'
+  );
+  const currentProjects = (memo.tags || []).filter(t => t.startsWith('project:'));
+  if (currentProjects.length > 0) projectBtn.classList.add('star-active');
+  projectBtn.addEventListener('click', e => { e.stopPropagation(); openProjectPopover(memo, projectBtn); });
+  actions.appendChild(projectBtn);
+
+  // Pin
+  const pinBtn = makeActionBtn(
+    '<svg viewBox="0 0 24 24"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/></svg>',
+    isPinned ? 'Unpin' : 'Pin to top'
+  );
+  if (isPinned) pinBtn.classList.add('star-active');
+  pinBtn.addEventListener('click', async e => {
+    e.stopPropagation();
+    try {
+      const updated = await apiPatch('/notes/' + memo.id, { pinned: !memo.pinned });
+      const idx = allMemos.findIndex(m => m.id === memo.id);
+      if (idx !== -1) allMemos[idx] = { ...allMemos[idx], ...updated.note };
+      renderFeed();
+    } catch(err) { toast('Failed to update pin'); }
+  });
+  actions.appendChild(pinBtn);
+
+  // Hide
+  const hideBtn = makeActionBtn(
+    isHidden
+      ? '<svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>'
+      : '<svg viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>',
+    isHidden ? 'Unhide' : 'Hide'
+  );
+  hideBtn.addEventListener('click', e => { e.stopPropagation(); toggleTag(memo, 'hidden'); });
+  actions.appendChild(hideBtn);
+
+  // Share
+  const shareBtn = makeActionBtn(
+    '<svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>',
+    'Share'
+  );
+  shareBtn.addEventListener('click', e => { e.stopPropagation(); openShareModal(memo); });
+  actions.appendChild(shareBtn);
+
+  // Email button — only shown if reminderEmail is configured
+  const emailBtn = makeActionBtn('<svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>', 'Email note');
+  emailBtn.addEventListener('click', e => { e.stopPropagation(); sendNoteByEmail(memo); });
+  actions.appendChild(emailBtn);
+
+  if (currentView === 'archived') {
+    // In archive view: show Unarchive + Delete
+    const unarchiveBtn = makeActionBtn('<svg viewBox="0 0 24 24"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>', 'Restore');
+    unarchiveBtn.addEventListener('click', e => { e.stopPropagation(); toggleArchive(memo); });
+    actions.appendChild(unarchiveBtn);
+
+    const deleteBtn = makeActionBtn('<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>', 'Delete permanently');
+    deleteBtn.classList.add('danger');
+    deleteBtn.addEventListener('click', e => { e.stopPropagation(); confirmDelete(memo); });
+    actions.appendChild(deleteBtn);
+  } else {
+    // Normal views: archive only
+    const archiveBtn = makeActionBtn('<svg viewBox="0 0 24 24"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>', 'Archive');
+    archiveBtn.addEventListener('click', e => { e.stopPropagation(); toggleArchive(memo); });
+    actions.appendChild(archiveBtn);
+  }
+
+  header.appendChild(actions);
+  card.appendChild(header);
+
+  // ── Inline editor (native markdown) ──────────────────────────────────────
+  const inlineWrap = document.createElement('div');
+  inlineWrap.className = 'inline-editor-wrap';
+
+  // Toolbar
+  const inlineMdWrap = document.createElement('div');
+  inlineMdWrap.className = 'inline-md-wrap';
+
+  const inlineTb = document.createElement('div');
+  inlineTb.className = 'md-toolbar';
+  inlineTb.innerHTML = '<button class="md-btn" data-md="bold" title="Bold"><b>B</b></button>'
+    + '<button class="md-btn" data-md="italic" title="Italic"><i>I</i></button>'
+    + '<button class="md-btn" data-md="strike" title="Strike"><s>S</s></button>'
+    + '<div class="md-sep"></div>'
+    + '<button class="md-btn" data-md="h2" title="Heading">H2</button>'
+    + '<button class="md-btn" data-md="h3" title="Subheading">H3</button>'
+    + '<div class="md-sep"></div>'
+    + '<button class="md-btn" data-md="ul" title="Bullet"><svg viewBox="0 0 24 24"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1.5" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1.5" fill="currentColor" stroke="none"/></svg></button>'
+    + '<button class="md-btn" data-md="quote" title="Quote"><svg viewBox="0 0 24 24"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg></button>'
+    + '<button class="md-btn" data-md="code" title="Code"><svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></button>';
+
+  const inlineTextarea = document.createElement('textarea');
+  inlineTextarea.className = 'md-textarea';
+
+  attachMdToolbar(inlineTb, inlineTextarea);
+  inlineTextarea.addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 320) + 'px';
+  });
+  inlineMdWrap.appendChild(inlineTb);
+  inlineMdWrap.appendChild(inlineTextarea);
+  inlineWrap.appendChild(inlineMdWrap);
+
+  // Footer: attach + cancel + save
+  const inlineFooter = document.createElement('div');
+  inlineFooter.className = 'inline-edit-footer';
+
+  const inlineLeft = document.createElement('div');
+  inlineLeft.style.cssText = 'display:flex;gap:6px;align-items:center';
+  const inlineAttachBtn = document.createElement('button');
+  inlineAttachBtn.className = 'attach-btn';
+  inlineAttachBtn.innerHTML = '<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;pointer-events:none"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg> Attach';
+  const inlineFileInput = document.createElement('input');
+  inlineFileInput.type = 'file'; inlineFileInput.accept = '*/*'; inlineFileInput.multiple = true;
+  inlineFileInput.style.display = 'none';
+  inlineAttachBtn.addEventListener('click', () => inlineFileInput.click());
+  let inlinePendingFiles = [];
+  inlineFileInput.addEventListener('change', async e => {
+    for (const f of e.target.files) inlinePendingFiles.push(f);
+    inlineAttachBtn.textContent = '📎 ' + inlinePendingFiles.length + ' file(s)';
+  });
+
+  inlineLeft.appendChild(inlineAttachBtn);
+  inlineLeft.appendChild(inlineFileInput);
+
+  const inlineRight = document.createElement('div');
+  inlineRight.style.cssText = 'display:flex;gap:6px';
+
+  const inlineCancelBtn = document.createElement('button');
+  inlineCancelBtn.className = 'btn-ghost';
+  inlineCancelBtn.style.fontSize = '12px';
+  inlineCancelBtn.textContent = 'Cancel';
+  inlineCancelBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    card.classList.remove('card-editing');
+    inlinePendingFiles = [];
+  });
+
+  const inlineSaveBtn = document.createElement('button');
+  inlineSaveBtn.className = 'btn-primary';
+  inlineSaveBtn.style.fontSize = '12px';
+  inlineSaveBtn.textContent = 'Save';
+  inlineSaveBtn.addEventListener('click', async e => {
+    e.stopPropagation();
+    inlineSaveBtn.disabled = true; inlineSaveBtn.textContent = 'Saving…';
+    try {
+      const content = inlineTextarea.value;
+      const newAtts = [];
+      for (const f of inlinePendingFiles) {
+        try {
+          const a = await uploadAttachment(f, memo.id);
+          if (a.attachment) newAtts.push(a.attachment);
+        } catch(err) { console.warn('Attachment upload failed:', err); }
+      }
+      const result = await apiPatch('/notes/' + memo.id, { content, tags: memo.tags || [] });
+      const updated = result.note || result;
+      const idx = allMemos.findIndex(m => m.id === memo.id);
+      if (idx !== -1) {
+        const existingAtts = allMemos[idx].attachments || [];
+        allMemos[idx] = { ...updated, attachments: [...existingAtts, ...newAtts] };
+        // Keep searchResults in sync if we're in search mode
+        if (searchResults !== null) {
+          const si = searchResults.findIndex(m => m.id === memo.id);
+          if (si !== -1) searchResults[si] = allMemos[idx];
+        }
+        const newVersion = updated.updated_at || Math.floor(Date.now() / 1000);
+        saveNotesCache(allMemos, newVersion);
+        setCachedVersion(Math.max(getCachedVersion(), newVersion));
+      }
+      card.classList.remove('card-editing');
+      inlinePendingFiles = [];
+      const savedMemo = allMemos.find(m => m.id === memo.id) || memo;
+      updateCard(savedMemo);
+      toast('Saved ✓');
+      // Run AI tagging in background after inline edit
+      (async () => {
+        try {
+          const aiTagList = await aiTags(content);
+          if (aiTagList.length > 0) {
+            const existingTags = (allMemos.find(m => m.id === memo.id)?.tags || []);
+            const merged = [...new Set([...existingTags, ...aiTagList])];
+            await apiPatch('/notes/' + memo.id, { tags: merged });
+            const i2 = allMemos.findIndex(m => m.id === memo.id);
+            if (i2 !== -1) { allMemos[i2].tags = merged; updateCard(allMemos[i2]); }
+          }
+        } catch(e) { console.error('AI tagging failed (inline):', e.message); }
+      })();
+    } catch(err) { toast('Error: ' + err.message); }
+    inlineSaveBtn.disabled = false; inlineSaveBtn.textContent = 'Save';
+  });
+
+  inlineRight.appendChild(inlineCancelBtn);
+  inlineRight.appendChild(inlineSaveBtn);
+  inlineFooter.appendChild(inlineLeft);
+  inlineFooter.appendChild(inlineRight);
+  inlineWrap.appendChild(inlineFooter);
+  card.appendChild(inlineWrap);
+
+  // Double-click/double-tap to enter edit mode
+  card.addEventListener('dblclick', e => {
+    if (e.target.closest('.card-action-btn') || e.target.closest('.tag-pill')) return;
+    if (card.classList.contains('card-editing')) return;
+    const _ec = (memo.content || '')
+      .replace(/<!-- tags -->[\s\S]*?<\/details>/gi, '')
+      .replace(/<!-- ocr -->[\s\S]*?<\/details>/gi, '')
+      .trim();
+    inlinePendingFiles = [];
+    inlineAttachBtn.innerHTML = '<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;pointer-events:none"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg> Attach';
+    inlineTextarea.value = _ec;
+    card.classList.add('card-editing');
+    setTimeout(() => {
+      inlineTextarea.focus();
+      inlineTextarea.setSelectionRange(_ec.length, _ec.length);
+      inlineTextarea.style.height = 'auto';
+      inlineTextarea.style.height = Math.min(inlineTextarea.scrollHeight, 320) + 'px';
+    }, 30);
+  });
+
+  // Content
+  const displayContent = (memo.content || '')
+    .replace(/<!-- tags -->[\s\S]*?<\/details>/gi, '')  // strip hidden tag metadata
+    // OCR block: keep as collapsible <details> but remove the HTML comment marker
+    .replace(/<!-- ocr -->\n/g, '')
+    .trim();
+
+  const contentWrap = document.createElement('div');
+  contentWrap.className = 'card-content-wrap';
+  const content = document.createElement('div');
+  content.className = 'card-content';
+  content.innerHTML = marked.parse(displayContent);
+  contentWrap.appendChild(content);
+  applyMaxHeight(contentWrap);
+  card.appendChild(contentWrap);
+
+  // Attachments
+  if (memo.attachments && memo.attachments.length) {
+    const attRow = document.createElement('div');
+    attRow.className = 'card-images';
+    memo.attachments.forEach(att => {
+      if (!att.id) return;
+      const url = attachmentUrl(att);
+      const mime = att.mime_type || att.type || '';
+      if (isImageAttachment(att)) {
+        const img = document.createElement('img');
+        img.loading = 'lazy';
+        img.style.opacity = '0.4';
+        // Fetch with auth token (checks offline cache first)
+        getAttachmentBlob(att, url)
+          .then(blob => {
+            img.src = URL.createObjectURL(blob);
+            img.style.opacity = '1';
+            img._blobUrl = img.src; // store for lightbox
+          })
+          .catch(() => { img.alt = att.filename || 'image'; img.style.opacity = '0.3'; });
+        img.addEventListener('click', () => {
+          if (!img._blobUrl) return;
+          // Collect all loaded blob URLs from this card's image row
+          const allUrls = Array.from(attRow.querySelectorAll('img'))
+            .map(i => i._blobUrl).filter(Boolean);
+          openLightbox(img._blobUrl, allUrls);
+        });
+        attRow.appendChild(img);
+      } else {
+        const fname = att.filename || att.id || 'file';
+        const ext = fname.split('.').pop().toLowerCase();
+        const isPdf     = mime === 'application/pdf' || ext === 'pdf';
+        const isVideo   = mime.startsWith('video/') || ['mp4','webm','mov','mkv'].includes(ext);
+        const isAudio   = mime.startsWith('audio/') || ['mp3','ogg','wav','flac','m4a'].includes(ext);
+        const isText    = mime.startsWith('text/') || ['txt','md','csv','json','xml','html','js','css'].includes(ext);
+        const isIndexed = ['docx','doc','xlsx','xls','odt','ods','odp'].includes(ext);
+        const canPreview = isPdf || isVideo || isAudio || isText || isIndexed;
+
+        const chip = document.createElement('button');
+        chip.className = 'file-chip' + (canPreview ? ' file-chip-preview' : '');
+        const isIndexing = att._indexing === true;
+        chip.innerHTML = fileIcon(mime) + ' <span>' + escHtml(fname) + '</span>' + (isIndexing ? ' <small style="opacity:0.6;font-size:10px">⏳</small>' : (canPreview ? ' <small style="opacity:0.5;font-size:10px">▶</small>' : ''));
+        chip.title = isIndexing ? 'Indexing for preview…' : (canPreview ? 'Preview ' + fname : 'Download ' + fname);
+
+        chip.addEventListener('click', async () => {
+          if (canPreview) {
+            openFilePreview(att, fname, mime, url, isPdf, isVideo, isAudio, isText, isIndexed);
+          } else {
+            chip.style.opacity = '0.6';
+            try {
+              const r = await fetch(url, { credentials: 'omit', headers: authHeaders() });
+              if (!r.ok) throw new Error('Download failed: ' + r.status);
+              const blob = await r.blob();
+              const blobUrl = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = blobUrl; a.download = fname; a.click();
+              setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+            } catch(e) { toast('Download failed: ' + e.message); }
+            chip.style.opacity = '1';
+          }
+        });
+        attRow.appendChild(chip);
+      }
+    });
+    if (attRow.children.length) card.appendChild(attRow);
+  }
+
+  // Tags (visible only)
+  const visibleTags = tags.filter(t => !SPECIAL_TAGS.includes(t));
+  if (visibleTags.length) {
+    const tagRow = document.createElement('div');
+    tagRow.className = 'card-tags';
+    visibleTags.forEach(t => {
+      const pill = document.createElement('span');
+      pill.className = 'tag-pill';
+      pill.textContent = '#' + t;
+      tagRow.appendChild(pill);
+    });
+    card.appendChild(tagRow);
+  }
+
+  return card;
+}
+
+function makeActionBtn(svgHtml, title) {
+  const btn = document.createElement('button');
+  btn.className = 'card-action-btn';
+  btn.title = title;
+  btn.innerHTML = svgHtml;
+  return btn;
+}
+
+// ── Toggle tag via API ────────────────────────────────────────────────────────
+// ── Projects ──────────────────────────────────────────────────────────────────
+let _projectPopoverEl = null;
+
+function closeProjectPopover() {
+  if (_projectPopoverEl) { _projectPopoverEl.remove(); _projectPopoverEl = null; }
+}
+
+function openProjectPopover(memo, anchorBtn) {
+  closeProjectPopover();
+  document.removeEventListener('click', closeProjectPopover);
+
+  const currentProjects = (memo.tags || []).filter(t => t.startsWith('project:'));
+  const allProjectTags = [..._knownProjectTags].sort();
+
+  const pop = document.createElement('div');
+  pop.className = 'project-popover';
+  pop.addEventListener('click', e => e.stopPropagation());
+
+  // Existing projects
+  if (allProjectTags.length > 0) {
+    allProjectTags.forEach(tag => {
+      const name = tag.replace('project:', '');
+      const btn = document.createElement('button');
+      btn.className = 'project-popover-item' + (currentProjects.includes(tag) ? ' active-project' : '');
+      btn.textContent = (currentProjects.includes(tag) ? '✓ ' : '') + name;
+      btn.addEventListener('click', async () => {
+        closeProjectPopover();
+        await toggleTag(memo, tag);
+        renderProjectsNav();
+      });
+      pop.appendChild(btn);
+    });
+    const div = document.createElement('div');
+    div.className = 'project-popover-divider';
+    pop.appendChild(div);
+  }
+
+  // New project input
+  const newRow = document.createElement('div');
+  newRow.className = 'project-popover-new';
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.placeholder = 'New project…';
+  const addBtn = document.createElement('button');
+  addBtn.textContent = 'Add';
+  const doAdd = async () => {
+    const raw = input.value.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-æøå]/g, '');
+    if (!raw) return;
+    closeProjectPopover();
+    await toggleTag(memo, 'project:' + raw);
+    renderProjectsNav();
+  };
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') doAdd(); });
+  addBtn.addEventListener('click', doAdd);
+  newRow.appendChild(input);
+  newRow.appendChild(addBtn);
+  pop.appendChild(newRow);
+
+  // Position below anchor
+  document.body.appendChild(pop);
+  const rect = anchorBtn.getBoundingClientRect();
+  pop.style.position = 'fixed';
+  pop.style.top = (rect.bottom + 4) + 'px';
+  pop.style.left = Math.min(rect.left, window.innerWidth - pop.offsetWidth - 8) + 'px';
+  _projectPopoverEl = pop;
+  setTimeout(() => input.focus(), 50);
+  setTimeout(() => document.addEventListener('click', closeProjectPopover, { once: true }), 10);
+}
+
+// Persistent set of known project tags — survives view switches
+let _knownProjectTags = new Set();
+
+function renderProjectsNav() {
+  const list = document.getElementById('projects-nav-list');
+  if (!list) return;
+
+  // Add any project tags from currently loaded notes
+  allMemos.forEach(m => (m.tags || []).filter(t => t.startsWith('project:')).forEach(t => _knownProjectTags.add(t)));
+
+  const sorted = [..._knownProjectTags].sort();
+
+  list.innerHTML = '';
+  if (sorted.length === 0) {
+    const empty = document.createElement('div');
+    empty.style.cssText = 'padding:4px 12px 8px;font-size:12px;color:var(--muted)';
+    empty.textContent = 'No projects yet';
+    list.appendChild(empty);
+    return;
+  }
+  sorted.forEach(tag => {
+    const name = tag.replace('project:', '');
+    const btn = document.createElement('button');
+    btn.className = 'nav-item';
+    btn.dataset.projectTag = tag;
+    if (currentView === 'tag' && currentTag === tag) btn.classList.add('active');
+    btn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>${name}`;
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.querySelectorAll('.nav-item[data-project-tag]').forEach(n => n.classList.remove('active'));
+      btn.classList.add('active');
+      currentView = 'tag';
+      currentTag = tag;
+      allMemos = []; nextCursor = null;
+      loadMemos();
+      document.getElementById('sidebar')?.classList.remove('open');
+      document.getElementById('sidebar-overlay')?.classList.remove('open');
+    });
+    list.appendChild(btn);
+  });
+}
+
+// ── Collapsible sidebar sections ──────────────────────────────────────────────
+function initCollapsibleSections() {
+  const STORAGE_KEY = 'noteflow_sidebar_collapsed';
+  let collapsed;
+  try { collapsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch { collapsed = {}; }
+
+  document.querySelectorAll('.nav-section-header[data-section]').forEach(hdr => {
+    const section = hdr.dataset.section;
+    const bodyId = 'nav-section-' + section + '-body';
+    const body = document.getElementById(bodyId);
+    if (!body) return;
+
+    const apply = (isCollapsed) => {
+      hdr.classList.toggle('collapsed', isCollapsed);
+      body.classList.toggle('collapsed', isCollapsed);
+    };
+
+    apply(!!collapsed[section]);
+
+    hdr.addEventListener('click', () => {
+      const nowCollapsed = !hdr.classList.contains('collapsed');
+      apply(nowCollapsed);
+      collapsed[section] = nowCollapsed;
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(collapsed)); } catch {}
+    });
+  });
+}
+
+async function toggleTag(memo, tag) {
+  const currentTags = Array.isArray(memo.tags) ? memo.tags : [];
+  const hasTag = currentTags.includes(tag);
+  const newTags = hasTag
+    ? currentTags.filter(t => t !== tag)
+    : [...currentTags, tag];
+
+  try {
+    const result = await apiPatch('/notes/' + memo.id, { tags: newTags });
+    const updated = result.note || result;
+    const idx = allMemos.findIndex(m => m.id === memo.id);
+    if (idx !== -1) { allMemos[idx] = updated; updateCard(updated); }
+    if (searchResults) {
+      const si = searchResults.findIndex(m => m.id === memo.id);
+      if (si !== -1) { searchResults[si] = updated; updateCard(updated); }
+    }
+    toast(hasTag ? tag + ' removed' : '⭐ ' + tag);
+  } catch(err) {
+    toast('Error: ' + err.message);
+  }
+}
+
+// ── Share modal ───────────────────────────────────────────────────────────────
+function openShareModal(memo) {
+  shareTargetMemo = memo;
+  const vis = memo.visibility || 'PRIVATE';
+  document.getElementById('share-vis').value = vis;
+  document.getElementById('share-current-vis').textContent =
+    'Current: ' + { PRIVATE: 'Private', PUBLIC: 'Public' }[vis] || 'Private';
+
+  const linkWrap = document.getElementById('share-link-wrap');
+  if (vis !== 'PRIVATE') {
+    linkWrap.style.display = 'block';
+    document.getElementById('share-link-input').value = SHARE_BASE + '/note/' + memo.id;
+  } else {
+    linkWrap.style.display = 'none';
+  }
+  document.getElementById('share-modal').classList.add('open');
+}
+
+document.getElementById('share-vis').addEventListener('change', function() {
+  const linkWrap = document.getElementById('share-link-wrap');
+  if (this.value !== 'PRIVATE' && shareTargetMemo) {
+    linkWrap.style.display = 'block';
+    document.getElementById('share-link-input').value = SHARE_BASE + '/note/' + shareTargetMemo.id;
+  } else {
+    linkWrap.style.display = 'none';
+  }
+});
+
+document.getElementById('share-cancel').addEventListener('click', () => {
+  document.getElementById('share-modal').classList.remove('open');
+});
+
+document.getElementById('share-save').addEventListener('click', async () => {
+  if (!shareTargetMemo) return;
+  const vis = document.getElementById('share-vis').value;
+  try {
+    const result = await apiPatch('/notes/' + shareTargetMemo.id, { visibility: vis });
+    const updated = result.note || result;
+    const idx = allMemos.findIndex(m => m.id === shareTargetMemo.id);
+    if (idx !== -1) allMemos[idx] = updated;
+    document.getElementById('share-modal').classList.remove('open');
+    renderFeed();
+    toast('Visibility updated');
+  } catch(err) { toast('Error: ' + err.message); }
+});
+
+document.getElementById('copy-link-btn').addEventListener('click', () => {
+  const input = document.getElementById('share-link-input');
+  navigator.clipboard.writeText(input.value).then(() => toast('Link copied!')).catch(() => {
+    input.select(); document.execCommand('copy'); toast('Link copied!');
+  });
+});
+
+// ── Sidebar nav ───────────────────────────────────────────────────────────────
+function switchView(view) {
+  currentTag = null; // clear any project tag filter
+  document.querySelectorAll('.nav-item[data-view]').forEach(n => n.classList.remove('active'));
+  // Also clear active state from project nav items
+  document.querySelectorAll('.nav-item[data-project-tag]').forEach(n => n.classList.remove('active'));
+  const item = document.querySelector('.nav-item[data-view="' + view + '"]');
+  if (item) item.classList.add('active');
+
+  const feedEl     = document.getElementById('feed');
+  const settingsEl = document.getElementById('settings-page');
+  const composerEl = document.getElementById('composer');
+  const loadMoreEl = document.getElementById('load-more');
+  const searchBar  = document.getElementById('search-bar');
+
+  // Hide all non-feed panels first
+  settingsEl.classList.remove('active');
+  document.querySelector('main').style.display = '';
+
+  if (view === 'settings') {
+    feedEl.style.display = 'none';
+    loadMoreEl.style.display = 'none';
+    composerEl.style.display = 'none';
+    if (searchBar) searchBar.classList.remove('visible');
+    settingsEl.classList.add('active');
+    document.getElementById('header-title').textContent = 'Settings';
+    currentView = 'settings';
+    loadAccountInfo(); // lazy — only fetched when user opens Settings
+    return;
+  }
+
+  if (searchBar) searchBar.classList.add('visible');
+  feedEl.style.display = '';
+  currentView = view;
+  document.getElementById('header-title').textContent = getViewTitle(view);
+  allMemos = [];
+  nextCursor = null;
+  if (view === 'attachments') {
+    renderFeed();
+    fetchAllMemos().then(all => {
+      allMemos = all;
+      renderFeed();
+    }).catch(err => toast('Failed to load attachments: ' + err.message));
+  } else {
+    loadMemos();
+  }
+}
+
+function initNavItems() {
+  document.querySelectorAll('.nav-item[data-view]').forEach(item => {
+    item.addEventListener('click', () => {
+      switchView(item.dataset.view);
+      document.getElementById('sidebar').classList.remove('open');
+      document.getElementById('sidebar-overlay').classList.remove('open');
+    });
+  });
+}
+
+// Mobile sidebar toggle
+document.getElementById('menu-toggle').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebar-overlay').classList.toggle('open');
+});
+document.getElementById('sidebar-overlay').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+});
+
+// ── Load more + infinite scroll ──────────────────────────────────────────────
+document.getElementById('load-more-btn').addEventListener('click', () => loadMemos(true));
+
+// ── Search ────────────────────────────────────────────────────────────────────
+const searchInput = document.getElementById('search-input');
+const searchClear = document.getElementById('search-clear');
+let _searchDebounce = null;
+searchInput.addEventListener('input', () => {
+  searchQuery = searchInput.value.trim();
+  searchClear.classList.toggle('visible', searchQuery.length > 0);
+  clearTimeout(_searchDebounce);
+  if (!searchQuery) {
+    searchResults = null;
+    renderFeed();
+    return;
+  }
+  if (searchQuery.length < 2) return;
+  _searchDebounce = setTimeout(async () => {
+    try {
+      const r = await fetch(API_BASE + '/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({ q: searchQuery }),
+      });
+      if (!r.ok) throw new Error('Search failed');
+      const { notes } = await r.json();
+      searchResults = notes || [];
+      renderFeed();
+    } catch (e) {
+      console.error('[search]', e);
+    }
+  }, 300);
+});
+searchClear.addEventListener('click', () => {
+  searchInput.value = ''; searchQuery = '';
+  searchResults = null;
+  searchClear.classList.remove('visible');
+  renderFeed();
+});
+
+// Hide search bar on non-feed views
+const _origSwitchView = switchView;
+
+let _loadingMore = false;
+const infiniteObserver = new IntersectionObserver(entries => {
+  if (entries[0].isIntersecting && settings.infiniteScroll && nextCursor && currentView !== 'settings') {
+    if (_loadingMore) return;
+    _loadingMore = true;
+    loadMemos(true).finally(() => { _loadingMore = false; });
+  }
+}, { rootMargin: '200px' });
+infiniteObserver.observe(document.getElementById('infinite-sentinel'));
+
+// ── Lightbox ──────────────────────────────────────────────────────────────────
+let lbImages = [];
+let lbIndex  = 0;
+
+function openLightbox(src, allSrcs) {
+  // Close any file preview first
+  document.getElementById('lightbox-content').classList.remove('open');
+  document.getElementById('lightbox-content').style.display = 'none';
+  const imgEl = document.getElementById('lightbox-img');
+  imgEl.style.display = '';
+
+  lbImages = allSrcs || [src];
+  lbIndex  = lbImages.indexOf(src);
+  if (lbIndex === -1) lbIndex = 0;
+  renderLightbox();
+  document.getElementById('lightbox').classList.add('open');
+}
+
+async function openFilePreview(att, fname, mime, url, isPdf, isVideo, isAudio, isText, isIndexed) {
+  const lb = document.getElementById('lightbox');
+  const imgEl = document.getElementById('lightbox-img');
+  const content = document.getElementById('lightbox-content');
+
+  // Hide image, show content panel
+  imgEl.style.display = 'none';
+  document.getElementById('lightbox-prev').classList.add('hidden');
+  document.getElementById('lightbox-next').classList.add('hidden');
+  document.getElementById('lightbox-counter').classList.add('hidden');
+
+  // Build content panel
+  content.innerHTML = '';
+  content.style.display = 'flex';
+  content.classList.add('open');
+
+  // Header with filename + download button
+  const header = document.createElement('div');
+  header.className = 'lb-file-header';
+  header.innerHTML = fileIcon(mime) + ' <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(fname) + '</span>';
+  const dlBtn = document.createElement('button');
+  dlBtn.textContent = '⬇ Download';
+  dlBtn.style.cssText = 'padding:4px 10px;font-size:12px;border-radius:6px;border:1px solid var(--border);background:var(--surface);cursor:pointer;white-space:nowrap;flex-shrink:0';
+  dlBtn.addEventListener('click', async () => {
+    try {
+      const r = await fetch(url, { credentials: 'omit', headers: authHeaders() });
+      const blob = await r.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob); a.download = fname; a.click();
+    } catch(e) { toast('Download failed'); }
+  });
+  header.appendChild(dlBtn);
+  content.appendChild(header);
+
+  const body = document.createElement('div');
+  body.className = 'lb-file-body';
+  body.innerHTML = '<div class="lb-loading">Loading…</div>';
+  content.appendChild(body);
+
+  lb.classList.add('open');
+
+  try {
+    if (isPdf || isVideo || isAudio) {
+      const r = await fetch(url, { credentials: 'omit', headers: authHeaders() });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const blob = await r.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      body.innerHTML = '';
+      if (isPdf) {
+        // On mobile, iframes don't render PDFs — use OS handler instead
+        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        if (isMobile) {
+          body.innerHTML = '';
+          const wrap = document.createElement('div');
+          wrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px;padding:30px;text-align:center';
+          wrap.innerHTML = '<div style="font-size:48px">📄</div>'
+            + '<div style="font-size:15px;font-weight:500">' + escHtml(fname) + '</div>'
+            + '<div style="font-size:13px;color:var(--muted)">PDF preview is not supported in the browser on mobile.</div>';
+          const openBtn = document.createElement('button');
+          openBtn.className = 'btn-primary';
+          openBtn.textContent = '↗ Open in PDF reader';
+          openBtn.addEventListener('click', () => window.open(blobUrl, '_blank'));
+          wrap.appendChild(openBtn);
+          body.appendChild(wrap);
+        } else {
+          const frame = document.createElement('iframe');
+          frame.src = blobUrl;
+          frame.title = fname;
+          body.appendChild(frame);
+        }
+      } else if (isVideo) {
+        const video = document.createElement('video');
+        video.controls = true; video.autoplay = false; video.preload = 'metadata';
+        video.src = blobUrl;
+        body.appendChild(video);
+      } else {
+        const audio = document.createElement('audio');
+        audio.controls = true; audio.preload = 'metadata';
+        audio.src = blobUrl;
+        body.style.cssText += 'display:flex;align-items:center;justify-content:center;padding:30px';
+        body.appendChild(audio);
+      }
+    } else if (isText) {
+      const r = await fetch(url, { credentials: 'omit', headers: authHeaders() });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const text = await r.text();
+      body.innerHTML = '';
+      const pre = document.createElement('div');
+      pre.className = 'lb-text';
+      pre.textContent = text;
+      body.appendChild(pre);
+    } else if (isIndexed) {
+      const data = await apiGet('/attachments/' + att.id + '/index');
+      body.innerHTML = '';
+      const div = document.createElement('div');
+      div.className = 'lb-indexed';
+      if (data.text) {
+        div.innerHTML = '<h3>📄 Extracted content (via Claude)</h3>' + escHtml(data.text).replace(/\n/g, '<br>');
+      } else if (data.pending) {
+        div.innerHTML = '<h3 style="color:#bbb">⏳ Indexing in progress…</h3><p style="color:#999;font-size:13px">Claude is extracting the content of this document. Close and try again in a few seconds.</p>';
+      } else {
+        div.innerHTML = '<h3 style="color:#bbb">No preview available</h3><p style="color:#999;font-size:13px">This document type isn\'t supported for preview.</p>';
+      }
+      body.appendChild(div);
+    }
+  } catch(e) {
+    body.innerHTML = '<div class="lb-loading" style="color:#c00">Failed to load preview</div>';
+  }
+}
+
+function renderLightbox() {
+  _lbResetZoom();
+  const img     = document.getElementById('lightbox-img');
+  const prev    = document.getElementById('lightbox-prev');
+  const next    = document.getElementById('lightbox-next');
+  const counter = document.getElementById('lightbox-counter');
+  img.src = lbImages[lbIndex];
+  prev.classList.toggle('hidden', lbImages.length <= 1 || lbIndex === 0);
+  next.classList.toggle('hidden', lbImages.length <= 1 || lbIndex === lbImages.length - 1);
+  if (lbImages.length > 1) {
+    counter.textContent = (lbIndex + 1) + ' / ' + lbImages.length;
+    counter.classList.remove('hidden');
+  } else {
+    counter.classList.add('hidden');
+  }
+}
+
+document.getElementById('lightbox-prev').addEventListener('click', e => {
+  e.stopPropagation();
+  if (lbIndex > 0) { lbIndex--; renderLightbox(); }
+});
+document.getElementById('lightbox-next').addEventListener('click', e => {
+  e.stopPropagation();
+  if (lbIndex < lbImages.length - 1) { lbIndex++; renderLightbox(); }
+});
+function closeLightbox() {
+  _lbResetZoom();
+  const lb = document.getElementById('lightbox');
+  lb.classList.remove('open');
+  // Reset content panel and restore image element
+  const content = document.getElementById('lightbox-content');
+  content.classList.remove('open');
+  content.style.display = 'none';
+  content.innerHTML = '';
+  document.getElementById('lightbox-img').style.display = '';
+}
+document.getElementById('lightbox-close').addEventListener('click', closeLightbox);
+document.getElementById('lightbox').addEventListener('click', e => { if (e.target === e.currentTarget) closeLightbox(); });
+// Keyboard navigation
+document.addEventListener('keydown', e => {
+  if (!document.getElementById('lightbox').classList.contains('open')) return;
+  if (e.key === 'ArrowLeft' && lbIndex > 0)                    { lbIndex--; renderLightbox(); }
+  if (e.key === 'ArrowRight' && lbIndex < lbImages.length - 1) { lbIndex++; renderLightbox(); }
+  if (e.key === 'Escape') closeLightbox();
+});
+
+// ── Lightbox pinch-zoom / drag / double-tap ───────────────────────────────────
+let _lbScale = 1, _lbTX = 0, _lbTY = 0;
+let _lbPinching = false, _lbPinchDist0 = 0;
+let _lbDragging = false, _lbDragOX = 0, _lbDragOY = 0;
+let _lbLastTap = 0;
+
+function _lbResetZoom() {
+  _lbScale = 1; _lbTX = 0; _lbTY = 0;
+  const img = document.getElementById('lightbox-img');
+  if (img) { img.style.transform = ''; img.style.cursor = 'zoom-in'; }
+}
+function _lbApplyZoom() {
+  const img = document.getElementById('lightbox-img');
+  img.style.transform = `translate(${_lbTX}px,${_lbTY}px) scale(${_lbScale})`;
+  img.style.cursor = _lbScale > 1 ? 'grab' : 'zoom-in';
+}
+
+(function() {
+  const el = document.getElementById('lightbox-img');
+  el.addEventListener('touchstart', e => {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      _lbPinching = true; _lbDragging = false;
+      _lbPinchDist0 = Math.hypot(
+        e.touches[1].clientX - e.touches[0].clientX,
+        e.touches[1].clientY - e.touches[0].clientY);
+    } else if (e.touches.length === 1) {
+      _lbDragging = true;
+      _lbDragOX = e.touches[0].clientX - _lbTX;
+      _lbDragOY = e.touches[0].clientY - _lbTY;
+      // Double-tap: toggle 2.5× zoom
+      const now = Date.now();
+      if (now - _lbLastTap < 280) {
+        e.preventDefault();
+        if (_lbScale > 1) _lbResetZoom(); else { _lbScale = 2.5; _lbApplyZoom(); }
+      }
+      _lbLastTap = now;
+    }
+  }, { passive: false });
+
+  el.addEventListener('touchmove', e => {
+    e.preventDefault();
+    if (e.touches.length === 2 && _lbPinching) {
+      const d = Math.hypot(
+        e.touches[1].clientX - e.touches[0].clientX,
+        e.touches[1].clientY - e.touches[0].clientY);
+      _lbScale = Math.min(8, Math.max(1, _lbScale * (d / _lbPinchDist0)));
+      _lbPinchDist0 = d;
+      if (_lbScale <= 1) { _lbTX = 0; _lbTY = 0; }
+      _lbApplyZoom();
+    } else if (e.touches.length === 1 && _lbDragging && _lbScale > 1) {
+      _lbTX = e.touches[0].clientX - _lbDragOX;
+      _lbTY = e.touches[0].clientY - _lbDragOY;
+      _lbApplyZoom();
+    }
+  }, { passive: false });
+
+  el.addEventListener('touchend', e => {
+    if (e.touches.length < 2) _lbPinching = false;
+    if (e.touches.length === 0) _lbDragging = false;
+    if (_lbScale < 1.08) _lbResetZoom(); // snap back if barely zoomed
+  });
+})();
+
+// ── Image attach ──────────────────────────────────────────────────────────────
+document.getElementById('attach-btn').addEventListener('click', () => document.getElementById('file-input').click());
+
+// Composer expand/collapse handled via textarea focus/blur in setupComposer() above.
+document.getElementById('file-input').addEventListener('change', async e => {
+  for (const file of e.target.files) await addFile(file);
+  e.target.value = '';
+});
+document.getElementById('composer').addEventListener('paste', async e => {
+  const items = e.clipboardData?.items || [];
+  for (const item of items) {
+    if (item.type.startsWith('image/')) {
+      e.preventDefault();
+      await addFile(item.getAsFile());
+    }
+  }
+});
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+// ── Date ──────────────────────────────────────────────────────────────────────
+function formatDate(iso) {
+  const d = new Date(iso), now = new Date(), diff = now - d;
+  if (diff < 60000)    return 'just now';
+  if (diff < 3600000)  return Math.floor(diff/60000) + 'm ago';
+  if (diff < 86400000) return Math.floor(diff/3600000) + 'h ago';
+  if (diff < 604800000) return d.toLocaleDateString('da-DK', { weekday:'short', hour:'2-digit', minute:'2-digit' });
+  return d.toLocaleDateString('da-DK', { day:'numeric', month:'short', year: d.getFullYear()!==now.getFullYear()?'numeric':undefined });
+}
+
+// ── Auth ────────────────────────────────────────────────────────────────────
+// Auth is handled by Cloudflare Access — CF_Authorization cookie sent automatically.
+function initAuth() { return true; }
+
+
+// ── Themes ────────────────────────────────────────────────────────────────────
+const THEMES = [
+  // ── Light themes ────────────────────────────────────────────────────────────
+  { id: 'warm',       label: 'Warm Sand',     bg:'#f7f4ef', surface:'#ffffff', surfaceAlt:'#f2ede5', accent:'#c17f3e', text:'#2c2825', border:'#e8e2d9', muted:'#a89f94' },
+  { id: 'arctic',     label: 'Arctic',        bg:'#f5f8fc', surface:'#ffffff', surfaceAlt:'#edf2f8', accent:'#2b7fff', text:'#0f1c2e', border:'#d8e4f0', muted:'#7a96b8' },
+  { id: 'forest',     label: 'Forest',        bg:'#f0f5f1', surface:'#ffffff', surfaceAlt:'#e8f0ea', accent:'#2e7d4f', text:'#1a2e20', border:'#cfe3d4', muted:'#6e9a7a' },
+  { id: 'rose',       label: 'Rose',          bg:'#fdf4f6', surface:'#ffffff', surfaceAlt:'#f8e8ec', accent:'#d63a60', text:'#2d1a20', border:'#f0d0d8', muted:'#b0707e' },
+  { id: 'lavender',   label: 'Lavender',      bg:'#f4f2fb', surface:'#ffffff', surfaceAlt:'#ece8f8', accent:'#6d4fc4', text:'#231a38', border:'#dcd4f2', muted:'#9880c4' },
+  { id: 'sepia',      label: 'Sepia',         bg:'#faf6f0', surface:'#fdf9f4', surfaceAlt:'#f2ebe0', accent:'#8b5e3c', text:'#3d2b1a', border:'#e8ddd0', muted:'#a08060' },
+  { id: 'stone',      label: 'Stone',         bg:'#f5f4f2', surface:'#ffffff', surfaceAlt:'#eeece8', accent:'#78716c', text:'#1c1917', border:'#e7e5e1', muted:'#a8a29e' },
+  // ── Dark themes ─────────────────────────────────────────────────────────────
+  { id: 'midnight',   label: 'Midnight',      bg:'#0f1117', surface:'#181b24', surfaceAlt:'#1e2130', accent:'#7c8cf8', text:'#e4e8f5', border:'#262c40', muted:'#5c6480' },
+  { id: 'obsidian',   label: 'Obsidian',      bg:'#13131a', surface:'#1c1c26', surfaceAlt:'#222230', accent:'#a78bfa', text:'#e8e4f8', border:'#2a2a3e', muted:'#6060a0' },
+  { id: 'ink',        label: 'Ink',           bg:'#161616', surface:'#1e1e1e', surfaceAlt:'#262626', accent:'#e8c547', text:'#f0ede8', border:'#2e2e2e', muted:'#666666' },
+  { id: 'charcoal',   label: 'Charcoal',      bg:'#1e2028', surface:'#272b36', surfaceAlt:'#2e3340', accent:'#4ecdc4', text:'#dde3f0', border:'#363c4e', muted:'#6a7490' },
+  { id: 'forest-dk',  label: 'Deep Forest',   bg:'#0e1a12', surface:'#152018', surfaceAlt:'#1c2a20', accent:'#4ade80', text:'#d4f0dd', border:'#1e3224', muted:'#4a7a58' },
+  { id: 'ember',      label: 'Ember',         bg:'#1a1208', surface:'#241a0e', surfaceAlt:'#2e2010', accent:'#f97316', text:'#fde8cc', border:'#382612', muted:'#7a5530' },
+  { id: 'nord',       label: 'Nord',          bg:'#2e3440', surface:'#3b4252', surfaceAlt:'#434c5e', accent:'#88c0d0', text:'#eceff4', border:'#4c566a', muted:'#7b8a9e' },
+  { id: 'rose-dk',    label: 'Dark Rose',     bg:'#1a0e12', surface:'#26141a', surfaceAlt:'#301820', accent:'#fb7185', text:'#fde4ea', border:'#3a1c24', muted:'#8a4458' },
+];
+
+function applyTheme(themeId) {
+  const t = THEMES.find(t => t.id === themeId) || THEMES[0];
+  const root = document.documentElement;
+  root.style.setProperty('--bg', t.bg);
+  root.style.setProperty('--surface', t.surface);
+  root.style.setProperty('--surface-alt', t.surfaceAlt);
+  root.style.setProperty('--accent', t.accent);
+  root.style.setProperty('--text', t.text);
+  root.style.setProperty('--border', t.border);
+  root.style.setProperty('--muted', t.muted);
+  root.style.setProperty('--accent-bg', t.accent + '20');
+  // Derive text-soft from text (60% opacity approximation)
+  root.style.setProperty('--text-soft', t.muted);
+  // Header background: semi-transparent version of bg
+  const hex = t.bg.replace('#', '');
+  const r = parseInt(hex.slice(0,2),16);
+  const g = parseInt(hex.slice(2,4),16);
+  const b = parseInt(hex.slice(4,6),16);
+  root.style.setProperty('--header-bg', `rgba(${r},${g},${b},0.95)`);
+  // Hidden note colours adapt to theme — light purple on light themes, muted on dark
+  const isDark = (parseInt(hex.slice(0,2),16) + parseInt(hex.slice(2,4),16) + parseInt(hex.slice(4,6),16)) < 300;
+  root.style.setProperty('--hidden-bg',     isDark ? 'rgba(124,111,158,0.15)' : '#f0edf8');
+  root.style.setProperty('--hidden-border', isDark ? 'rgba(124,111,158,0.35)' : '#c4b8e8');
+}
+
+function buildThemeGrid() {
+  const grid = document.getElementById('theme-grid');
+  if (!grid) return;
+  THEMES.forEach(t => {
+    const swatch = document.createElement('div');
+    swatch.className = 'theme-swatch' + (settings.theme === t.id ? ' active' : '');
+    swatch.title = t.label;
+    swatch.style.background = 'linear-gradient(135deg, ' + t.surface + ' 50%, ' + t.accent + ' 50%)';
+    swatch.style.border = '2px solid ' + t.border;
+    swatch.addEventListener('click', () => {
+      document.querySelectorAll('.theme-swatch').forEach(s => s.classList.remove('active'));
+      swatch.classList.add('active');
+      settings.theme = t.id;
+      saveSettings();
+      applyTheme(t.id);
+    });
+    grid.appendChild(swatch);
+  });
+}
+
+// ── Bulk auto-tagger ──────────────────────────────────────────────────────────
+async function bulkTagUntagged(onProgress) {
+  // Fetch ALL notes (paginate through everything)
+  let cursor = null;
+  const allNotes = [];
+  do {
+    const url = '/notes?limit=100' + (cursor ? '&cursor=' + encodeURIComponent(cursor) : '');
+    const data = await apiGet(url);
+    allNotes.push(...(data.notes || []));
+    cursor = data.nextCursor || null;
+  } while (cursor);
+
+  const untagged = allNotes.filter(n => !n.tags || n.tags.length === 0);
+  if (untagged.length === 0) return { done: 0, skipped: 0 };
+
+  // Pre-fetch combined content + OCR text for all untagged notes in batches of 100
+  const contextMap = {};
+  const CTX_BATCH = 90;
+  for (let i = 0; i < untagged.length; i += CTX_BATCH) {
+    const ids = untagged.slice(i, i + CTX_BATCH).map(n => n.id);
+    try {
+      const r = await fetch(API_BASE + '/notes/tag-contexts', {
+        method: 'POST', credentials: 'omit',
+        headers: authHeaders(),
+        body: JSON.stringify({ ids })
+      });
+      if (r.ok) Object.assign(contextMap, await r.json());
+    } catch(e) { /* fall back to note.content */ }
+  }
+
+  let done = 0, skipped = 0, failed = 0;
+  for (let i = 0; i < untagged.length; i++) {
+    const note = untagged[i];
+    try {
+      const context = contextMap[note.id] || note.content || '';
+      const tags = await aiTags(context);
+      if (tags.length > 0) {
+        await apiPatch('/notes/' + note.id, { tags });
+        const idx = allMemos.findIndex(m => m.id === note.id);
+        if (idx !== -1) allMemos[idx] = { ...allMemos[idx], tags };
+        done++;
+      } else {
+        skipped++;
+      }
+    } catch(e) {
+      console.warn('Tag failed for', note.id, e.message);
+      failed++;
+    }
+    onProgress(done, failed, untagged.length);
+    // 1.2s between notes keeps well under Anthropic's rate limits
+    if (i < untagged.length - 1) await new Promise(r => setTimeout(r, 1200));
+  }
+  return { done, skipped, failed, total: untagged.length };
+}
+
+// ── Show/hide tags ────────────────────────────────────────────────────────────
+function applyShowTags() {
+  document.body.classList.toggle('hide-tags', !settings.showTags);
+}
+
+// ── Sync all control values from settings (called after async DB load) ────────
+function syncSettingsControls() {
+  const el = id => document.getElementById(id);
+  const s = settings;
+
+  const infiniteToggle = el('setting-infinite-scroll');
+  const maxHeightSlider = el('setting-max-height');
+  const maxHeightVal    = el('setting-max-height-val');
+  if (infiniteToggle)   infiniteToggle.checked = s.infiniteScroll;
+  if (maxHeightSlider)  maxHeightSlider.value  = s.maxHeight;
+  if (maxHeightVal)     maxHeightVal.textContent = s.maxHeight === 0 ? 'Off' : s.maxHeight + 'px';
+
+  const mobileFontSlider = el('setting-mobile-font');
+  const mobileFontVal    = el('setting-mobile-font-val');
+  if (mobileFontSlider) mobileFontSlider.value = s.mobileFontSize || 15;
+  if (mobileFontVal)    mobileFontVal.textContent = (s.mobileFontSize || 15) + 'px';
+
+  const fontSelect = el('setting-font-family');
+  if (fontSelect) fontSelect.value = s.fontFamily || "'DM Sans', sans-serif";
+
+  const attPerPageSlider = el('setting-att-per-page');
+  const attPerPageVal    = el('setting-att-per-page-val');
+  if (attPerPageSlider) attPerPageSlider.value = s.attachmentsPerPage || 27;
+  if (attPerPageVal)    attPerPageVal.textContent = s.attachmentsPerPage || 27;
+
+  const feedWidthSlider = el('setting-feed-width');
+  const feedWidthVal    = el('setting-feed-width-val');
+  if (feedWidthSlider) feedWidthSlider.value = s.feedMaxWidth || 700;
+  if (feedWidthVal)    feedWidthVal.textContent = (s.feedMaxWidth || 700) + 'px';
+
+  const offlineDaysSlider = el('setting-offline-days');
+  const offlineDaysVal    = el('setting-offline-days-val');
+  const offlineAttToggle  = el('setting-offline-attachments');
+  if (offlineDaysSlider) offlineDaysSlider.value = s.offlineDays;
+  if (offlineDaysVal)    offlineDaysVal.textContent = s.offlineDays === 0 ? 'Off' : s.offlineDays + ' days';
+  if (offlineAttToggle)  offlineAttToggle.checked = s.offlineCacheAttachments;
+
+  // voyageKeyInput removed — key now stored as VOYAGE_KEY worker secret
+  const reminderEmailInput = el('setting-reminder-email');
+  const emailMakePublicCb  = el('setting-email-make-public');
+  if (reminderEmailInput)  reminderEmailInput.value    = s.reminderEmail   || '';
+  if (emailMakePublicCb)   emailMakePublicCb.checked   = !!s.emailMakePublic;
+
+  const showTagsToggle     = el('setting-show-tags');
+  const tagCategoriesInput = el('setting-tag-categories');
+  const tagPeopleInput     = el('setting-tag-people');
+  if (showTagsToggle)       showTagsToggle.checked   = s.showTags !== false;
+  if (tagCategoriesInput)   tagCategoriesInput.value = s.tagCategories || '';
+  if (tagPeopleInput)       tagPeopleInput.value     = s.tagPeople     || '';
+
+  // Update active theme swatch
+  document.querySelectorAll('.theme-swatch').forEach((sw, i) => {
+    sw.classList.toggle('active', THEMES[i]?.id === s.theme);
+  });
+}
+
+// ── Settings page controls ────────────────────────────────────────────────────
+function initSettingsControls() {
+  const infiniteToggle  = document.getElementById('setting-infinite-scroll');
+  const maxHeightSlider = document.getElementById('setting-max-height');
+  const maxHeightVal    = document.getElementById('setting-max-height-val');
+  const mobileFontSlider = document.getElementById('setting-mobile-font');
+  const mobileFontVal    = document.getElementById('setting-mobile-font-val');
+  const fontSelect       = document.getElementById('setting-font-family');
+  const attPerPageSlider = document.getElementById('setting-att-per-page');
+  const attPerPageVal    = document.getElementById('setting-att-per-page-val');
+  const feedWidthSlider  = document.getElementById('setting-feed-width');
+  const feedWidthVal     = document.getElementById('setting-feed-width-val');
+  const offlineDaysSlider = document.getElementById('setting-offline-days');
+  const offlineDaysVal    = document.getElementById('setting-offline-days-val');
+  const offlineAttToggle  = document.getElementById('setting-offline-attachments');
+  const offlineCacheBtn   = document.getElementById('btn-refresh-offline-cache');
+  const offlineCacheStatus = document.getElementById('offline-cache-status');
+  const reminderEmailInput = document.getElementById('setting-reminder-email');
+  const emailMakePublicCb  = document.getElementById('setting-email-make-public');
+  const showTagsToggle    = document.getElementById('setting-show-tags');
+  const tagCategoriesInput = document.getElementById('setting-tag-categories');
+  const tagPeopleInput    = document.getElementById('setting-tag-people');
+  const tagAllBtn         = document.getElementById('btn-tag-all-untagged');
+  const tagAllStatus      = document.getElementById('tag-all-status');
+
+  // Populate with current values
+  syncSettingsControls();
+  buildThemeGrid();
+
+  // Show current cache size on settings open
+  const cached = loadNotesCache();
+  if (cached.length) offlineCacheStatus.textContent = `Currently cached: ${cached.length} notes`;
+
+  // ── Event listeners ───────────────────────────────────────────────────────
+  infiniteToggle.addEventListener('change', () => {
+    settings.infiniteScroll = infiniteToggle.checked;
+    saveSettings();
+    document.getElementById('load-more').style.display =
+      (settings.infiniteScroll || !nextCursor) ? 'none' : 'block';
+  });
+
+  maxHeightSlider.addEventListener('input', () => {
+    settings.maxHeight = parseInt(maxHeightSlider.value);
+    maxHeightVal.textContent = settings.maxHeight === 0 ? 'Off' : settings.maxHeight + 'px';
+  });
+  maxHeightSlider.addEventListener('change', () => { saveSettings(); renderFeed(); });
+
+  mobileFontSlider.addEventListener('input', () => {
+    settings.mobileFontSize = parseInt(mobileFontSlider.value);
+    mobileFontVal.textContent = settings.mobileFontSize + 'px';
+    applyMobileFontSize();
+    saveSettings();
+  });
+
+  fontSelect.addEventListener('change', () => {
+    settings.fontFamily = fontSelect.value;
+    applyFontFamily();
+    saveSettings();
+  });
+
+  attPerPageSlider.addEventListener('input', () => {
+    settings.attachmentsPerPage = parseInt(attPerPageSlider.value);
+    attPerPageVal.textContent = settings.attachmentsPerPage;
+    saveSettings();
+    if (currentView === 'attachments') renderFeed();
+  });
+
+  feedWidthSlider.addEventListener('input', () => {
+    settings.feedMaxWidth = parseInt(feedWidthSlider.value);
+    feedWidthVal.textContent = settings.feedMaxWidth + 'px';
+    applyFeedWidth();
+    saveSettings();
+  });
+
+  offlineDaysSlider.addEventListener('input', () => {
+    settings.offlineDays = parseInt(offlineDaysSlider.value);
+    offlineDaysVal.textContent = settings.offlineDays === 0 ? 'Off' : settings.offlineDays + ' days';
+    saveSettings();
+  });
+  offlineAttToggle.addEventListener('change', () => {
+    settings.offlineCacheAttachments = offlineAttToggle.checked;
+    saveSettings();
+  });
+  offlineCacheBtn.addEventListener('click', async () => {
+    if (!navigator.onLine) { toast('Cannot refresh — you\'re offline'); return; }
+    if (!settings.offlineDays) { toast('Enable offline caching in settings first'); return; }
+    offlineCacheBtn.disabled = true;
+    offlineCacheBtn.textContent = 'Refreshing…';
+    offlineCacheStatus.textContent = '';
+    _prefetchRunning = false;
+    try {
+      await prefetchOfflineCache();
+      const cached = loadNotesCache();
+      offlineCacheStatus.textContent = cached.length
+        ? `✓ Cached ${cached.length} notes`
+        : 'Completed but no notes found — check console for errors';
+    } catch(e) {
+      offlineCacheStatus.textContent = 'Failed: ' + e.message;
+      console.error('Offline cache refresh failed:', e);
+    }
+    offlineCacheBtn.disabled = false;
+    offlineCacheBtn.textContent = 'Refresh offline cache now';
+  });
+
+  // voyageKeyInput listener removed — key is now a worker secret
+  if (reminderEmailInput) reminderEmailInput.addEventListener('input', () => { settings.reminderEmail = reminderEmailInput.value.trim(); saveSettings(); });
+  if (emailMakePublicCb)  emailMakePublicCb.addEventListener('change', () => { settings.emailMakePublic = emailMakePublicCb.checked; saveSettings(); });
+
+  showTagsToggle.addEventListener('change', () => {
+    settings.showTags = showTagsToggle.checked;
+    applyShowTags();
+    saveSettings();
+  });
+  tagCategoriesInput.addEventListener('input', () => { settings.tagCategories = tagCategoriesInput.value; saveSettings(); });
+  tagPeopleInput.addEventListener('input',     () => { settings.tagPeople     = tagPeopleInput.value;     saveSettings(); });
+
+  tagAllBtn.addEventListener('click', async () => {
+    if (tagAllBtn.disabled) return;
+    tagAllBtn.disabled = true;
+    tagAllStatus.textContent = 'Fetching notes…';
+    try {
+      const result = await bulkTagUntagged((done, failed, total) => {
+        tagAllStatus.textContent = `${done + failed}/${total} — ${done} tagged${failed ? `, ${failed} errors` : ''}…`;
+      });
+      if (!result.total) {
+        tagAllStatus.textContent = 'All notes already have tags.';
+      } else {
+        tagAllStatus.textContent = `Done — ${result.done} tagged, ${result.skipped} no tags, ${result.failed} errors.`;
+        if (result.done > 0) await loadMemos();
+      }
+    } catch(e) {
+      tagAllStatus.textContent = 'Error: ' + e.message;
+    }
+    tagAllBtn.disabled = false;
+  });
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+// Apply defaults immediately for fast render, then load from DB
+applyFeedWidth();
+applyFontFamily();
+applyTheme(settings.theme);
+applyMobileFontSize();
+applyShowTags();
+
+// ── Sidebar margin: driven by matchMedia, not CSS media query ─────────────────
+// This prevents mobile Chrome's scrolling viewport resize from breaking layout.
+// Debounce the change handler so brief viewport-width glitches (e.g. Android
+// Chrome URL-bar collapse during infinite-scroll reflow) don't permanently
+// flip the class.
+const sidebarMQ = window.matchMedia('(min-width: 701px)');
+let _sidebarMarginTimer;
+function updateSidebarMargin(e) {
+  clearTimeout(_sidebarMarginTimer);
+  _sidebarMarginTimer = setTimeout(() => {
+    document.getElementById('content').classList.toggle('sidebar-visible', e.matches);
+  }, 150);
+}
+sidebarMQ.addEventListener('change', updateSidebarMargin);
+// Apply immediately on load (no debounce needed for initial state)
+document.getElementById('content').classList.toggle('sidebar-visible', sidebarMQ.matches);
+// ── Public share view ────────────────────────────────────────────────────────
+// If URL is /note/:id and there's no CF token, render a read-only public view
+// instead of the full app (requires CF Access Bypass policy on /note/* and
+// noteflow-api.jeppesen.cc/api/public/*).
+(async function checkPublicShare() {
+  const m = window.location.pathname.match(/^\/note\/([^/]+)$/);
+  if (!m) return;
+  const noteId = m[1];
+  const token = getCFToken();
+  if (token) return; // authenticated — normal app flow handles it
+
+  // Hide app shell, show share view
+  document.getElementById('app').style.display = 'none';
+
+  const wrap = document.createElement('div');
+  wrap.id = 'share-view';
+  wrap.innerHTML = `<style>
+    #share-view{max-width:700px;margin:48px auto;padding:0 20px;font-family:var(--font-body);color:var(--text)}
+    #share-view .sv-content{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:28px 32px;line-height:1.7}
+    #share-view .sv-content img{max-width:100%;border-radius:8px}
+    #share-view .sv-images{margin-top:16px;display:flex;flex-wrap:wrap;gap:8px}
+    #share-view .sv-images img{max-height:240px;border-radius:8px;object-fit:cover;cursor:pointer}
+    #share-view .sv-chips{margin-top:12px;display:flex;flex-wrap:wrap;gap:8px}
+    #share-view .sv-chip{display:inline-flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:13px;color:var(--text);text-decoration:none;cursor:pointer}
+    #share-view .sv-chip:hover{background:var(--hover)}
+    #share-view .sv-footer{margin-top:28px;text-align:center;font-size:12px;color:var(--muted)}
+    #share-view .sv-footer a{color:var(--accent);text-decoration:none}
+    #share-view .sv-error{text-align:center;padding:60px 0;color:var(--muted)}
+  </style><div class="sv-content" id="sv-body"><em style="color:var(--muted)">Loading…</em></div>
+  <div class="sv-footer">Shared via <a href="index.html">NoteFlow</a></div>`;
+  document.body.appendChild(wrap);
+
+  try {
+    const r = await fetch(API_BASE + '/public/notes/' + noteId);
+    if (!r.ok) throw new Error(r.status);
+    const note = await r.json();
+    const body = document.getElementById('sv-body');
+    const displayContent = (note.content || '')
+      .replace(/<!-- tags -->[\s\S]*?<\/details>/gi, '')
+      .replace(/<!-- ocr -->\n/g, '')
+      .trim();
+    body.innerHTML = marked.parse(displayContent);
+    // Render all attachments
+    if ((note.attachments || []).length) {
+      const imgRow = document.createElement('div');
+      imgRow.className = 'sv-images';
+      const chipRow = document.createElement('div');
+      chipRow.className = 'sv-chips';
+      const svImgs = [];
+
+      note.attachments.forEach(att => {
+        const mime = att.mime_type || '';
+        const fname = att.filename || att.id || 'file';
+        const ext = fname.split('.').pop().toLowerCase();
+        const pubUrl = API_BASE + '/public/attachments/' + att.id;
+
+        const isImage = mime.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp|svg|bmp|avif)$/.test(fname.toLowerCase());
+        const isVideo = mime.startsWith('video/') || ['mp4','webm','mov','mkv'].includes(ext);
+        const isAudio = mime.startsWith('audio/') || ['mp3','ogg','wav','flac','m4a'].includes(ext);
+
+        if (isImage) {
+          const img = document.createElement('img');
+          img.alt = fname;
+          img.loading = 'lazy';
+          fetch(pubUrl, { credentials: 'omit' })
+            .then(r => r.ok ? r.blob() : Promise.reject(r.status))
+            .then(blob => {
+              img.src = URL.createObjectURL(blob);
+              img._blobUrl = img.src;
+              img.addEventListener('click', () => {
+                const all = svImgs.map(i => i._blobUrl).filter(Boolean);
+                openLightbox(img._blobUrl, all);
+              });
+            })
+            .catch(() => {});
+          svImgs.push(img);
+          imgRow.appendChild(img);
+        } else if (isVideo) {
+          const video = document.createElement('video');
+          video.controls = true;
+          video.style.cssText = 'max-width:100%;border-radius:8px;margin-top:8px;';
+          fetch(pubUrl, { credentials: 'omit' })
+            .then(r => r.ok ? r.blob() : Promise.reject(r.status))
+            .then(blob => { video.src = URL.createObjectURL(blob); })
+            .catch(() => {});
+          imgRow.appendChild(video);
+        } else if (isAudio) {
+          const audio = document.createElement('audio');
+          audio.controls = true;
+          audio.style.cssText = 'width:100%;margin-top:8px;';
+          fetch(pubUrl, { credentials: 'omit' })
+            .then(r => r.ok ? r.blob() : Promise.reject(r.status))
+            .then(blob => { audio.src = URL.createObjectURL(blob); })
+            .catch(() => {});
+          imgRow.appendChild(audio);
+        } else {
+          // PDF, office docs, text, and everything else — download chip
+          const chip = document.createElement('a');
+          chip.className = 'sv-chip';
+          chip.textContent = fileIcon(mime) + ' ' + fname;
+          chip.href = '#';
+          chip.addEventListener('click', async e => {
+            e.preventDefault();
+            chip.style.opacity = '0.6';
+            try {
+              const r = await fetch(pubUrl, { credentials: 'omit' });
+              if (!r.ok) throw new Error(r.status);
+              const blob = await r.blob();
+              const a = document.createElement('a');
+              a.href = URL.createObjectURL(blob);
+              a.download = fname;
+              a.click();
+            } catch(err) { alert('Download failed'); }
+            chip.style.opacity = '1';
+          });
+          chipRow.appendChild(chip);
+        }
+      });
+
+      if (imgRow.children.length) body.appendChild(imgRow);
+      if (chipRow.children.length) body.appendChild(chipRow);
+    }
+  } catch(e) {
+    document.getElementById('sv-body').innerHTML =
+      '<div class="sv-error">Note not found or no longer public.</div>';
+  }
+})();
+
+// ── Tag Cloud / Graph View ────────────────────────────────────────────────────
+// ── Fetch current user info for settings panel ────────────────────────────────
+// ── Tracker sidebar nav (links to tracker.html) ──────────────────────────────
+let trackers = [];
+function renderTrackerNav() {
+  const list = document.getElementById('tracker-nav-list');
+  if (!list) return;
+  list.innerHTML = '';
+  trackers.filter(t => !t.archived).forEach(t => {
+    const a = document.createElement('a');
+    a.className = 'nav-item';
+    a.href = '/tracker.html?id=' + t.id;
+    a.style.textDecoration = 'none';
+    a.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + (t.color || 'var(--accent)') + ';margin-right:6px;flex-shrink:0"></span>' + (t.name || 'Untitled');
+    list.appendChild(a);
+  });
+}
+async function loadTrackers() {
+  try {
+    const data = await apiGet('/trackers');
+    trackers = data.trackers || [];
+    renderTrackerNav();
+  } catch(e) { console.warn('loadTrackers failed:', e.message); }
+}
+
+async function loadAccountInfo() {
+  try {
+    const data = await apiGet('/me');
+    const jwtEl  = document.getElementById('account-jwt-email');
+    const userEl = document.getElementById('account-user-id');
+    if (jwtEl)  jwtEl.textContent  = data.jwt_email || '—';
+    if (userEl) {
+      const userId = data.user?.id || '—';
+      userEl.textContent = userId;
+      if (data.jwt_email && data.jwt_email !== userId) {
+        userEl.textContent = userId + ' ← aliased';
+      }
+    }
+  } catch(e) {
+    console.warn('Could not load account info:', e.message);
+  }
+}
+// Lazy-loaded when Settings is opened (not on boot)
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+initSettingsControls();
+initCollapsibleSections();
+if (initAuth()) {
+  // Single combined boot request replaces loadSettings + checkCacheVersion + loadTrackers
+  (async () => {
+    try {
+      const boot = await apiGet('/boot');
+      // Apply settings
+      if (boot.settings && typeof boot.settings === 'object') {
+        Object.assign(settings, boot.settings);
+        try {
+          const prefs = {};
+          DISPLAY_PREF_KEYS.forEach(k => { prefs[k] = settings[k]; });
+          localStorage.setItem('noteflow_display_prefs', JSON.stringify(prefs));
+        } catch(e) {}
+      }
+      _settingsLoaded = true;
+      applyFeedWidth(); applyFontFamily(); applyTheme(settings.theme);
+      applyMobileFontSize(); applyShowTags(); syncSettingsControls();
+
+      // Apply cache version check
+      const serverVersion = boot.version || 0;
+      const localVersion = getCachedVersion();
+      if (serverVersion !== localVersion) {
+        clearNotesCache();
+        setCachedVersion(serverVersion);
+      }
+
+      // Apply trackers
+      trackers = boot.trackers || [];
+      renderTrackerNav();
+
+      // Seed project tags from boot — sidebar populates instantly
+      if (Array.isArray(boot.projectTags)) {
+        boot.projectTags.forEach(t => _knownProjectTags.add(t));
+        renderProjectsNav();
+      }
+    } catch(e) {
+      console.error('Boot failed, falling back to individual calls:', e);
+      _settingsLoaded = true;
+      loadSettings();
+      checkCacheVersion();
+      loadTrackers();
+    }
+  })();
+  loadMemos();
+}
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/service-worker.js', {
+        scope: '/'
+      }).then(reg => {
+      console.log('SW registered');
+
+      // Listen for messages from SW (queue updates)
+      navigator.serviceWorker.addEventListener('message', event => {
+        const { type, size, synced } = event.data || {};
+        if (type === 'QUEUE_SIZE') updateQueueBadge(size);
+        if (type === 'QUEUE_FLUSHED') {
+          updateQueueBadge(remaining || 0);
+          if (synced > 0) {
+            toast(`✓ Synced ${synced} offline note${synced > 1 ? 's' : ''}`);
+            loadMemos(); // Refresh feed so shared note appears
+          }
+        }
+        // SW asking for JWT so it can call the API
+        if (type === 'GET_JWT' && event.ports?.[0]) {
+          const jwt = document.cookie.split(';')
+            .map(c => c.trim())
+            .find(c => c.startsWith('CF_Authorization='))
+            ?.split('=')?.[1] || null;
+          event.ports[0].postMessage({ jwt });
+        }
+      });
+
+      // Ask SW for current queue size on load (only if controller is ready)
+      navigator.serviceWorker.ready.then(() => {
+        if (navigator.serviceWorker.controller) {
+          navigator.serviceWorker.controller.postMessage({ type: 'GET_QUEUE_SIZE' });
+        }
+      });
+    }).catch(err => console.warn('SW registration failed:', err));
+  }
+
+  // ── Online/offline banner (created dynamically, never shown on load) ───────
+  let _offlineBanner = null;
+  let _queueBadge = null;
+  let _isOffline = false;
+
+  function ensureOfflineUI() {
+    if (!_offlineBanner) {
+      _offlineBanner = document.createElement('div');
+      _offlineBanner.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#e53935;color:#fff;text-align:center;font-size:13px;padding:8px;z-index:9999;font-family:system-ui,sans-serif;';
+      _offlineBanner.textContent = '📵 You\'re offline — new notes will sync when reconnected';
+      document.body.appendChild(_offlineBanner);
+    }
+    if (!_queueBadge) {
+      _queueBadge = document.createElement('div');
+      _queueBadge.style.cssText = 'display:none;position:fixed;bottom:48px;right:16px;background:#ff9800;color:#fff;border-radius:20px;padding:6px 12px;font-size:12px;font-weight:600;z-index:9998;box-shadow:0 2px 8px rgba(0,0,0,.2);cursor:pointer;';
+      _queueBadge.innerHTML = '⏳ <span id="queue-count">0</span> pending';
+      _queueBadge.addEventListener('click', () => {
+        if (navigator.serviceWorker.controller)
+          navigator.serviceWorker.controller.postMessage({ type: 'SYNC_QUEUE' });
+        toast('Retrying sync…');
+      });
+      document.body.appendChild(_queueBadge);
+    }
+  }
+
+  function setOffline(offline) {
+    if (_isOffline === offline) return;
+    _isOffline = offline;
+    if (offline) {
+      ensureOfflineUI();
+      _offlineBanner.style.display = 'block';
+    } else {
+      if (_offlineBanner) _offlineBanner.style.display = 'none';
+      if (navigator.serviceWorker.controller)
+        navigator.serviceWorker.controller.postMessage({ type: 'SYNC_QUEUE' });
+    }
+  }
+
+  function updateQueueBadge(size) {
+    if (size > 0) {
+      ensureOfflineUI();
+      document.getElementById('queue-count').textContent = size;
+      _queueBadge.style.display = 'block';
+      // If we're online, try to sync immediately rather than waiting for user action
+      if (navigator.onLine && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({ type: 'SYNC_QUEUE' });
+      }
+    } else if (_queueBadge) {
+      _queueBadge.style.display = 'none';
+    }
+  }
+
+  // Only trust actual browser events — never check on load
+  window.addEventListener('online',  () => setOffline(false));
+  window.addEventListener('offline', () => setOffline(true));
+
+  // ── Queue badge ──────────────────────────────────────────────────────────
+  // Queue badge handled in setOffline/updateQueueBadge above
+
+  // ── Share target: check for pending share on load ────────────────────────
+  async function checkSharePending() {
+    try {
+      const cache = await caches.open('noteflow-v2');
+      const res = await cache.match('/__share_pending__');
+      if (!res) return;
+      const { content, fileCount = 0 } = await res.json();
+      await cache.delete('/__share_pending__');
+
+      switchView('all');
+      if (content) openComposerWithContent(content);
+
+      // Load shared files into the composer's pending attachments
+      for (let i = 0; i < fileCount; i++) {
+        const fileRes = await cache.match(`/__share_file_${i}__`);
+        if (fileRes) {
+          await cache.delete(`/__share_file_${i}__`);
+          const blob = await fileRes.blob();
+          const name = decodeURIComponent(fileRes.headers.get('X-File-Name') || `file_${i}`);
+          const file = new File([blob], name, { type: blob.type });
+          await addFile(file);
+        }
+      }
+    } catch(e) { /* no cache, no problem */ }
+  }
+
+  // Also check sessionStorage fallback (for when SW wasn't ready)
+  const _ssPending = sessionStorage.getItem('__share_pending__');
+  if (_ssPending) {
+    try {
+      const { content } = JSON.parse(_ssPending);
+      sessionStorage.removeItem('__share_pending__');
+      if (content) setTimeout(() => openComposerWithContent(content), 500);
+    } catch(e) {}
+  }
+
+  function openComposerWithContent(content) {
+    switchView('all');
+    if (composerEditor) {
+      composerEditor.value = content;
+      composerEditor.focus();
+      document.getElementById('composer').classList.add('expanded');
+    } else {
+      // Composer not ready yet — store for deferred apply
+      _pendingShareContent = content;
+    }
+  }
+
+  // Check for share payload after SW is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', checkSharePending);
+  } else {
+    checkSharePending();
+  }
+  </script>
+
+<script>window.NAV_PAGE = 'index';</script>
+<script src="/nav.js"></script>
+</body>
+</html>
