@@ -13,8 +13,6 @@ function corsHeaders(origin) {
     "https://notes.jeppesen.cc",
     "https://noteflow-v2.pages.dev", // New git connected page
     "https://noteflow.pages.dev",
-    "https://noteflow-frontend-dge.pages.dev",
-    "https://notepreview.noteflow-frontend-dge.pages.dev",
   ];
   const o = allowed.includes(origin) ? origin : allowed[0];
   return { "Access-Control-Allow-Origin": o, "Access-Control-Allow-Credentials": "true", "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, PUT, OPTIONS", "Access-Control-Allow-Headers": "Content-Type, Authorization, Cf-Access-Jwt-Assertion" };
