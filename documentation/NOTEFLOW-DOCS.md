@@ -21,13 +21,17 @@ There is no SaaS dependency. Every piece of infrastructure is owned and controll
 Browser (PWA)
   │
   ├─ notes.jeppesen.cc          ← Cloudflare Pages (static frontend)
-  │    ├─ public/index.html     ← Main notes app
-  │    ├─ public/tracker.html   ← Tracker feature (standalone page)
-  │    ├─ public/tagcloud.html  ← Tag Cloud / Semantic / Embeddings
-  │    ├─ public/nav.js         ← Shared sidebar (loaded by all pages)
-  │    └─ public/service-worker.js ← PWA offline support
+  │    └─ → noteflow-v2.pages.dev (CNAME target)
+  │         GitHub repo: swamp2k/noteflow-v2 (main branch auto-deploys)
+  │         Build output: /public directory only
+  │         ├─ public/index.html
+  │         ├─ public/tracker.html
+  │         ├─ public/tagcloud.html
+  │         ├─ public/nav.js
+  │         └─ public/service-worker.js
   │
   └─ noteflow-api.jeppesen.cc   ← Cloudflare Worker (API + public assets)
+       GitHub repo: swamp2k/noteflow-v2 (main branch auto-deploys)
        ├─ D1 database: noteflow
        ├─ R2 bucket: noteflow-attachments
        └─ Anthropic API (server-side, via ANTHROPIC_KEY secret)
@@ -35,9 +39,9 @@ Browser (PWA)
 
 ### Authentication
 
-Cloudflare Access protects `notes.jeppesen.cc`. The browser receives a `CF_Authorization` JWT cookie. The worker verifies this JWT on every API call using `TEAM_DOMAIN` and `POLICY_AUD` secrets — no session state is stored anywhere.
+Cloudflare Access protects `notes.jeppesen.cc` and `noteflow-v2.pages.dev`. The browser receives a `CF_Authorization` JWT cookie. The worker verifies this JWT on every API call using `TEAM_DOMAIN` and `POLICY_AUD` secrets — no session state is stored anywhere.
 
-The worker at `noteflow-api.jeppesen.cc` has no CF Access policy. It handles its own auth by verifying the JWT included in the `Authorization: Bearer` header sent by the frontend.
+The worker at `noteflow-api.jeppesen.cc` has no CF Access policy. It handles its own auth by verifying the JWT included in the `Authorization: Bearer` header sent by the frontend. CORS is configured to allow requests from both `notes.jeppesen.cc` and `noteflow-v2.pages.dev`.
 
 ---
 
@@ -51,7 +55,10 @@ The worker at `noteflow-api.jeppesen.cc` has no CF Access policy. It handles its
 | D1 Database | `noteflow` / `075788a4-1d08-458e-9622-e10c561ee481` |
 | R2 Bucket | `noteflow-attachments` |
 | Worker | `noteflow-api` |
-| Pages Project | `noteflow-frontend-dge` |
+| Pages Project | `noteflow-v2` (GitHub-linked, replaces `noteflow-frontend-dge`) |
+| GitHub Repository | `github.com:swamp2k/noteflow-v2` |
+| Primary URL | `https://notes.jeppesen.cc` (CNAME → `noteflow-v2.pages.dev`) |
+| Pages Preview URL | `https://noteflow-v2.pages.dev` |
 
 ---
 
@@ -89,19 +96,79 @@ noteflow/
     └── service-worker.js  ← Browser service worker
 ```
 
-### Deployment Commands
+### Deployment — GitHub CI/CD
 
+Both the worker and Pages frontend deploy automatically on every push to the `main` branch of `github.com:swamp2k/noteflow-v2`.
+
+**Worker (`noteflow-api`):** Linked directly to the GitHub repository. Cloudflare runs `npx wrangler deploy` automatically on push. The `wrangler.toml` at the repo root defines all D1 and R2 bindings.
+
+**Pages (`noteflow-v2`):** GitHub-integrated Pages project. Build output directory is explicitly set to `/public` — this is critical. Root-level files (`worker.js`, `gemini.md`, `NOTEFLOW-DOCS.md`, `wrangler.toml`) are **not** served publicly. Only the contents of `/public` are deployed to the CDN.
+
+**Manual deployment (fallback):**
 ```bash
-# Deploy the worker (API)
+# Worker only
 npx wrangler deploy
 
-# Deploy the Pages frontend
-npx wrangler pages deploy public --project-name noteflow-frontend-dge --commit-dirty=true
+# Pages only (if GitHub integration is unavailable)
+npx wrangler pages deploy public --project-name noteflow-v2 --commit-dirty=true
 ```
+
+**Old Pages project `noteflow-frontend-dge` has been decommissioned** — its custom domain mapping and CF Access policy entry have been removed.
 
 ---
 
-## 6. Architecture Decisions
+## 6. CI/CD Pipeline
+
+### Repository Structure
+
+```
+github.com:swamp2k/noteflow-v2 (main branch)
+├── worker.js          ← deployed to Cloudflare Worker
+├── wrangler.toml      ← worker config + bindings
+├── gemini.md          ← AI assistant onboarding (NOT served publicly)
+├── NOTEFLOW-DOCS.md   ← project documentation (NOT served publicly)
+├── schema.sql         ← D1 schema reference (NOT served publicly)
+└── public/            ← ONLY this directory is deployed to Pages
+    ├── index.html
+    ├── tracker.html
+    ├── tagcloud.html
+    ├── nav.js
+    └── service-worker.js
+```
+
+### Automatic Deployments
+
+A push to `main` triggers two independent deployments in parallel:
+
+1. **Worker** — Cloudflare's native GitHub integration runs `npx wrangler deploy`. The worker goes live within ~30 seconds.
+
+2. **Pages** — Cloudflare Pages CI/CD detects the push, reads `/public` as the build output directory, and deploys all files in that directory to the CDN. No build step — files are served as-is.
+
+### Security Note on Build Output Directory
+
+The Pages project build output is set to `/public`. This means:
+- `worker.js` (contains embedded icon data and SW code) — **not public**
+- `wrangler.toml` (contains account ID and database IDs) — **not public**
+- `gemini.md` / `NOTEFLOW-DOCS.md` (contain CF credentials reference) — **not public**
+- Everything in `/public/` — served publicly via CDN
+
+### CF Access Coverage
+
+The CF Access Application covers both:
+- `notes.jeppesen.cc` (primary custom domain)
+- `noteflow-v2.pages.dev` (Cloudflare-managed Pages domain)
+
+Both domains issue valid `CF_Authorization` JWT cookies. The worker's CORS configuration whitelists both origins.
+
+### DNS
+
+`notes.jeppesen.cc` → CNAME → `noteflow-v2.pages.dev`
+
+This means the custom domain always points to whatever the current `noteflow-v2` Pages deployment is, with no DNS change required for new deployments.
+
+---
+
+## 7. Architecture Decisions
 
 ### Single-user by design
 NoteFlow is built for one user (Martin). Multi-user support was never a goal. `user_id` is derived from the CF Access JWT email on every request.
@@ -137,7 +204,7 @@ The star feature is hidden from the UI (button removed, nav item removed) but th
 
 ---
 
-## 7. Boot Sequence
+## 8. Boot Sequence
 
 Every page makes two parallel requests on load:
 
@@ -155,7 +222,7 @@ After boot:
 
 ---
 
-## 8. D1 Database Schema
+## 9. D1 Database Schema
 
 ### Core Tables
 
@@ -269,7 +336,7 @@ idx_tracker_share_tokens_token   ON tracker_share_tokens(token)
 
 ---
 
-## 9. Worker API Routes
+## 10. Worker API Routes
 
 All routes under `/api/*` require a valid CF Access JWT in the `Authorization: Bearer` header except for public routes.
 
@@ -347,7 +414,7 @@ All routes under `/api/*` require a valid CF Access JWT in the `Authorization: B
 
 ---
 
-## 10. Frontend Features
+## 11. Frontend Features
 
 ### index.html
 
@@ -417,7 +484,7 @@ All Voyage calls go through `POST /api/tags/voyage-embed` on the worker.
 
 ---
 
-## 11. Settings Object (D1 Stored)
+## 12. Settings Object (D1 Stored)
 
 ```javascript
 {
@@ -445,7 +512,7 @@ Display preferences also cached in `localStorage.noteflow_display_prefs`:
 
 ---
 
-## 12. Themes
+## 13. Themes
 
 15 themes available. Each defines 7 CSS variables:
 
@@ -458,7 +525,7 @@ Theme IDs: `warm`, `arctic`, `forest`, `rose`, `lavender`, `sepia`, `stone`,
 
 ---
 
-## 13. Service Worker
+## 14. Service Worker
 
 Served from `GET /service-worker.js` on the worker (not from Pages, to avoid CF Access blocking).
 
@@ -473,7 +540,7 @@ Responsibilities:
 
 ---
 
-## 14. nav.js
+## 15. nav.js
 
 Loaded by every page. Set `window.NAV_PAGE` before loading:
 
@@ -500,7 +567,7 @@ Loaded by every page. Set `window.NAV_PAGE` before loading:
 
 ---
 
-## 15. Known Limitations / Backlog
+## 16. Known Limitations / Backlog
 
 - `voyageApiKey` field remains in the `settings` object for migration compatibility but is otherwise inert
 - `ai_providers` and `user_ai_providers` tables exist from an earlier multi-provider experiment but are unused
@@ -510,7 +577,7 @@ Loaded by every page. Set `window.NAV_PAGE` before loading:
 
 ---
 
-## 16. Secrets Restoration Reference
+## 17. Secrets Restoration Reference
 
 If secrets are ever lost from the worker:
 

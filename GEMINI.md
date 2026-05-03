@@ -32,15 +32,22 @@ noteflow/
 
 ## Deployment
 
+Both the worker and Pages frontend deploy **automatically on every push to `main`** of `github.com:swamp2k/noteflow-v2`.
+
+**Pages build output directory is `/public`** — root-level files (`worker.js`, `gemini.md`, `wrangler.toml`, etc.) are NOT served publicly.
+
+**Manual deployment (fallback only):**
 ```bash
-# Deploy worker
+# Worker
 npx wrangler deploy
 
-# Deploy frontend (all files in public/)
-npx wrangler pages deploy public --project-name noteflow-frontend-dge --commit-dirty=true
+# Pages
+npx wrangler pages deploy public --project-name noteflow-v2 --commit-dirty=true
 ```
 
 **Never use the Cloudflare Dashboard Quick Edit** to deploy the worker. Always use wrangler CLI — the dashboard can silently corrupt module format.
+
+The old Pages project `noteflow-frontend-dge` has been decommissioned — do not reference it.
 
 ---
 
@@ -52,7 +59,8 @@ npx wrangler pages deploy public --project-name noteflow-frontend-dge --commit-d
 | D1 database | `noteflow` / ID: `075788a4-1d08-458e-9622-e10c561ee481` |
 | R2 bucket | `noteflow-attachments` |
 | Worker name | `noteflow-api` |
-| Pages project | `noteflow-frontend-dge` |
+| Pages project | `noteflow-v2` (GitHub-linked, replaces `noteflow-frontend-dge`) |
+| GitHub Repository | `github.com:swamp2k/noteflow-v2` |
 | CF Access team | `https://hadus.cloudflareaccess.com` |
 | CF Access AUD | `3ec90fd4d44c80d81b5b2e35387ed0160410ea878adb234279738b647bba19b5` |
 
