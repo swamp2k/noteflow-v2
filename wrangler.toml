@@ -19,3 +19,7 @@ bucket_name = "noteflow-attachments"
 # VOYAGE_KEY    = pa-...    (Voyage AI — for tag embeddings)
 # RESEND_KEY    = re_...    (email feature)
 # RESEND_FROM   = NoteFlow <noteflow@jeppesen.cc>
+
+[pages_build_config]
+build_command = ""
+pages_build_output_dir = "public"
