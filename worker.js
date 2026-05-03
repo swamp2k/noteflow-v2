@@ -11,6 +11,7 @@ function extractTags(content) {
 function corsHeaders(origin) {
   const allowed = [
     "https://notes.jeppesen.cc",
+    "https://noteflow-v2.pages.dev", // New git connected page
     "https://noteflow.pages.dev",
     "https://noteflow-frontend-dge.pages.dev",
     "https://notepreview.noteflow-frontend-dge.pages.dev",

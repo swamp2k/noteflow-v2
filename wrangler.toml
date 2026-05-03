@@ -23,3 +23,8 @@ bucket_name = "noteflow-attachments"
 [pages_build_config]
 build_command = ""
 pages_build_output_dir = "public"
+
+[observability]
+[observability.logs]
+enabled = true
+invocation_logs = true
