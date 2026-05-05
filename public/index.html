@@ -2127,6 +2127,7 @@ async function fetchAllMemos() {
 
 // ── Render feed ───────────────────────────────────────────────────────────────
 function getViewTitle(view) {
+  if (view === 'tag' && currentTag) return currentTag.replace('project:', '');
   return { all:'All notes', starred:'Starred', hidden:'Hidden', archived:'Archive', shared:'Shared', attachments:'Attachments' }[view] || 'Notes';
 }
 
@@ -2136,7 +2137,7 @@ async function sendNoteByEmail(memo) {
     toast('Add a recipient address in Settings → Email first');
     return;
   }
-  const btn = document.querySelector(`.memo-card[data-id="${memo.id}"] .card-actions button[title="Email note"]`);
+  const btn = document.querySelector(`.memo-card[data-memo-name="${memo.id}"] .card-actions button[title="Email note"]`);
   if (btn) { btn.disabled = true; btn.textContent = '…'; }
   try {
     // Optionally make public first
@@ -2459,11 +2460,9 @@ function fileIcon(mime) {
   if (mime.includes('zip') || mime.includes('archive') || mime.includes('compressed')) return '🗜️';
   return '📎';
 }
-function buildCard(memo) {
-
 // ── Targeted card update — replace a single card without rebuilding the feed ──
 function updateCard(memo) {
-  const existing = document.querySelector(`.memo-card[data-id="${memo.id}"]`);
+  const existing = document.querySelector(`.memo-card[data-memo-name="${memo.id}"]`);
   if (!existing) return false; // card not in DOM — fall back to renderFeed
   const newCard = buildCard(memo);
   existing.replaceWith(newCard);
@@ -2472,9 +2471,11 @@ function updateCard(memo) {
 
 // ── Remove a card from DOM without rebuilding ─────────────────────────────────
 function removeCard(memoId) {
-  const existing = document.querySelector(`.memo-card[data-id="${memoId}"]`);
+  const existing = document.querySelector(`.memo-card[data-memo-name="${memoId}"]`);
   if (existing) existing.remove();
 }
+
+function buildCard(memo) {
   const tags     = memo.tags || [];
   const isStarred = tags.includes('starred');
   const isHidden  = tags.includes('hidden');
@@ -2939,6 +2940,15 @@ function renderProjectsNav() {
       btn.classList.add('active');
       currentView = 'tag';
       currentTag = tag;
+      document.getElementById('header-title').textContent = getViewTitle('tag');
+      
+      // Update URL to persist tag view
+      const url = new URL(location.href);
+      url.searchParams.set('v', 'tag');
+      url.searchParams.set('t', tag);
+      url.searchParams.delete('q');
+      history.replaceState(null, '', url.toString());
+
       allMemos = []; nextCursor = null;
       loadMemos();
       document.getElementById('sidebar')?.classList.remove('open');
@@ -3085,6 +3095,14 @@ function switchView(view) {
   if (searchBar) searchBar.classList.add('visible');
   feedEl.style.display = '';
   currentView = view;
+  
+  // Update URL to persist view
+  const url = new URL(location.href);
+  url.searchParams.set('v', view);
+  url.searchParams.delete('t');
+  url.searchParams.delete('q');
+  history.replaceState(null, '', url.toString());
+
   document.getElementById('header-title').textContent = getViewTitle(view);
   allMemos = [];
   nextCursor = null;
@@ -3129,6 +3147,13 @@ let _searchDebounce = null;
 searchInput.addEventListener('input', () => {
   searchQuery = searchInput.value.trim();
   searchClear.classList.toggle('visible', searchQuery.length > 0);
+  
+  // Update URL to persist search query
+  const url = new URL(location.href);
+  if (searchQuery) url.searchParams.set('q', searchQuery);
+  else url.searchParams.delete('q');
+  history.replaceState(null, '', url.toString());
+
   clearTimeout(_searchDebounce);
   if (!searchQuery) {
     searchResults = null;
@@ -3156,6 +3181,12 @@ searchClear.addEventListener('click', () => {
   searchInput.value = ''; searchQuery = '';
   searchResults = null;
   searchClear.classList.remove('visible');
+  
+  // Update URL to clear search query
+  const url = new URL(location.href);
+  url.searchParams.delete('q');
+  history.replaceState(null, '', url.toString());
+
   renderFeed();
 });
 
@@ -3972,7 +4003,11 @@ async function loadAccountInfo() {
 initSettingsControls();
 initCollapsibleSections();
 if (initAuth()) {
-  // Single combined boot request replaces loadSettings + checkCacheVersion + loadTrackers
+  const params = new URLSearchParams(location.search);
+  const q = params.get('q');
+  const v = params.get('v');
+  const t = params.get('t');
+
   (async () => {
     try {
       const boot = await apiGet('/boot');
@@ -4003,8 +4038,39 @@ if (initAuth()) {
 
       // Seed project tags from boot — sidebar populates instantly
       if (Array.isArray(boot.projectTags)) {
-        boot.projectTags.forEach(t => _knownProjectTags.add(t));
+        boot.projectTags.forEach(t2 => _knownProjectTags.add(t2));
         renderProjectsNav();
+      }
+
+      // Restore state from URL
+      if (q) {
+        searchInput.value = q;
+        searchQuery = q;
+        if (searchClear) searchClear.classList.add('visible');
+        const r = await fetch(API_BASE + '/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...authHeaders() },
+          body: JSON.stringify({ q: q }),
+        });
+        if (r.ok) {
+          const { notes } = await r.json();
+          searchResults = notes || [];
+          renderFeed();
+        } else {
+          loadMemos();
+        }
+      } else {
+        if (v) {
+          currentView = v;
+          if (v === 'tag' && t) currentTag = t;
+          document.getElementById('header-title').textContent = getViewTitle(currentView);
+          // Highlight active nav item
+          document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+          const selector = v === 'tag' ? `.nav-item[data-project-tag="${t}"]` : `.nav-item[data-view="${v}"]`;
+          const item = document.querySelector(selector);
+          if (item) item.classList.add('active');
+        }
+        loadMemos();
       }
     } catch(e) {
       console.error('Boot failed, falling back to individual calls:', e);
@@ -4012,9 +4078,9 @@ if (initAuth()) {
       loadSettings();
       checkCacheVersion();
       loadTrackers();
+      loadMemos();
     }
   })();
-  loadMemos();
 }
 
   if ('serviceWorker' in navigator) {
