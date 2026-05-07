@@ -6,26 +6,24 @@
 // Apply saved theme immediately to prevent flash of default theme
 (function(){
   var THEME_VARS = {
-    'warm':      {bg:'#f7f4ef',surface:'#ffffff',surfaceAlt:'#f2ede5',accent:'#c17f3e',text:'#2c2825',border:'#e8e2d9',muted:'#a89f94'},
-    'arctic':    {bg:'#f5f8fc',surface:'#ffffff',surfaceAlt:'#edf2f8',accent:'#2b7fff',text:'#0f1c2e',border:'#d8e4f0',muted:'#7a96b8'},
-    'forest':    {bg:'#f0f5f1',surface:'#ffffff',surfaceAlt:'#e8f0ea',accent:'#2e7d4f',text:'#1a2e20',border:'#cfe3d4',muted:'#6e9a7a'},
-    'rose':      {bg:'#fdf4f6',surface:'#ffffff',surfaceAlt:'#f8e8ec',accent:'#d63a60',text:'#2d1a20',border:'#f0d0d8',muted:'#b0707e'},
-    'lavender':  {bg:'#f4f2fb',surface:'#ffffff',surfaceAlt:'#ece8f8',accent:'#6d4fc4',text:'#231a38',border:'#dcd4f2',muted:'#9880c4'},
-    'sepia':     {bg:'#faf6f0',surface:'#fdf9f4',surfaceAlt:'#f2ebe0',accent:'#8b5e3c',text:'#3d2b1a',border:'#e8ddd0',muted:'#a08060'},
-    'stone':     {bg:'#f5f4f2',surface:'#ffffff',surfaceAlt:'#eeece8',accent:'#78716c',text:'#1c1917',border:'#e7e5e1',muted:'#a8a29e'},
-    'midnight':  {bg:'#0f1117',surface:'#181b24',surfaceAlt:'#1e2130',accent:'#7c8cf8',text:'#e4e8f5',border:'#262c40',muted:'#5c6480'},
-    'obsidian':  {bg:'#13131a',surface:'#1c1c26',surfaceAlt:'#222230',accent:'#a78bfa',text:'#e8e4f8',border:'#2a2a3e',muted:'#6060a0'},
-    'ink':       {bg:'#161616',surface:'#1e1e1e',surfaceAlt:'#262626',accent:'#e8c547',text:'#f0ede8',border:'#2e2e2e',muted:'#666666'},
-    'charcoal':  {bg:'#1e2028',surface:'#272b36',surfaceAlt:'#2e3340',accent:'#4ecdc4',text:'#dde3f0',border:'#363c4e',muted:'#6a7490'},
-    'forest-dk': {bg:'#0e1a12',surface:'#152018',surfaceAlt:'#1c2a20',accent:'#4ade80',text:'#d4f0dd',border:'#1e3224',muted:'#4a7a58'},
-    'ember':     {bg:'#1a1208',surface:'#241a0e',surfaceAlt:'#2e2010',accent:'#f97316',text:'#fde8cc',border:'#382612',muted:'#7a5530'},
-    'nord':      {bg:'#2e3440',surface:'#3b4252',surfaceAlt:'#434c5e',accent:'#88c0d0',text:'#eceff4',border:'#4c566a',muted:'#7b8a9e'},
-    'rose-dk':   {bg:'#1a0e12',surface:'#26141a',surfaceAlt:'#301820',accent:'#fb7185',text:'#fde4ea',border:'#3a1c24',muted:'#8a4458'},
+    'vercel-light': {bg:'#fafafa',surface:'#ffffff',surfaceAlt:'#f5f5f5',accent:'#000000',text:'#000000',border:'#eaeaea',muted:'#666666'},
+    'material-light': {bg:'#fafdfc',surface:'#ffffff',surfaceAlt:'#f0f4f4',accent:'#006874',text:'#191c1d',border:'#bec8c8',muted:'#6f7979'},
+    'tailwind-slate': {bg:'#f8fafc',surface:'#ffffff',surfaceAlt:'#f1f5f9',accent:'#3b82f6',text:'#0f172a',border:'#e2e8f0',muted:'#64748b'},
+    'github-light': {bg:'#f6f8fa',surface:'#ffffff',surfaceAlt:'#f3f4f6',accent:'#0969da',text:'#24292f',border:'#d0d7de',muted:'#57606a'},
+    'catppuccin-latte': {bg:'#eff1f5',surface:'#e6e9ef',surfaceAlt:'#dce0e8',accent:'#1e66f5',text:'#4c4f69',border:'#ccd0da',muted:'#7c7f93'},
+    'solarized-light': {bg:'#fdf6e3',surface:'#eee8d5',surfaceAlt:'#e6dfcb',accent:'#268bd2',text:'#657b83',border:'#d3cbb7',muted:'#93a1a1'},
+    'vercel-dark': {bg:'#000000',surface:'#0a0a0a',surfaceAlt:'#111111',accent:'#ffffff',text:'#ffffff',border:'#333333',muted:'#888888'},
+    'material-dark': {bg:'#191c1d',surface:'#1e2021',surfaceAlt:'#282b2c',accent:'#4fd8eb',text:'#e1e3e3',border:'#3f4848',muted:'#899393'},
+    'tailwind-zinc': {bg:'#18181b',surface:'#27272a',surfaceAlt:'#3f3f46',accent:'#6366f1',text:'#f4f4f5',border:'#3f3f46',muted:'#a1a1aa'},
+    'github-dark': {bg:'#0d1117',surface:'#161b22',surfaceAlt:'#21262d',accent:'#58a6ff',text:'#c9d1d9',border:'#30363d',muted:'#8b949e'},
+    'catppuccin-mocha': {bg:'#1e1e2e',surface:'#181825',surfaceAlt:'#313244',accent:'#cba6f7',text:'#cdd6f4',border:'#45475a',muted:'#a6adc8'},
+    'dracula': {bg:'#282a36',surface:'#44475a',surfaceAlt:'#6272a4',accent:'#bd93f9',text:'#f8f8f2',border:'#44475a',muted:'#6272a4'},
+    'solarized-dark': {bg:'#002b36',surface:'#073642',surfaceAlt:'#0a4352',accent:'#268bd2',text:'#839496',border:'#0a4352',muted:'#586e75'},
   };
   try {
     var saved = localStorage.getItem('noteflow_display_prefs');
     var themeId = saved ? JSON.parse(saved).theme : null;
-    var t = THEME_VARS[themeId] || THEME_VARS['warm'];
+    var t = THEME_VARS[themeId] || THEME_VARS['github-light'];
     var r = document.documentElement;
     r.style.setProperty('--bg', t.bg);
     r.style.setProperty('--surface', t.surface);
@@ -1293,7 +1291,7 @@ let _settingsLoaded = false;
 const DISPLAY_PREF_KEYS = ['theme', 'fontFamily', 'feedMaxWidth', 'mobileFontSize'];
 
 let settings = {
-  theme: 'warm', feedMaxWidth: 700, mobileFontSize: 15,
+  theme: 'github-light', feedMaxWidth: 700, mobileFontSize: 15,
   fontFamily: "'DM Sans', sans-serif",
   tagCategories: '', tagPeople: '', voyageApiKey: '',
   reminderEmail: '', emailMakePublic: false,
@@ -1305,21 +1303,22 @@ try {
 
 // ── Theme application ────────────────────────────────────────────────────────
 const THEMES = [
-  { id:'warm',      bg:'#f7f4ef',surface:'#ffffff',surfaceAlt:'#f2ede5',accent:'#c17f3e',text:'#2c2825',border:'#e8e2d9',muted:'#a89f94' },
-  { id:'arctic',    bg:'#f5f8fc',surface:'#ffffff',surfaceAlt:'#edf2f8',accent:'#2b7fff',text:'#0f1c2e',border:'#d8e4f0',muted:'#7a96b8' },
-  { id:'forest',    bg:'#f0f5f1',surface:'#ffffff',surfaceAlt:'#e8f0ea',accent:'#2e7d4f',text:'#1a2e20',border:'#cfe3d4',muted:'#6e9a7a' },
-  { id:'rose',      bg:'#fdf4f6',surface:'#ffffff',surfaceAlt:'#f8e8ec',accent:'#d63a60',text:'#2d1a20',border:'#f0d0d8',muted:'#b0707e' },
-  { id:'lavender',  bg:'#f4f2fb',surface:'#ffffff',surfaceAlt:'#ece8f8',accent:'#6d4fc4',text:'#231a38',border:'#dcd4f2',muted:'#9880c4' },
-  { id:'sepia',     bg:'#faf6f0',surface:'#fdf9f4',surfaceAlt:'#f2ebe0',accent:'#8b5e3c',text:'#3d2b1a',border:'#e8ddd0',muted:'#a08060' },
-  { id:'stone',     bg:'#f5f4f2',surface:'#ffffff',surfaceAlt:'#eeece8',accent:'#78716c',text:'#1c1917',border:'#e7e5e1',muted:'#a8a29e' },
-  { id:'midnight',  bg:'#0f1117',surface:'#181b24',surfaceAlt:'#1e2130',accent:'#7c8cf8',text:'#e4e8f5',border:'#262c40',muted:'#5c6480' },
-  { id:'obsidian',  bg:'#13131a',surface:'#1c1c26',surfaceAlt:'#222230',accent:'#a78bfa',text:'#e8e4f8',border:'#2a2a3e',muted:'#6060a0' },
-  { id:'ink',       bg:'#161616',surface:'#1e1e1e',surfaceAlt:'#262626',accent:'#e8c547',text:'#f0ede8',border:'#2e2e2e',muted:'#666666' },
-  { id:'charcoal',  bg:'#1e2028',surface:'#272b36',surfaceAlt:'#2e3340',accent:'#4ecdc4',text:'#dde3f0',border:'#363c4e',muted:'#6a7490' },
-  { id:'forest-dk', bg:'#0e1a12',surface:'#152018',surfaceAlt:'#1c2a20',accent:'#4ade80',text:'#d4f0dd',border:'#1e3224',muted:'#4a7a58' },
-  { id:'ember',     bg:'#1a1208',surface:'#241a0e',surfaceAlt:'#2e2010',accent:'#f97316',text:'#fde8cc',border:'#382612',muted:'#7a5530' },
-  { id:'nord',      bg:'#2e3440',surface:'#3b4252',surfaceAlt:'#434c5e',accent:'#88c0d0',text:'#eceff4',border:'#4c566a',muted:'#7b8a9e' },
-  { id:'rose-dk',   bg:'#1a0e12',surface:'#26141a',surfaceAlt:'#301820',accent:'#fb7185',text:'#fde4ea',border:'#3a1c24',muted:'#8a4458' },
+  // ── Light themes ────────────────────────────────────────────────────────────
+  { id: 'vercel-light', label: 'Minimal Light', bg:'#fafafa', surface:'#ffffff', surfaceAlt:'#f5f5f5', accent:'#000000', text:'#000000', border:'#eaeaea', muted:'#666666' },
+  { id: 'material-light', label: 'Material Light', bg:'#fafdfc', surface:'#ffffff', surfaceAlt:'#f0f4f4', accent:'#006874', text:'#191c1d', border:'#bec8c8', muted:'#6f7979' },
+  { id: 'tailwind-slate', label: 'Tailwind Slate', bg:'#f8fafc', surface:'#ffffff', surfaceAlt:'#f1f5f9', accent:'#3b82f6', text:'#0f172a', border:'#e2e8f0', muted:'#64748b' },
+  { id: 'github-light', label: 'GitHub Light',  bg:'#f6f8fa', surface:'#ffffff', surfaceAlt:'#f3f4f6', accent:'#0969da', text:'#24292f', border:'#d0d7de', muted:'#57606a' },
+  { id: 'catppuccin-latte', label: 'Catppuccin Latte', bg:'#eff1f5', surface:'#e6e9ef', surfaceAlt:'#dce0e8', accent:'#1e66f5', text:'#4c4f69', border:'#ccd0da', muted:'#7c7f93' },
+  { id: 'solarized-light', label: 'Solarized Light', bg:'#fdf6e3', surface:'#eee8d5', surfaceAlt:'#e6dfcb', accent:'#268bd2', text:'#657b83', border:'#d3cbb7', muted:'#93a1a1' },
+  
+  // ── Dark themes ─────────────────────────────────────────────────────────────
+  { id: 'vercel-dark', label: 'Minimal Dark', bg:'#000000', surface:'#0a0a0a', surfaceAlt:'#111111', accent:'#ffffff', text:'#ffffff', border:'#333333', muted:'#888888' },
+  { id: 'material-dark', label: 'Material Dark', bg:'#191c1d', surface:'#1e2021', surfaceAlt:'#282b2c', accent:'#4fd8eb', text:'#e1e3e3', border:'#3f4848', muted:'#899393' },
+  { id: 'tailwind-zinc', label: 'Tailwind Zinc', bg:'#18181b', surface:'#27272a', surfaceAlt:'#3f3f46', accent:'#6366f1', text:'#f4f4f5', border:'#3f3f46', muted:'#a1a1aa' },
+  { id: 'github-dark', label: 'GitHub Dark',   bg:'#0d1117', surface:'#161b22', surfaceAlt:'#21262d', accent:'#58a6ff', text:'#c9d1d9', border:'#30363d', muted:'#8b949e' },
+  { id: 'catppuccin-mocha', label: 'Catppuccin Mocha', bg:'#1e1e2e', surface:'#181825', surfaceAlt:'#313244', accent:'#cba6f7', text:'#cdd6f4', border:'#45475a', muted:'#a6adc8' },
+  { id: 'dracula', label: 'Dracula', bg:'#282a36', surface:'#44475a', surfaceAlt:'#6272a4', accent:'#bd93f9', text:'#f8f8f2', border:'#44475a', muted:'#6272a4' },
+  { id: 'solarized-dark', label: 'Solarized Dark', bg:'#002b36', surface:'#073642', surfaceAlt:'#0a4352', accent:'#268bd2', text:'#839496', border:'#0a4352', muted:'#586e75' }
 ];
 
 function applyTheme(themeId) {
