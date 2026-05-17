@@ -1,5 +1,5 @@
 name = "noteflow-api"
-main = "worker.js"
+main = "worker/index.js"
 compatibility_date = "2024-01-01"
 account_id = "98b26d7882ddf77fcd45529f35b11202"
 
