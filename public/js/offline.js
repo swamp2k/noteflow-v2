@@ -88,7 +88,7 @@ if (_ssPending) {
 function openComposerWithContent(content) {
   switchView('all');
   if (composerEditor) {
-    composerEditor.innerHTML = marked.parse(content);
+    composerEditor.value = content;
     composerEditor.focus();
     document.getElementById('composer').classList.add('expanded');
   } else {

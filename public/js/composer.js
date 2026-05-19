@@ -72,115 +72,88 @@ function renderImagePreviews() {
   });
 }
 
-// ── HTML → Markdown serializer (for WYSIWYG contenteditable) ─────────────────
-function htmlToMarkdown(el) {
-  function walk(node) {
-    if (node.nodeType === Node.TEXT_NODE) return node.textContent;
-    if (node.nodeType !== Node.ELEMENT_NODE) return '';
-    const tag = node.tagName;
-    const kids = () => Array.from(node.childNodes).map(walk).join('');
-    switch (tag) {
-      case 'STRONG': case 'B': return '**' + kids() + '**';
-      case 'EM':     case 'I': return '*'  + kids() + '*';
-      case 'DEL': case 'S': case 'STRIKE': return '~~' + kids() + '~~';
-      case 'CODE':
-        return node.closest('pre') ? kids() : '`' + kids() + '`';
-      case 'PRE': {
-        const codeEl = node.querySelector('code');
-        return '\n```\n' + (codeEl ? codeEl.textContent : node.textContent) + '\n```\n';
-      }
-      case 'H2': return '\n## ' + kids() + '\n';
-      case 'H3': return '\n### ' + kids() + '\n';
-      case 'BLOCKQUOTE':
-        return '\n' + kids().split('\n').map(l => '> ' + l).join('\n') + '\n';
-      case 'UL': return '\n' + Array.from(node.children).map(li => '- ' + walk(li).trim()).join('\n') + '\n';
-      case 'OL': return '\n' + Array.from(node.children).map((li, i) => (i + 1) + '. ' + walk(li).trim()).join('\n') + '\n';
-      case 'LI': return kids();
-      case 'A': return '[' + kids() + '](' + (node.getAttribute('href') || '') + ')';
-      case 'BR': return '\n';
-      case 'DETAILS': return '\n' + node.outerHTML + '\n';
-      case 'SUMMARY': return '';
-      case 'P': case 'DIV': {
-        const text = kids();
-        return text.trim() ? text + '\n' : '\n';
-      }
-      case 'SPAN': {
-        // execCommand may emit <span style="..."> instead of semantic tags
-        const style = node.getAttribute('style') || '';
-        let text = kids();
-        if (/font-weight\s*:\s*(bold|700)/.test(style))         text = '**' + text + '**';
-        if (/font-style\s*:\s*italic/.test(style))               text = '*'  + text + '*';
-        if (/text-decoration[^:]*:\s*line-through/.test(style)) text = '~~' + text + '~~';
-        return text;
-      }
-      case 'SCRIPT': case 'STYLE': return '';
-      default: return kids();
-    }
-  }
-  const raw = Array.from(el.childNodes).map(walk).join('');
-  return raw.replace(/\n{3,}/g, '\n\n').trim();
-}
+// ── Markdown toolbar ──────────────────────────────────────────────────────────
+function mdInsert(ta, cmd) {
+  const start = ta.selectionStart, end = ta.selectionEnd;
+  const sel = ta.value.slice(start, end);
+  const before = ta.value.slice(0, start);
+  const after = ta.value.slice(end);
+  const lineStart = before.lastIndexOf('\n') + 1;
+  const linePrefix = before.slice(lineStart);
 
-// ── WYSIWYG toolbar actions ───────────────────────────────────────────────────
-function wysiwygInsert(editor, cmd) {
-  editor.focus();
-  const sel = window.getSelection();
-  const range = sel && sel.rangeCount ? sel.getRangeAt(0) : null;
-  const selectedText = range ? range.toString() : '';
-
+  let newText, cursorOffset, selOffset;
   switch (cmd) {
-    case 'bold':   document.execCommand('bold',          false, null); break;
-    case 'italic': document.execCommand('italic',        false, null); break;
-    case 'strike': document.execCommand('strikeThrough', false, null); break;
-    case 'ul':     document.execCommand('insertUnorderedList', false, null); break;
-    case 'ol':     document.execCommand('insertOrderedList',   false, null); break;
-    case 'h2':     document.execCommand('formatBlock',   false, 'h2'); break;
-    case 'h3':     document.execCommand('formatBlock',   false, 'h3'); break;
-    case 'quote':  document.execCommand('formatBlock',   false, 'blockquote'); break;
-    case 'code': {
-      if (!range) break;
-      const code = document.createElement('code');
-      try {
-        if (selectedText) {
-          range.surroundContents(code);
-        } else {
-          code.textContent = 'code';
-          range.insertNode(code);
-          const r2 = document.createRange();
-          r2.selectNodeContents(code);
-          sel.removeAllRanges(); sel.addRange(r2);
-        }
-      } catch(_) {
-        document.execCommand('insertHTML', false, '<code>' + (selectedText || 'code') + '</code>');
-      }
-      break;
-    }
+    case 'bold':    newText = '**' + (sel || 'bold text') + '**'; cursorOffset = sel ? newText.length : 2; selOffset = sel ? 0 : newText.length - 4; break;
+    case 'italic':  newText = '*' + (sel || 'italic text') + '*'; cursorOffset = sel ? newText.length : 1; selOffset = sel ? 0 : newText.length - 2; break;
+    case 'strike':  newText = '~~' + (sel || 'text') + '~~'; cursorOffset = sel ? newText.length : 2; selOffset = sel ? 0 : newText.length - 4; break;
+    case 'code':    newText = '`' + (sel || 'code') + '`'; cursorOffset = sel ? newText.length : 1; selOffset = sel ? 0 : newText.length - 2; break;
     case 'link': {
-      if (!range) break;
-      const url = selectedText && selectedText.startsWith('http')
-        ? selectedText : prompt('URL:', 'https://');
-      if (!url) break;
-      const label = (selectedText && !selectedText.startsWith('http')) ? selectedText : 'link text';
-      document.execCommand('insertHTML', false, '<a href="' + url + '">' + label + '</a>');
-      break;
+      const url = sel && sel.startsWith('http') ? sel : 'https://';
+      const label = sel && !sel.startsWith('http') ? sel : 'link text';
+      newText = '[' + label + '](' + url + ')';
+      cursorOffset = 1; selOffset = label.length; break;
     }
-    case 'collapsible':
-      document.execCommand('insertHTML', false,
-        '<details><summary>' + (selectedText || 'Section title') + '</summary><p>content</p></details>');
-      break;
-    default: break;
+    case 'h2':    newText = (linePrefix ? '\n' : '') + '## ' + (sel || 'Heading'); cursorOffset = newText.length; selOffset = 0; break;
+    case 'h3':    newText = (linePrefix ? '\n' : '') + '### ' + (sel || 'Heading'); cursorOffset = newText.length; selOffset = 0; break;
+    case 'quote': newText = (linePrefix ? '\n' : '') + '> ' + (sel || 'quote'); cursorOffset = newText.length; selOffset = 0; break;
+    case 'ul':    newText = (linePrefix ? '\n' : '') + '- ' + (sel || 'item'); cursorOffset = newText.length; selOffset = 0; break;
+    case 'ol':    newText = (linePrefix ? '\n' : '') + '1. ' + (sel || 'item'); cursorOffset = newText.length; selOffset = 0; break;
+    case 'collapsible': {
+      const title = sel || 'Section title';
+      newText = (linePrefix ? '\n' : '') + '<details>\n<summary>' + title + '</summary>\n\ncontent\n\n</details>';
+      cursorOffset = newText.indexOf('content'); selOffset = 'content'.length; break;
+    }
+    default: return;
   }
-  editor.dispatchEvent(new Event('input', { bubbles: true }));
+
+  ta.value = before + newText + after;
+  if (selOffset > 0) {
+    ta.selectionStart = start + cursorOffset;
+    ta.selectionEnd = start + cursorOffset + selOffset;
+  } else {
+    ta.selectionStart = ta.selectionEnd = start + cursorOffset;
+  }
+  ta.focus();
+  ta.dispatchEvent(new Event('input'));
 }
 
-function attachMdToolbar(toolbar, editor) {
+function attachMdToolbar(toolbar, textarea) {
   toolbar.addEventListener('mousedown', e => {
     const btn = e.target.closest('.md-btn');
     if (!btn) return;
-    e.preventDefault(); // preserve selection in contenteditable
-    wysiwygInsert(editor, btn.dataset.md);
+    e.preventDefault(); // prevent blur on textarea
+    mdInsert(textarea, btn.dataset.md);
   });
 }
+
+// ── Preview toggle (composer) ─────────────────────────────────────────────────
+function composerShowPreview() {
+  const ta      = composerEditor;
+  const preview = document.getElementById('composer-preview');
+  const btn     = document.getElementById('composer-preview-btn');
+  if (!ta || !preview) return;
+  preview.innerHTML = marked.parse(ta.value || '');
+  ta.style.display      = 'none';
+  preview.style.display = 'block';
+  btn.title = 'Edit';
+  btn.innerHTML = SVG_EDIT;
+}
+
+function composerShowEdit() {
+  const ta      = composerEditor;
+  const preview = document.getElementById('composer-preview');
+  const btn     = document.getElementById('composer-preview-btn');
+  if (!ta || !preview) return;
+  ta.style.display      = '';
+  preview.style.display = 'none';
+  btn.title = 'Preview';
+  btn.innerHTML = SVG_EYE;
+  ta.focus();
+}
+
+// SVG icons for the toggle button
+const SVG_EYE  = '<svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+const SVG_EDIT = '<svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
 
 // Composer setup
 (function setupComposer() {
@@ -188,29 +161,54 @@ function attachMdToolbar(toolbar, editor) {
   const tb = document.getElementById('composer-toolbar');
   if (!ta || !tb) { setTimeout(setupComposer, 50); return; }
   composerEditor = ta;
-  document.execCommand('defaultParagraphSeparator', false, 'div');
   attachMdToolbar(tb, ta);
+
   ta.addEventListener('focus', () => {
     document.getElementById('composer').classList.add('expanded');
+    composerShowEdit();
   });
   ta.addEventListener('blur', () => {
     setTimeout(() => {
-      if (!ta.textContent.trim() && !document.getElementById('composer').matches(':focus-within')) {
-        document.getElementById('composer').classList.remove('expanded');
+      const composer = document.getElementById('composer');
+      if (!composer.matches(':focus-within')) {
+        if (!ta.value.trim()) {
+          composer.classList.remove('expanded');
+        } else {
+          composerShowPreview();
+        }
       }
     }, 200);
   });
-  // Clear lone <br> that browser inserts into empty contenteditable
+
+  // Auto-grow
   ta.addEventListener('input', () => {
-    if (ta.innerHTML === '<br>') ta.innerHTML = '';
+    ta.style.height = 'auto';
+    ta.style.height = Math.min(ta.scrollHeight, 280) + 'px';
   });
-  // Strip HTML on paste — plain text only
-  ta.addEventListener('paste', e => {
-    e.preventDefault();
-    document.execCommand('insertText', false, e.clipboardData.getData('text/plain'));
-  });
+
+  // Preview button toggle
+  const previewBtn = document.getElementById('composer-preview-btn');
+  if (previewBtn) {
+    previewBtn.innerHTML = SVG_EYE;
+    previewBtn.addEventListener('mousedown', e => {
+      e.preventDefault();
+      const preview = document.getElementById('composer-preview');
+      if (preview && preview.style.display !== 'none') {
+        composerShowEdit();
+      } else {
+        composerShowPreview();
+      }
+    });
+  }
+
+  // Click on preview → back to edit
+  const preview = document.getElementById('composer-preview');
+  if (preview) {
+    preview.addEventListener('click', () => composerShowEdit());
+  }
+
   if (_pendingShareContent) {
-    ta.innerHTML = marked.parse(_pendingShareContent);
+    ta.value = _pendingShareContent;
     ta.focus();
     _pendingShareContent = null;
   }
@@ -219,7 +217,9 @@ function attachMdToolbar(toolbar, editor) {
 // ── Save ──────────────────────────────────────────────────────────────────────
 document.getElementById('save-btn').addEventListener('click', async () => {
   if (!composerEditor) return;
-  const content_raw = htmlToMarkdown(composerEditor);
+  // Make sure we read from the textarea, not the preview
+  composerShowEdit();
+  const content_raw = composerEditor.value.trim();
   if (!content_raw) return;
 
   const saveBtn = document.getElementById('save-btn');
@@ -233,7 +233,8 @@ document.getElementById('save-btn').addEventListener('click', async () => {
         type: 'QUEUE_MEMO',
         payload: { content: content_raw, token: getCFToken() }
       });
-      composerEditor.innerHTML = '';
+      composerEditor.value = '';
+      composerEditor.style.height = 'auto';
       pendingImages = [];
       renderImagePreviews();
       toast('📥 Saved offline — will sync when reconnected');
@@ -264,7 +265,8 @@ document.getElementById('save-btn').addEventListener('click', async () => {
     allMemos.unshift(newMemo);
     saveNotesCache(allMemos);  // keep offline cache in sync
     const snapshotImages = [...pendingImages];
-    composerEditor.innerHTML = '';
+    composerEditor.value = '';
+    composerEditor.style.height = 'auto';
     pendingImages = [];
     renderImagePreviews();
     renderFeed();
