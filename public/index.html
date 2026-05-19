@@ -270,22 +270,33 @@
   .md-btn:hover { background: var(--accent-bg); color: var(--accent); }
   .md-btn svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
   .md-sep { width: 1px; background: var(--border); margin: 3px 2px; height: 18px; }
-  .md-textarea {
-    width: 100%; border: none; outline: none; resize: none;
+  .md-wysiwyg {
+    width: 100%; border: none; outline: none;
     font-family: var(--font-body); font-size: 14.5px; line-height: 1.6;
     color: var(--text); background: var(--surface);
     padding: 10px 14px; min-height: 44px; max-height: 280px;
     overflow-y: auto; display: block; box-sizing: border-box;
-    transition: min-height 0.15s;
+    transition: min-height 0.15s; word-break: break-word;
   }
-  .md-textarea::placeholder { color: var(--muted); }
-  .md-textarea:focus { outline: none; }
+  .md-wysiwyg:empty::before, .md-wysiwyg:has(> br:only-child)::before {
+    content: attr(data-placeholder); color: var(--muted); pointer-events: none;
+  }
+  .md-wysiwyg:focus { outline: none; }
+  /* Formatting rendered live inside the editor */
+  .md-wysiwyg h2 { font-family: var(--font-serif, serif); font-size: 1.1em; font-weight: 500; margin: 4px 0 2px; }
+  .md-wysiwyg h3 { font-size: 1em; font-weight: 600; margin: 3px 0 2px; }
+  .md-wysiwyg blockquote { border-left: 3px solid var(--accent); padding-left: 10px; margin: 4px 0; color: var(--text-soft); }
+  .md-wysiwyg ul, .md-wysiwyg ol { padding-left: 18px; margin: 4px 0; }
+  .md-wysiwyg code { background: var(--surface-alt); padding: 1px 4px; border-radius: 3px; font-family: monospace; font-size: 0.87em; }
+  .md-wysiwyg a { color: var(--accent); }
+  .md-wysiwyg details { border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; margin: 4px 0; }
+  .md-wysiwyg summary { font-weight: 600; cursor: pointer; }
   #composer .md-toolbar { display: none; }
   #composer.expanded .md-toolbar { display: flex; }
-  #composer.expanded .md-textarea { min-height: 90px; }
+  #composer.expanded .md-wysiwyg { min-height: 90px; }
   /* Inline card editing */
   .inline-md-wrap .md-toolbar { display: flex; border-radius: 6px 6px 0 0; }
-  .inline-md-wrap .md-textarea {
+  .inline-md-wrap .md-wysiwyg {
     min-height: 90px; max-height: 320px; border: 1px solid var(--border);
     border-top: none; border-radius: 0 0 6px 6px; font-size: 14px; overflow-y: auto;
   }
@@ -1210,7 +1221,7 @@
           <button class="md-btn" data-md="code" title="Code"><svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></button>
           <button class="md-btn" data-md="link" title="Link"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
         </div>
-        <textarea id="composer-textarea" class="md-textarea" placeholder="What's on your mind?"></textarea>
+        <div id="composer-textarea" class="md-wysiwyg" contenteditable="true" data-placeholder="What's on your mind?"></div>
         <div id="image-preview-area"></div>
         <div class="composer-footer">
           <div class="composer-left">
