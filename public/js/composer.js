@@ -98,6 +98,11 @@ function mdInsert(ta, cmd) {
     case 'quote': newText = (linePrefix ? '\n' : '') + '> ' + (sel || 'quote'); cursorOffset = newText.length; selOffset = 0; break;
     case 'ul':    newText = (linePrefix ? '\n' : '') + '- ' + (sel || 'item'); cursorOffset = newText.length; selOffset = 0; break;
     case 'ol':    newText = (linePrefix ? '\n' : '') + '1. ' + (sel || 'item'); cursorOffset = newText.length; selOffset = 0; break;
+    case 'collapsible': {
+      const title = sel || 'Section title';
+      newText = (linePrefix ? '\n' : '') + '<details>\n<summary>' + title + '</summary>\n\ncontent\n\n</details>';
+      cursorOffset = newText.indexOf('content'); selOffset = 'content'.length; break;
+    }
     default: return;
   }
 
