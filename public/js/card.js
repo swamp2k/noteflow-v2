@@ -121,13 +121,18 @@ function buildCard(memo) {
     + '<button class="md-btn" data-md="quote" title="Quote"><svg viewBox="0 0 24 24"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg></button>'
     + '<button class="md-btn" data-md="code" title="Code"><svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></button>';
 
-  const inlineTextarea = document.createElement('textarea');
-  inlineTextarea.className = 'md-textarea';
+  const inlineTextarea = document.createElement('div');
+  inlineTextarea.className = 'md-wysiwyg';
+  inlineTextarea.contentEditable = 'true';
+  inlineTextarea.dataset.placeholder = 'Edit note…';
 
   attachMdToolbar(inlineTb, inlineTextarea);
-  inlineTextarea.addEventListener('input', function() {
-    this.style.height = 'auto';
-    this.style.height = Math.min(this.scrollHeight, 320) + 'px';
+  inlineTextarea.addEventListener('input', () => {
+    if (inlineTextarea.innerHTML === '<br>') inlineTextarea.innerHTML = '';
+  });
+  inlineTextarea.addEventListener('paste', e => {
+    e.preventDefault();
+    document.execCommand('insertText', false, e.clipboardData.getData('text/plain'));
   });
   inlineMdWrap.appendChild(inlineTb);
   inlineMdWrap.appendChild(inlineTextarea);
@@ -176,7 +181,7 @@ function buildCard(memo) {
     e.stopPropagation();
     inlineSaveBtn.disabled = true; inlineSaveBtn.textContent = 'Saving…';
     try {
-      const content = inlineTextarea.value;
+      const content = htmlToMarkdown(inlineTextarea);
       const newAtts = [];
       for (const f of inlinePendingFiles) {
         try {
@@ -238,13 +243,16 @@ function buildCard(memo) {
       .trim();
     inlinePendingFiles = [];
     inlineAttachBtn.innerHTML = '<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;pointer-events:none"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg> Attach';
-    inlineTextarea.value = _ec;
+    inlineTextarea.innerHTML = marked.parse(_ec);
     card.classList.add('card-editing');
     setTimeout(() => {
+      document.execCommand('defaultParagraphSeparator', false, 'div');
       inlineTextarea.focus();
-      inlineTextarea.setSelectionRange(_ec.length, _ec.length);
-      inlineTextarea.style.height = 'auto';
-      inlineTextarea.style.height = Math.min(inlineTextarea.scrollHeight, 320) + 'px';
+      const r = document.createRange();
+      r.selectNodeContents(inlineTextarea);
+      r.collapse(false);
+      const s = window.getSelection();
+      s.removeAllRanges(); s.addRange(r);
     }, 30);
   });
 

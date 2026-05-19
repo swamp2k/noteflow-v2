@@ -72,59 +72,113 @@ function renderImagePreviews() {
   });
 }
 
-// ── Native markdown toolbar ───────────────────────────────────────────────────
-function mdInsert(ta, cmd) {
-  const start = ta.selectionStart, end = ta.selectionEnd;
-  const sel = ta.value.slice(start, end);
-  const before = ta.value.slice(0, start);
-  const after = ta.value.slice(end);
-  const lineStart = before.lastIndexOf('\n') + 1;
-  const linePrefix = before.slice(lineStart);
-
-  let newText, cursorOffset, selOffset;
-  switch (cmd) {
-    case 'bold':    newText = '**' + (sel || 'bold text') + '**'; cursorOffset = sel ? newText.length : 2; selOffset = sel ? 0 : newText.length - 4; break;
-    case 'italic':  newText = '*' + (sel || 'italic text') + '*'; cursorOffset = sel ? newText.length : 1; selOffset = sel ? 0 : newText.length - 2; break;
-    case 'strike':  newText = '~~' + (sel || 'text') + '~~'; cursorOffset = sel ? newText.length : 2; selOffset = sel ? 0 : newText.length - 4; break;
-    case 'code':    newText = '`' + (sel || 'code') + '`'; cursorOffset = sel ? newText.length : 1; selOffset = sel ? 0 : newText.length - 2; break;
-    case 'link': {
-      const url = sel && sel.startsWith('http') ? sel : 'https://';
-      const label = sel && !sel.startsWith('http') ? sel : 'link text';
-      newText = '[' + label + '](' + url + ')';
-      cursorOffset = 1; selOffset = label.length; break;
+// ── HTML → Markdown serializer (for WYSIWYG contenteditable) ─────────────────
+function htmlToMarkdown(el) {
+  function walk(node) {
+    if (node.nodeType === Node.TEXT_NODE) return node.textContent;
+    if (node.nodeType !== Node.ELEMENT_NODE) return '';
+    const tag = node.tagName;
+    const kids = () => Array.from(node.childNodes).map(walk).join('');
+    switch (tag) {
+      case 'STRONG': case 'B': return '**' + kids() + '**';
+      case 'EM':     case 'I': return '*'  + kids() + '*';
+      case 'DEL': case 'S': case 'STRIKE': return '~~' + kids() + '~~';
+      case 'CODE':
+        return node.closest('pre') ? kids() : '`' + kids() + '`';
+      case 'PRE': {
+        const codeEl = node.querySelector('code');
+        return '\n```\n' + (codeEl ? codeEl.textContent : node.textContent) + '\n```\n';
+      }
+      case 'H2': return '\n## ' + kids() + '\n';
+      case 'H3': return '\n### ' + kids() + '\n';
+      case 'BLOCKQUOTE':
+        return '\n' + kids().split('\n').map(l => '> ' + l).join('\n') + '\n';
+      case 'UL': return '\n' + Array.from(node.children).map(li => '- ' + walk(li).trim()).join('\n') + '\n';
+      case 'OL': return '\n' + Array.from(node.children).map((li, i) => (i + 1) + '. ' + walk(li).trim()).join('\n') + '\n';
+      case 'LI': return kids();
+      case 'A': return '[' + kids() + '](' + (node.getAttribute('href') || '') + ')';
+      case 'BR': return '\n';
+      case 'DETAILS': return '\n' + node.outerHTML + '\n';
+      case 'SUMMARY': return '';
+      case 'P': case 'DIV': {
+        const text = kids();
+        return text.trim() ? text + '\n' : '\n';
+      }
+      case 'SPAN': {
+        // execCommand may emit <span style="..."> instead of semantic tags
+        const style = node.getAttribute('style') || '';
+        let text = kids();
+        if (/font-weight\s*:\s*(bold|700)/.test(style))         text = '**' + text + '**';
+        if (/font-style\s*:\s*italic/.test(style))               text = '*'  + text + '*';
+        if (/text-decoration[^:]*:\s*line-through/.test(style)) text = '~~' + text + '~~';
+        return text;
+      }
+      case 'SCRIPT': case 'STYLE': return '';
+      default: return kids();
     }
-    case 'h2':    newText = (linePrefix ? '\n' : '') + '## ' + (sel || 'Heading'); cursorOffset = newText.length; selOffset = 0; break;
-    case 'h3':    newText = (linePrefix ? '\n' : '') + '### ' + (sel || 'Heading'); cursorOffset = newText.length; selOffset = 0; break;
-    case 'quote': newText = (linePrefix ? '\n' : '') + '> ' + (sel || 'quote'); cursorOffset = newText.length; selOffset = 0; break;
-    case 'ul':    newText = (linePrefix ? '\n' : '') + '- ' + (sel || 'item'); cursorOffset = newText.length; selOffset = 0; break;
-    case 'ol':    newText = (linePrefix ? '\n' : '') + '1. ' + (sel || 'item'); cursorOffset = newText.length; selOffset = 0; break;
-    case 'collapsible': {
-      const title = sel || 'Section title';
-      newText = (linePrefix ? '\n' : '') + '<details>\n<summary>' + title + '</summary>\n\ncontent\n\n</details>';
-      cursorOffset = newText.indexOf('content'); selOffset = 'content'.length; break;
-    }
-    default: return;
   }
-
-  ta.value = before + newText + after;
-  ta.selectionStart = start + cursorOffset - (selOffset > 0 ? cursorOffset - (start + newText.length - after.length - (before + newText).length + start) : 0);
-  // Simpler: just place cursor sensibly
-  if (selOffset > 0) {
-    ta.selectionStart = start + cursorOffset;
-    ta.selectionEnd = start + cursorOffset + selOffset;
-  } else {
-    ta.selectionStart = ta.selectionEnd = start + cursorOffset;
-  }
-  ta.focus();
-  ta.dispatchEvent(new Event('input'));
+  const raw = Array.from(el.childNodes).map(walk).join('');
+  return raw.replace(/\n{3,}/g, '\n\n').trim();
 }
 
-function attachMdToolbar(toolbar, textarea) {
+// ── WYSIWYG toolbar actions ───────────────────────────────────────────────────
+function wysiwygInsert(editor, cmd) {
+  editor.focus();
+  const sel = window.getSelection();
+  const range = sel && sel.rangeCount ? sel.getRangeAt(0) : null;
+  const selectedText = range ? range.toString() : '';
+
+  switch (cmd) {
+    case 'bold':   document.execCommand('bold',          false, null); break;
+    case 'italic': document.execCommand('italic',        false, null); break;
+    case 'strike': document.execCommand('strikeThrough', false, null); break;
+    case 'ul':     document.execCommand('insertUnorderedList', false, null); break;
+    case 'ol':     document.execCommand('insertOrderedList',   false, null); break;
+    case 'h2':     document.execCommand('formatBlock',   false, 'h2'); break;
+    case 'h3':     document.execCommand('formatBlock',   false, 'h3'); break;
+    case 'quote':  document.execCommand('formatBlock',   false, 'blockquote'); break;
+    case 'code': {
+      if (!range) break;
+      const code = document.createElement('code');
+      try {
+        if (selectedText) {
+          range.surroundContents(code);
+        } else {
+          code.textContent = 'code';
+          range.insertNode(code);
+          const r2 = document.createRange();
+          r2.selectNodeContents(code);
+          sel.removeAllRanges(); sel.addRange(r2);
+        }
+      } catch(_) {
+        document.execCommand('insertHTML', false, '<code>' + (selectedText || 'code') + '</code>');
+      }
+      break;
+    }
+    case 'link': {
+      if (!range) break;
+      const url = selectedText && selectedText.startsWith('http')
+        ? selectedText : prompt('URL:', 'https://');
+      if (!url) break;
+      const label = (selectedText && !selectedText.startsWith('http')) ? selectedText : 'link text';
+      document.execCommand('insertHTML', false, '<a href="' + url + '">' + label + '</a>');
+      break;
+    }
+    case 'collapsible':
+      document.execCommand('insertHTML', false,
+        '<details><summary>' + (selectedText || 'Section title') + '</summary><p>content</p></details>');
+      break;
+    default: break;
+  }
+  editor.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+function attachMdToolbar(toolbar, editor) {
   toolbar.addEventListener('mousedown', e => {
     const btn = e.target.closest('.md-btn');
     if (!btn) return;
-    e.preventDefault(); // prevent blur on textarea
-    mdInsert(textarea, btn.dataset.md);
+    e.preventDefault(); // preserve selection in contenteditable
+    wysiwygInsert(editor, btn.dataset.md);
   });
 }
 
@@ -133,25 +187,30 @@ function attachMdToolbar(toolbar, textarea) {
   const ta = document.getElementById('composer-textarea');
   const tb = document.getElementById('composer-toolbar');
   if (!ta || !tb) { setTimeout(setupComposer, 50); return; }
-  composerEditor = ta; // "composerEditor" now IS the textarea
+  composerEditor = ta;
+  document.execCommand('defaultParagraphSeparator', false, 'div');
   attachMdToolbar(tb, ta);
   ta.addEventListener('focus', () => {
     document.getElementById('composer').classList.add('expanded');
   });
   ta.addEventListener('blur', () => {
     setTimeout(() => {
-      if (!ta.value.trim() && !document.getElementById('composer').matches(':focus-within')) {
+      if (!ta.textContent.trim() && !document.getElementById('composer').matches(':focus-within')) {
         document.getElementById('composer').classList.remove('expanded');
       }
     }, 200);
   });
-  // Auto-grow
+  // Clear lone <br> that browser inserts into empty contenteditable
   ta.addEventListener('input', () => {
-    ta.style.height = 'auto';
-    ta.style.height = Math.min(ta.scrollHeight, 280) + 'px';
+    if (ta.innerHTML === '<br>') ta.innerHTML = '';
+  });
+  // Strip HTML on paste — plain text only
+  ta.addEventListener('paste', e => {
+    e.preventDefault();
+    document.execCommand('insertText', false, e.clipboardData.getData('text/plain'));
   });
   if (_pendingShareContent) {
-    ta.value = _pendingShareContent;
+    ta.innerHTML = marked.parse(_pendingShareContent);
     ta.focus();
     _pendingShareContent = null;
   }
@@ -160,7 +219,7 @@ function attachMdToolbar(toolbar, textarea) {
 // ── Save ──────────────────────────────────────────────────────────────────────
 document.getElementById('save-btn').addEventListener('click', async () => {
   if (!composerEditor) return;
-  const content_raw = composerEditor.value.trim();
+  const content_raw = htmlToMarkdown(composerEditor);
   if (!content_raw) return;
 
   const saveBtn = document.getElementById('save-btn');
@@ -174,8 +233,7 @@ document.getElementById('save-btn').addEventListener('click', async () => {
         type: 'QUEUE_MEMO',
         payload: { content: content_raw, token: getCFToken() }
       });
-      composerEditor.value = '';
-      composerEditor.style.height = 'auto';
+      composerEditor.innerHTML = '';
       pendingImages = [];
       renderImagePreviews();
       toast('📥 Saved offline — will sync when reconnected');
@@ -206,8 +264,7 @@ document.getElementById('save-btn').addEventListener('click', async () => {
     allMemos.unshift(newMemo);
     saveNotesCache(allMemos);  // keep offline cache in sync
     const snapshotImages = [...pendingImages];
-    composerEditor.value = '';
-    composerEditor.style.height = 'auto';
+    composerEditor.innerHTML = '';
     pendingImages = [];
     renderImagePreviews();
     renderFeed();
