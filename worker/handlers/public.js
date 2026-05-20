@@ -1,6 +1,6 @@
 import { json, err, corsHeaders } from "../lib/utils.js";
 
-const SERVICE_WORKER_JS = `// NoteFlow Service Worker v22
+const SERVICE_WORKER_JS = `// NoteFlow Service Worker v23
 // Handles: share target, offline queue, basic shell caching
 const CACHE_NAME = 'noteflow-shell-v23';
 const API_BASE   = 'https://noteflow-api.jeppesen.cc/api';
