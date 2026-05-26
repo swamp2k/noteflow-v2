@@ -82,4 +82,32 @@ async function extractOdfText(b64){try{const bin=atob(b64);const arr=new Uint8Ar
 async function extractTextViaAnthropic(env,rawText){try{const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":env.ANTHROPIC_KEY,"anthropic-version":"2023-06-01"},body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1e3,messages:[{role:"user",content:"Clean up this raw text extracted from an Office document. Remove XML artifacts, fix spacing, return just readable content. May be Danish or English.\n\n"+rawText.slice(0,8e3)}]})});const data=await res.json();return data.content?.[0]?.text||rawText;}catch(e){return rawText;}}
 async function extractViaAnthropic(env,filename,mimeType,b64content){try{const isImage=mimeType&&mimeType.startsWith("image/");const cb=isImage?{type:"image",source:{type:"base64",media_type:mimeType,data:b64content}}:{type:"document",source:{type:"base64",media_type:"application/pdf",data:b64content}};const prompt=isImage?"Describe what is in this image and extract any visible text. Be thorough but concise. Content may be in Danish or English.":"Extract all text content from this document. Return only the raw text, no commentary.";const headers={"Content-Type":"application/json","x-api-key":env.ANTHROPIC_KEY,"anthropic-version":"2023-06-01"};if(!isImage)headers["anthropic-beta"]="pdfs-2024-09-25";const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers,body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1e3,messages:[{role:"user",content:[cb,{type:"text",text:prompt}]}]})});const data=await res.json();if(!res.ok){console.error("extractViaAnthropic error",res.status,filename,JSON.stringify(data).slice(0,300));return "";}return data.content?.[0]?.text||"";}catch(e){console.error("extractViaAnthropic exception",filename,e.message);return "";}}
 
-export { ensureTagEmbeddingsTable, buildTrackerContext, callTrackerAI, callPartnerAI, shouldIndex, indexDocument, arr2str, extractZipEntry, extractDocxText, extractXlsxText, extractOdfText, extractTextViaAnthropic, extractViaAnthropic };
+async function buildProjectContext(env, userId, projectTag) {
+  const { results: notes } = await env.DB.prepare(
+    "SELECT n.id,n.content,n.created_at FROM notes n " +
+    "INNER JOIN note_tags nt ON nt.note_id=n.id AND nt.tag=? " +
+    "WHERE n.user_id=? AND n.archived=0 ORDER BY n.created_at DESC LIMIT 150"
+  ).bind(projectTag, userId).all();
+  if (notes.length === 0) return "(No notes in this project yet)";
+  const ids = notes.map(n => n.id);
+  const ph = ids.map(() => "?").join(",");
+  const { results: docs } = await env.DB.prepare(
+    `SELECT a.note_id,a.filename,di.text_content FROM document_index di JOIN attachments a ON a.id=di.attachment_id WHERE a.note_id IN (${ph})`
+  ).bind(...ids).all();
+  const docMap = {};
+  for (const d of docs) {
+    if (!docMap[d.note_id]) docMap[d.note_id] = [];
+    docMap[d.note_id].push(d);
+  }
+  const parts = notes.map(n => {
+    const date = new Date(n.created_at * 1000).toLocaleDateString("da-DK");
+    let text = `[${date}] ${n.content || ""}`;
+    for (const doc of (docMap[n.id] || [])) {
+      if (doc.text_content) text += `\n  [File: ${doc.filename}]\n  ${doc.text_content.slice(0, 2000)}`;
+    }
+    return text;
+  });
+  return parts.join("\n\n---\n\n");
+}
+
+export { ensureTagEmbeddingsTable, buildTrackerContext, callTrackerAI, callPartnerAI, shouldIndex, indexDocument, arr2str, extractZipEntry, extractDocxText, extractXlsxText, extractOdfText, extractTextViaAnthropic, extractViaAnthropic, buildProjectContext };

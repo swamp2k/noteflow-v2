@@ -8,6 +8,7 @@ import { tagsHandler } from "./handlers/tags.js";
 import { attachmentsHandler } from "./handlers/attachments.js";
 import { trackerHandler } from "./handlers/tracker.js";
 import { searchHandler } from "./handlers/search.js";
+import { projectAIHandler } from "./handlers/project-ai.js";
 import { emailHandler } from "./handlers/email.js";
 
 export default {
@@ -59,6 +60,9 @@ export default {
       if (res) return res;
 
       res = await searchHandler(request, env, ctx, url, path, method, userId, origin);
+      if (res) return res;
+
+      res = await projectAIHandler(request, env, ctx, url, path, method, userId, origin);
       if (res) return res;
 
       res = await emailHandler(request, env, ctx, url, path, method, userId, origin);

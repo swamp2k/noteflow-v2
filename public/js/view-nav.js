@@ -39,6 +39,7 @@ function renderProjectsNav() {
 
       allMemos = []; nextCursor = null;
       loadMemos();
+      if (typeof loadProjectConversation === 'function') loadProjectConversation(tag);
       document.getElementById('sidebar')?.classList.remove('open');
       document.getElementById('sidebar-overlay')?.classList.remove('open');
     });
@@ -179,7 +180,7 @@ searchInput.addEventListener('input', () => {
       const r = await fetch(API_BASE + '/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
-        body: JSON.stringify({ q: searchQuery }),
+        body: JSON.stringify({ q: searchQuery, tag: (currentView === 'tag' && currentTag && currentTag.startsWith('project:')) ? currentTag : undefined }),
       });
       if (!r.ok) throw new Error('Search failed');
       const { notes } = await r.json();
