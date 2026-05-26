@@ -137,6 +137,7 @@ function initAuth() { return true; }
 initSettingsControls();
 initCollapsibleSections();
 initNavItems();
+initProjectAI();
 if (initAuth()) {
   const params = new URLSearchParams(location.search);
   const q = params.get('q');
@@ -206,6 +207,10 @@ if (initAuth()) {
           if (item) item.classList.add('active');
         }
         loadMemos();
+        // Load project AI conversation if landing directly on a project URL
+        if (currentView === 'tag' && currentTag && currentTag.startsWith('project:')) {
+          if (typeof loadProjectConversation === 'function') loadProjectConversation(currentTag);
+        }
       }
     } catch(e) {
       console.error('Boot failed, falling back to individual calls:', e);

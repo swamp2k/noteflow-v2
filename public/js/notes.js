@@ -116,6 +116,8 @@ function renderFeed(appendMode = false) {
     // Archive view: inject "Delete all" toolbar
     const existingDeleteAll = document.getElementById('delete-all-bar');
     if (existingDeleteAll) existingDeleteAll.remove();
+    if (typeof updateProjectAIVisibility === 'function') updateProjectAIVisibility();
+
     if (currentView === 'archived' && allMemos.length > 0) {
       const bar = document.createElement('div');
       bar.id = 'delete-all-bar';
