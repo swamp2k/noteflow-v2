@@ -34,6 +34,21 @@ let settings = {
   reminderEmail:   '',
   emailMakePublic: false,
   _semanticCoords: null,
+  // Task settings
+  tasks_hide_from_main_feed:  true,
+  tasks_default_priority:     null,
+  tasks_show_completed:       false,
+  // Notification settings
+  notif_enabled:              false,
+  notif_send_time:            '08:00',
+  notif_discord_enabled:      false,
+  notif_discord_webhook:      '',
+  notif_email_enabled:        false,
+  notif_email_address:        '',
+  notif_push_enabled:         false,
+  notif_trigger_due_today:    true,
+  notif_trigger_overdue:      true,
+  notif_trigger_due_soon:     false,
 };
 // Read ONLY display preferences from localStorage for instant boot theming.
 // Sensitive keys (voyageApiKey etc.) live in D1 only and are never touched here.
@@ -70,6 +85,11 @@ const searchClear = document.getElementById('search-clear');
 let _searchDebounce = null;
 
 let _loadingMore = false;
+
+// ── Tasks ─────────────────────────────────────────────────────────────────────
+let taskSortOrder    = localStorage.getItem('noteflow_task_sort') || 'priority';
+// 'priority' | 'due_date' | 'created'
+let tasksOverlayOpen = false;
 
 // ── Lightbox ──────────────────────────────────────────────────────────────────
 let lbImages = [];

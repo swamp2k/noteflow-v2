@@ -1,6 +1,6 @@
-// NoteFlow Service Worker v23
+// NoteFlow Service Worker v24
 // Handles: share target, offline queue, basic shell caching
-const CACHE_NAME = 'noteflow-shell-v23';
+const CACHE_NAME = 'noteflow-shell-v24';
 const API_BASE   = 'https://noteflow-api.jeppesen.cc/api';
 
 // ── Install: cache only the shell HTML — no external deps ────────────────────
@@ -165,6 +165,26 @@ async function getJwt() {
   }
   return null;
 }
+
+// ── Push notification handler ─────────────────────────────────────────────────
+self.addEventListener('push', event => {
+  let data = {};
+  try { data = event.data ? event.data.json() : {}; } catch(e) {}
+  event.waitUntil(
+    self.registration.showNotification(data.title || 'NoteFlow Tasks', {
+      body:  data.body  || '',
+      icon:  '/icon-192.png',
+      badge: '/icon-192.png',
+      data:  { url: data.url || 'https://notes.jeppesen.cc/?v=tasks' }
+    })
+  );
+});
+
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const targetUrl = event.notification.data?.url || 'https://notes.jeppesen.cc/?v=tasks';
+  event.waitUntil(clients.openWindow(targetUrl));
+});
 
 // ── Message handler ───────────────────────────────────────────────────────────
 self.addEventListener('message', async event => {

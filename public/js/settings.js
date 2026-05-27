@@ -221,6 +221,42 @@ function syncSettingsControls() {
   document.querySelectorAll('.theme-swatch').forEach((sw, i) => {
     sw.classList.toggle('active', THEMES[i]?.id === s.theme);
   });
+
+  // Task settings
+  const taskHideCb    = el('setting-tasks-hide-from-feed');
+  const taskPrioSel   = el('setting-tasks-default-priority');
+  if (taskHideCb)  taskHideCb.checked  = !!s.tasks_hide_from_main_feed;
+  if (taskPrioSel) taskPrioSel.value   = s.tasks_default_priority != null ? String(s.tasks_default_priority) : '';
+
+  // Notification settings
+  const notifEnabledCb     = el('setting-notif-enabled');
+  const notifSendTime      = el('setting-notif-send-time');
+  const notifDiscordCb     = el('setting-notif-discord');
+  const notifDiscordInput  = el('setting-notif-discord-webhook');
+  const notifEmailCb       = el('setting-notif-email');
+  const notifEmailInput    = el('setting-notif-email-address');
+  const notifPushCb        = el('setting-notif-push');
+  const notifTrigTodayCb   = el('setting-notif-trigger-today');
+  const notifTrigOverdueCb = el('setting-notif-trigger-overdue');
+  const notifTrigSoonCb    = el('setting-notif-trigger-soon');
+  const notifChannels      = el('notif-channels-section');
+
+  if (notifEnabledCb)     notifEnabledCb.checked     = !!s.notif_enabled;
+  if (notifSendTime)      notifSendTime.value         = s.notif_send_time || '08:00';
+  if (notifDiscordCb)     notifDiscordCb.checked      = !!s.notif_discord_enabled;
+  if (notifDiscordInput)  notifDiscordInput.value     = s.notif_discord_webhook || '';
+  if (notifEmailCb)       notifEmailCb.checked        = !!s.notif_email_enabled;
+  if (notifEmailInput)    notifEmailInput.value       = s.notif_email_address || '';
+  if (notifPushCb)        notifPushCb.checked         = !!s.notif_push_enabled;
+  if (notifTrigTodayCb)   notifTrigTodayCb.checked    = s.notif_trigger_due_today !== false;
+  if (notifTrigOverdueCb) notifTrigOverdueCb.checked  = s.notif_trigger_overdue   !== false;
+  if (notifTrigSoonCb)    notifTrigSoonCb.checked     = !!s.notif_trigger_due_soon;
+  if (notifChannels)      notifChannels.style.display = s.notif_enabled ? '' : 'none';
+  // Show/hide discord webhook input based on discord toggle
+  const discordWebhookRow = el('notif-discord-webhook-row');
+  if (discordWebhookRow) discordWebhookRow.style.display = s.notif_discord_enabled ? '' : 'none';
+  const emailAddressRow = el('notif-email-address-row');
+  if (emailAddressRow) emailAddressRow.style.display = s.notif_email_enabled ? '' : 'none';
 }
 
 // ── Settings page controls ────────────────────────────────────────────────────
@@ -336,6 +372,98 @@ function initSettingsControls() {
   });
   tagCategoriesInput.addEventListener('input', () => { settings.tagCategories = tagCategoriesInput.value; saveSettings(); });
   tagPeopleInput.addEventListener('input',     () => { settings.tagPeople     = tagPeopleInput.value;     saveSettings(); });
+
+  // ── Task settings ─────────────────────────────────────────────────────────
+  const taskHideCb  = document.getElementById('setting-tasks-hide-from-feed');
+  const taskPrioSel = document.getElementById('setting-tasks-default-priority');
+  if (taskHideCb) taskHideCb.addEventListener('change', () => {
+    settings.tasks_hide_from_main_feed = taskHideCb.checked;
+    saveSettings();
+    if (currentView === 'all') loadMemos();
+  });
+  if (taskPrioSel) taskPrioSel.addEventListener('change', () => {
+    settings.tasks_default_priority = taskPrioSel.value !== '' ? parseInt(taskPrioSel.value) : null;
+    saveSettings();
+  });
+
+  // ── Notification settings ──────────────────────────────────────────────────
+  function validateNotifSettings() {
+    const anyChannel = settings.notif_discord_enabled || settings.notif_email_enabled || settings.notif_push_enabled;
+    if (!anyChannel) return true;
+    const anyTrigger = settings.notif_trigger_due_today || settings.notif_trigger_overdue || settings.notif_trigger_due_soon;
+    if (!anyTrigger) {
+      toast('Enable at least one trigger (Due today, Overdue, or Due soon)');
+      return false;
+    }
+    return true;
+  }
+
+  const notifEnabledCb     = document.getElementById('setting-notif-enabled');
+  const notifSendTime      = document.getElementById('setting-notif-send-time');
+  const notifDiscordCb     = document.getElementById('setting-notif-discord');
+  const notifDiscordInput  = document.getElementById('setting-notif-discord-webhook');
+  const notifEmailCb       = document.getElementById('setting-notif-email');
+  const notifEmailInput    = document.getElementById('setting-notif-email-address');
+  const notifPushCb        = document.getElementById('setting-notif-push');
+  const notifTrigTodayCb   = document.getElementById('setting-notif-trigger-today');
+  const notifTrigOverdueCb = document.getElementById('setting-notif-trigger-overdue');
+  const notifTrigSoonCb    = document.getElementById('setting-notif-trigger-soon');
+  const notifChannels      = document.getElementById('notif-channels-section');
+  const discordWebhookRow  = document.getElementById('notif-discord-webhook-row');
+  const emailAddressRow    = document.getElementById('notif-email-address-row');
+
+  if (notifEnabledCb) notifEnabledCb.addEventListener('change', () => {
+    settings.notif_enabled = notifEnabledCb.checked;
+    if (notifChannels) notifChannels.style.display = notifEnabledCb.checked ? '' : 'none';
+    saveSettings();
+  });
+  if (notifSendTime) notifSendTime.addEventListener('change', () => {
+    settings.notif_send_time = notifSendTime.value;
+    saveSettings();
+  });
+  if (notifDiscordCb) notifDiscordCb.addEventListener('change', () => {
+    settings.notif_discord_enabled = notifDiscordCb.checked;
+    if (discordWebhookRow) discordWebhookRow.style.display = notifDiscordCb.checked ? '' : 'none';
+    if (!validateNotifSettings()) { notifDiscordCb.checked = false; settings.notif_discord_enabled = false; return; }
+    saveSettings();
+  });
+  if (notifDiscordInput) notifDiscordInput.addEventListener('input', () => {
+    settings.notif_discord_webhook = notifDiscordInput.value.trim();
+    saveSettings();
+  });
+  if (notifEmailCb) notifEmailCb.addEventListener('change', () => {
+    settings.notif_email_enabled = notifEmailCb.checked;
+    if (emailAddressRow) emailAddressRow.style.display = notifEmailCb.checked ? '' : 'none';
+    if (!validateNotifSettings()) { notifEmailCb.checked = false; settings.notif_email_enabled = false; return; }
+    saveSettings();
+  });
+  if (notifEmailInput) notifEmailInput.addEventListener('input', () => {
+    settings.notif_email_address = notifEmailInput.value.trim();
+    saveSettings();
+  });
+  if (notifPushCb) notifPushCb.addEventListener('change', async () => {
+    if (notifPushCb.checked) {
+      if (typeof subscribeToPush === 'function') {
+        const ok = await subscribeToPush();
+        if (!ok) { notifPushCb.checked = false; return; }
+      }
+    } else {
+      if (typeof unsubscribeFromPush === 'function') await unsubscribeFromPush();
+    }
+    settings.notif_push_enabled = notifPushCb.checked;
+    if (!validateNotifSettings()) { notifPushCb.checked = false; settings.notif_push_enabled = false; return; }
+    saveSettings();
+  });
+  const notifTriggerChange = () => {
+    settings.notif_trigger_due_today = notifTrigTodayCb?.checked || false;
+    settings.notif_trigger_overdue   = notifTrigOverdueCb?.checked || false;
+    settings.notif_trigger_due_soon  = notifTrigSoonCb?.checked || false;
+    if (!validateNotifSettings()) return;
+    saveSettings();
+  };
+  if (notifTrigTodayCb)   notifTrigTodayCb.addEventListener('change', notifTriggerChange);
+  if (notifTrigOverdueCb) notifTrigOverdueCb.addEventListener('change', notifTriggerChange);
+  if (notifTrigSoonCb)    notifTrigSoonCb.addEventListener('change', notifTriggerChange);
 
   tagAllBtn.addEventListener('click', async () => {
     if (tagAllBtn.disabled) return;
