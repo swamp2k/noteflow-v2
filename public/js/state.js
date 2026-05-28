@@ -71,6 +71,7 @@ let _pendingShareContent = null;
 const NOTES_CACHE_KEY     = 'noteflow_notes_cache';
 const NOTES_CACHE_VERSION = 'noteflow_cache_version';
 const ATT_CACHE_NAME      = 'noteflow-attachments-v1';
+const TASKS_CACHE_KEY     = 'noteflow_tasks_cache';
 
 let _prefetchRunning = false;
 
@@ -99,8 +100,11 @@ let _lbPinching = false, _lbPinchDist0 = 0;
 let _lbDragging = false, _lbDragOX = 0, _lbDragOY = 0;
 let _lbLastTap = 0;
 
-// ── Toast ─────────────────────────────────────────────────────────────────────
-let toastTimer;
+// ── Activity Log ──────────────────────────────────────────────────────────────
+let toastTimer; // kept for backwards compat (unused)
+let _activityLog = [];   // { ts: Date, msg: string }[]  capped at LOG_MAX
+let _logUnreadCount = 0;
+const LOG_MAX = 50;
 
 // ── Themes ────────────────────────────────────────────────────────────────────
 const THEMES = [

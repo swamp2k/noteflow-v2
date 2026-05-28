@@ -517,6 +517,28 @@ function openMorePopover(memo, anchorBtn) {
   });
   pop.appendChild(offlineBtn);
 
+  // Convert to task (notes only)
+  if (!memo.is_task) {
+    const div2 = document.createElement('div');
+    div2.className = 'project-popover-divider';
+    pop.appendChild(div2);
+
+    const toTaskBtn = document.createElement('button');
+    toTaskBtn.className = 'project-popover-item';
+    toTaskBtn.innerHTML = '<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;margin-right:8px"><polyline points="9 11 12 14 20 6"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg> Convert to task';
+    toTaskBtn.addEventListener('click', async () => {
+      closeMorePopover();
+      try {
+        await apiPatch('/notes/' + memo.id, { is_task: 1, priority: null, due_date: null });
+        const idx = allMemos.findIndex(m => m.id === memo.id);
+        if (idx !== -1) allMemos.splice(idx, 1);
+        removeCard(memo.id);
+        toast('Converted to task');
+      } catch(e) { toast('Error: ' + e.message); }
+    });
+    pop.appendChild(toTaskBtn);
+  }
+
   // Position below anchor
   document.body.appendChild(pop);
   const rect = anchorBtn.getBoundingClientRect();

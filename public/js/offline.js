@@ -1,13 +1,15 @@
 function ensureOfflineUI() {
   if (!_offlineBanner) {
     _offlineBanner = document.createElement('div');
-    _offlineBanner.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#e53935;color:#fff;text-align:center;font-size:13px;padding:8px;z-index:9999;font-family:system-ui,sans-serif;';
+    _offlineBanner.style.cssText = 'display:none;background:#e53935;color:#fff;text-align:center;font-size:13px;padding:8px 20px;width:calc(100% + 40px);margin-left:-20px;margin-right:-20px;margin-bottom:16px;font-family:system-ui,sans-serif;position:sticky;top:0;z-index:45;box-sizing:border-box;';
     _offlineBanner.textContent = '📵 You\'re offline — new notes will sync when reconnected';
-    document.body.appendChild(_offlineBanner);
+    const mainEl = document.querySelector('main');
+    if (mainEl) mainEl.prepend(_offlineBanner);
+    else document.body.appendChild(_offlineBanner);
   }
   if (!_queueBadge) {
     _queueBadge = document.createElement('div');
-    _queueBadge.style.cssText = 'display:none;position:fixed;bottom:48px;right:16px;background:#ff9800;color:#fff;border-radius:20px;padding:6px 12px;font-size:12px;font-weight:600;z-index:9998;box-shadow:0 2px 8px rgba(0,0,0,.2);cursor:pointer;';
+    _queueBadge.style.cssText = 'display:none;position:fixed;bottom:24px;right:16px;background:#ff9800;color:#fff;border-radius:20px;padding:6px 12px;font-size:12px;font-weight:600;z-index:9998;box-shadow:0 2px 8px rgba(0,0,0,.2);cursor:pointer;';
     _queueBadge.innerHTML = '⏳ <span id="queue-count">0</span> pending';
     _queueBadge.addEventListener('click', () => {
       if (navigator.serviceWorker.controller)

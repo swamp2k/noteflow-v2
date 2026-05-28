@@ -484,6 +484,39 @@ function initSettingsControls() {
     }
     tagAllBtn.disabled = false;
   });
+
+  // ── Activity log ──────────────────────────────────────────────────────────
+  const logBtn = document.getElementById('btn-view-logs');
+  if (logBtn) {
+    logBtn.addEventListener('click', () => {
+      _logUnreadCount = 0;
+      _updateLogBadge();
+      const container = document.getElementById('log-modal-entries');
+      container.innerHTML = '';
+      if (!_activityLog.length) {
+        container.innerHTML = '<span style="color:var(--muted)">No log entries yet.</span>';
+      } else {
+        [..._activityLog].reverse().forEach(entry => {
+          const row = document.createElement('div');
+          row.style.cssText = 'padding:4px 6px;border-radius:4px;background:var(--surface-alt);word-break:break-word;line-height:1.4';
+          const time = entry.ts.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+          const date = entry.ts.toLocaleDateString('en-GB', { day:'2-digit', month:'short' });
+          row.innerHTML = `<span style="color:var(--muted)">[${date} ${time}]</span> ${escHtml(entry.msg)}`;
+          container.appendChild(row);
+        });
+      }
+      document.getElementById('log-modal').classList.add('open');
+    });
+  }
+  const logClearBtn = document.getElementById('btn-log-clear');
+  if (logClearBtn) {
+    logClearBtn.addEventListener('click', () => {
+      _activityLog = [];
+      _logUnreadCount = 0;
+      _updateLogBadge();
+      document.getElementById('log-modal-entries').innerHTML = '<span style="color:var(--muted)">Log cleared.</span>';
+    });
+  }
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────

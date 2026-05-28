@@ -223,6 +223,22 @@ function buildTaskCard(task) {
   });
   actions.appendChild(archBtn);
 
+  const toNoteBtn = document.createElement('button');
+  toNoteBtn.className = 'card-action-btn';
+  toNoteBtn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> To note';
+  toNoteBtn.title = 'Convert to note';
+  toNoteBtn.addEventListener('click', async e => {
+    e.stopPropagation();
+    try {
+      await apiPatch('/notes/' + task.id, { is_task: 0, due_date: null, priority: null, completed_at: null });
+      card.style.transition = 'opacity 0.3s';
+      card.style.opacity = '0';
+      setTimeout(() => card.remove(), 300);
+      toast('Converted to note');
+    } catch(e) { toast('Error: ' + e.message); }
+  });
+  actions.appendChild(toNoteBtn);
+
   card.appendChild(actions);
 
   card.addEventListener('click', e => {
@@ -354,8 +370,17 @@ async function renderTasksFeed() {
     feed.appendChild(completedSection);
 
   } catch(e) {
-    feed.innerHTML = '<div class="empty-state">Failed to load tasks</div>';
-    toast('Failed to load tasks: ' + e.message);
+    const cached = loadTasksCache();
+    if (cached.length) {
+      const offlineNote = document.createElement('div');
+      offlineNote.style.cssText = 'padding:8px 14px;background:#fff3cd;border-radius:8px;font-size:12px;color:#856404;margin-bottom:10px;border:1px solid #ffc107';
+      offlineNote.textContent = '📵 Showing cached tasks — last synced when online';
+      feed.appendChild(offlineNote);
+      cached.forEach(task => feed.appendChild(buildTaskCard(task)));
+    } else {
+      feed.innerHTML = '<div class="empty-state">Failed to load tasks — no offline cache available</div>';
+      toast('Failed to load tasks: ' + e.message);
+    }
   }
 }
 
@@ -431,7 +456,17 @@ async function renderTasksOverlay() {
     feedEl.appendChild(completedSection);
 
   } catch(e) {
-    feedEl.innerHTML = '<div style="padding:20px;color:var(--danger);font-size:13px">Failed to load tasks</div>';
+    const cached = loadTasksCache();
+    if (cached.length) {
+      feedEl.innerHTML = '';
+      const offlineNote = document.createElement('div');
+      offlineNote.style.cssText = 'padding:8px 14px;font-size:12px;color:#856404;background:#fff3cd;border-bottom:1px solid #ffc107;margin-bottom:4px';
+      offlineNote.textContent = '📵 Cached tasks';
+      feedEl.appendChild(offlineNote);
+      cached.forEach(task => feedEl.appendChild(buildTaskRow(task, feedEl)));
+    } else {
+      feedEl.innerHTML = '<div style="padding:20px;color:var(--danger);font-size:13px">Failed to load tasks</div>';
+    }
   }
 }
 
