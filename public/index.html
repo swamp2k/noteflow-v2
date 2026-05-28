@@ -586,11 +586,13 @@
   /* ── Search bar ─────────────────────────────────────────────────── */
   #search-bar {
     display: none; margin-bottom: 12px;
-    position: relative;
   }
-  #search-bar.visible { display: block; }
+  #search-bar.visible { display: flex; align-items: center; }
+  #search-input-wrap {
+    position: relative; flex: 1; min-width: 0;
+  }
   #search-input {
-    width: 100%; border: 1px solid var(--border); border-radius: 8px;
+    width: 100%; border: 1px solid var(--border); border-radius: 8px 0 0 8px;
     padding: 7px 32px 7px 32px; font-size: 13px;
     font-family: var(--font-body); background: var(--surface);
     color: var(--text); outline: none; transition: border-color 0.15s;
@@ -1286,16 +1288,18 @@
       </div>
 
       <!-- Search bar + Tasks pill -->
-      <div id="search-tasks-bar" style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
-        <div id="search-bar" class="visible" style="margin-bottom:0;flex:1">
-          <svg id="search-icon" viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" id="search-input" placeholder="Search notes…" autocomplete="off">
-          <button id="search-clear">✕</button>
+      <div id="search-tasks-bar" style="margin-bottom:12px">
+        <div id="search-bar" class="visible" style="margin-bottom:0">
+          <div id="search-input-wrap">
+            <svg id="search-icon" viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="search-input" placeholder="Search notes…" autocomplete="off">
+            <button id="search-clear">✕</button>
+          </div>
+          <button id="tasks-pill-btn" title="Open tasks" onclick="openTasksOverlay()" style="display:flex;align-items:center;gap:5px;padding:0 11px;height:34px;border-radius:0 8px 8px 0;border:1px solid var(--border);border-left:none;background:var(--surface-alt);color:var(--text);font-size:12px;font-family:var(--font-body);cursor:pointer;white-space:nowrap;flex-shrink:0;transition:background 0.15s">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 20 6"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg>
+            Tasks
+          </button>
         </div>
-        <button id="tasks-pill-btn" title="Open tasks" onclick="openTasksOverlay()" style="display:flex;align-items:center;gap:5px;padding:6px 11px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:12px;font-family:var(--font-body);cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all 0.15s">
-          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 20 6"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg>
-          Tasks
-        </button>
       </div>
 
       <!-- Project AI panel — shown only when viewing a project tag -->
