@@ -107,6 +107,8 @@ function switchView(view) {
   }
 
   if (searchBar) searchBar.classList.add('visible');
+  const stBar = document.getElementById('search-tasks-bar');
+  if (stBar) stBar.style.display = '';
   feedEl.style.display = '';
   currentView = view;
 
@@ -120,6 +122,23 @@ function switchView(view) {
   document.getElementById('header-title').textContent = getViewTitle(view);
   allMemos = [];
   nextCursor = null;
+  if (view === 'tasks') {
+    const stBar = document.getElementById('search-tasks-bar');
+    if (stBar) stBar.style.display = 'none';
+    composerEl.style.display = 'none';
+    loadMoreEl.style.display = 'none';
+    feedEl.style.display = '';
+    document.getElementById('header-title').textContent = 'Tasks';
+    currentView = 'tasks';
+    const url = new URL(location.href);
+    url.searchParams.set('v', 'tasks');
+    url.searchParams.delete('t');
+    url.searchParams.delete('q');
+    history.replaceState(null, '', url.toString());
+    renderTasksFeed();
+    return;
+  }
+
   if (view === 'attachments') {
     renderFeed();
     fetchAllMemos().then(all => {
