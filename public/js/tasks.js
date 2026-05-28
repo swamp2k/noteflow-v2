@@ -211,37 +211,31 @@ function buildTaskCard(task) {
   }
   meta.appendChild(buildPriorityBadge(task.priority));
 
-  // Due date chip — click to edit
-  function buildEditableDateChip(due_date) {
+  // Due date chip — click opens detail modal for editing
+  function buildClickableDateChip(due_date) {
     const chip = dueDateChip(due_date);
-    const placeholder = document.createElement('span');
-    placeholder.style.cssText = 'font-size:11px;padding:2px 7px;border-radius:10px;background:var(--surface-alt);color:var(--muted);cursor:pointer;user-select:none';
-    placeholder.textContent = 'No due date';
-    placeholder.title = 'Click to set due date';
-    const el = chip || placeholder;
+    const el = chip || (() => {
+      const p = document.createElement('span');
+      p.style.cssText = 'font-size:11px;padding:2px 7px;border-radius:10px;background:var(--surface-alt);color:var(--muted);cursor:pointer;user-select:none';
+      p.textContent = 'No due date';
+      return p;
+    })();
     el.style.cursor = 'pointer';
-    el.title = el.title || 'Click to change due date';
-    el.addEventListener('click', e => {
-      e.stopPropagation();
-      const input = document.createElement('input');
-      input.type = 'date';
-      input.value = due_date || '';
-      input.style.cssText = 'font-size:11px;border:1px solid var(--border);border-radius:6px;padding:2px 4px;background:var(--bg);color:var(--text);font-family:var(--font-body)';
-      el.replaceWith(input);
-      input.focus();
-      const commit = async () => {
-        const newDate = input.value || null;
-        task.due_date = newDate;
-        await saveTaskFields(task.id, { due_date: newDate });
-        const newEl = buildEditableDateChip(newDate);
-        input.replaceWith(newEl);
-      };
-      input.addEventListener('change', commit);
-      input.addEventListener('blur', () => { if (document.contains(input)) { const ne = buildEditableDateChip(task.due_date); input.replaceWith(ne); } });
-    });
+    el.addEventListener('click', e => { e.stopPropagation(); openTaskDetail(task.id); });
     return el;
   }
-  meta.appendChild(buildEditableDateChip(task.due_date));
+  meta.appendChild(buildClickableDateChip(task.due_date));
+
+  // Notification indicator
+  if (task.notif_days_before != null && task.notif_time) {
+    const notifChip = document.createElement('span');
+    notifChip.style.cssText = 'font-size:11px;padding:2px 7px;border-radius:10px;background:var(--surface-alt);color:var(--muted);cursor:pointer;user-select:none;display:flex;align-items:center;gap:3px';
+    notifChip.innerHTML = '<svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>';
+    notifChip.appendChild(document.createTextNode(' ' + task.notif_days_before + 'd · ' + task.notif_time));
+    notifChip.title = 'Notification: ' + task.notif_days_before + ' day(s) before at ' + task.notif_time;
+    notifChip.addEventListener('click', e => { e.stopPropagation(); openTaskDetail(task.id); });
+    meta.appendChild(notifChip);
+  }
 
   card.appendChild(meta);
 
