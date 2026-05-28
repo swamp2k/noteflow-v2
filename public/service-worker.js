@@ -1,6 +1,6 @@
-// NoteFlow Service Worker v24
+// NoteFlow Service Worker v25
 // Handles: share target, offline queue, basic shell caching
-const CACHE_NAME = 'noteflow-shell-v24';
+const CACHE_NAME = 'noteflow-shell-v25';
 const API_BASE   = 'https://noteflow-api.jeppesen.cc/api';
 
 // ── Install: cache only the shell HTML — no external deps ────────────────────
