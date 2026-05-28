@@ -21,39 +21,21 @@ async function notifyUser(env, userId) {
 
   const now = new Date();
   const today = now.toISOString().slice(0, 10); // "YYYY-MM-DD"
-  const tomorrow = new Date(now.getTime() + 86400000).toISOString().slice(0, 10);
+  const currentHour = now.getUTCHours();
 
-  // Check if current UTC hour matches notif_send_time
-  const [sendHour] = (s.notif_send_time || "08:00").split(":").map(Number);
-  if (now.getUTCHours() !== sendHour) return;
+  // Find tasks with per-task notification scheduled for this hour
+  const { results: candidates } = await env.DB.prepare(
+    "SELECT id,content,due_date,priority,notif_days_before,notif_time FROM notes " +
+    "WHERE user_id=? AND is_task=1 AND completed_at IS NULL AND archived=0 " +
+    "AND notif_days_before IS NOT NULL AND notif_time IS NOT NULL AND due_date IS NOT NULL"
+  ).bind(userId).all();
 
-  const tasks = [];
-
-  if (s.notif_trigger_due_today) {
-    const { results } = await env.DB.prepare(
-      "SELECT id,content,due_date,priority FROM notes WHERE user_id=? AND is_task=1 AND completed_at IS NULL AND archived=0 AND due_date=?"
-    ).bind(userId, today).all();
-    tasks.push(...results.map(t => ({ ...t, trigger: "due_today" })));
-  }
-
-  if (s.notif_trigger_overdue) {
-    const { results } = await env.DB.prepare(
-      "SELECT id,content,due_date,priority FROM notes WHERE user_id=? AND is_task=1 AND completed_at IS NULL AND archived=0 AND due_date<?"
-    ).bind(userId, today).all();
-    // Avoid duplicates if both triggers are set
-    for (const t of results) {
-      if (!tasks.find(x => x.id === t.id)) tasks.push({ ...t, trigger: "overdue" });
-    }
-  }
-
-  if (s.notif_trigger_due_soon) {
-    const { results } = await env.DB.prepare(
-      "SELECT id,content,due_date,priority FROM notes WHERE user_id=? AND is_task=1 AND completed_at IS NULL AND archived=0 AND due_date=?"
-    ).bind(userId, tomorrow).all();
-    for (const t of results) {
-      if (!tasks.find(x => x.id === t.id)) tasks.push({ ...t, trigger: "due_soon" });
-    }
-  }
+  const tasks = candidates.filter(t => {
+    const dueMs = new Date(t.due_date + "T00:00:00Z").getTime();
+    const notifDate = new Date(dueMs - t.notif_days_before * 86400000).toISOString().slice(0, 10);
+    const [notifHour] = t.notif_time.split(":").map(Number);
+    return notifDate === today && notifHour === currentHour;
+  });
 
   if (!tasks.length) return;
 

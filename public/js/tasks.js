@@ -115,7 +115,6 @@ function buildTaskRow(task, feedEl) {
   });
 
   row.appendChild(cb);
-  row.appendChild(priorityDot(task.priority));
 
   const textEl = document.createElement('span');
   textEl.style.cssText = 'flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;' + (task.completed_at ? 'text-decoration:line-through;color:var(--muted)' : '');
@@ -142,7 +141,7 @@ function buildTaskCard(task) {
   card.dataset.memoName = task.id;
   card.style.position = 'relative';
 
-  // Header row: checkbox + priority dot + date chip
+  // Header row: checkbox + title (first line)
   const header = document.createElement('div');
   header.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:6px';
 
@@ -165,22 +164,86 @@ function buildTaskCard(task) {
     }
   });
   header.appendChild(cb);
-  header.appendChild(priorityDot(task.priority));
 
-  const chip = dueDateChip(task.due_date);
-  if (chip) { chip.style.marginLeft = 'auto'; header.appendChild(chip); }
+  const titleEl = document.createElement('span');
+  titleEl.style.cssText = 'flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:500;' + (task.completed_at ? 'text-decoration:line-through;opacity:0.6' : '');
+  titleEl.textContent = (task.content || '').split('\n')[0] || 'Task';
+  header.appendChild(titleEl);
 
   card.appendChild(header);
 
-  // Content
-  const contentWrap = document.createElement('div');
-  contentWrap.className = 'card-content-wrap';
-  const contentEl = document.createElement('div');
-  contentEl.className = 'card-content';
-  if (task.completed_at) contentEl.style.cssText = 'text-decoration:line-through;opacity:0.6';
-  contentEl.innerHTML = marked.parse(task.content || '');
-  contentWrap.appendChild(contentEl);
-  card.appendChild(contentWrap);
+  // Meta row: priority badge + due date chip (both inline-editable)
+  const meta = document.createElement('div');
+  meta.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap';
+
+  // Priority badge — click to cycle/change
+  function buildPriorityBadge(priority) {
+    const colors = { 1: { bg:'#fde8e8', text:'#ef4444' }, 2: { bg:'#fef3c7', text:'#d97706' }, 3: { bg:'#dcfce7', text:'#16a34a' }, null: { bg:'var(--surface-alt)', text:'var(--muted)' } };
+    const c = colors[priority] || colors[null];
+    const badge = document.createElement('span');
+    badge.style.cssText = `font-size:11px;padding:2px 8px;border-radius:10px;background:${c.bg};color:${c.text};cursor:pointer;user-select:none;white-space:nowrap`;
+    badge.textContent = PRIORITY_LABELS[priority] || 'No priority';
+    badge.title = 'Click to change priority';
+    badge.addEventListener('click', e => {
+      e.stopPropagation();
+      const sel = document.createElement('select');
+      sel.style.cssText = 'font-size:11px;border:1px solid var(--border);border-radius:6px;padding:2px 4px;background:var(--bg);color:var(--text);font-family:var(--font-body)';
+      [['', 'No priority'], ['1', 'High'], ['2', 'Medium'], ['3', 'Low']].forEach(([val, label]) => {
+        const opt = document.createElement('option');
+        opt.value = val;
+        opt.textContent = label;
+        if ((priority == null && val === '') || String(priority) === val) opt.selected = true;
+        sel.appendChild(opt);
+      });
+      badge.replaceWith(sel);
+      sel.focus();
+      const commit = async () => {
+        const newPrio = sel.value !== '' ? parseInt(sel.value) : null;
+        task.priority = newPrio;
+        await saveTaskFields(task.id, { priority: newPrio });
+        const newBadge = buildPriorityBadge(newPrio);
+        sel.replaceWith(newBadge);
+      };
+      sel.addEventListener('change', commit);
+      sel.addEventListener('blur', () => { if (document.contains(sel)) { const nb = buildPriorityBadge(task.priority); sel.replaceWith(nb); } });
+    });
+    return badge;
+  }
+  meta.appendChild(buildPriorityBadge(task.priority));
+
+  // Due date chip — click to edit
+  function buildEditableDateChip(due_date) {
+    const chip = dueDateChip(due_date);
+    const placeholder = document.createElement('span');
+    placeholder.style.cssText = 'font-size:11px;padding:2px 7px;border-radius:10px;background:var(--surface-alt);color:var(--muted);cursor:pointer;user-select:none';
+    placeholder.textContent = 'No due date';
+    placeholder.title = 'Click to set due date';
+    const el = chip || placeholder;
+    el.style.cursor = 'pointer';
+    el.title = el.title || 'Click to change due date';
+    el.addEventListener('click', e => {
+      e.stopPropagation();
+      const input = document.createElement('input');
+      input.type = 'date';
+      input.value = due_date || '';
+      input.style.cssText = 'font-size:11px;border:1px solid var(--border);border-radius:6px;padding:2px 4px;background:var(--bg);color:var(--text);font-family:var(--font-body)';
+      el.replaceWith(input);
+      input.focus();
+      const commit = async () => {
+        const newDate = input.value || null;
+        task.due_date = newDate;
+        await saveTaskFields(task.id, { due_date: newDate });
+        const newEl = buildEditableDateChip(newDate);
+        input.replaceWith(newEl);
+      };
+      input.addEventListener('change', commit);
+      input.addEventListener('blur', () => { if (document.contains(input)) { const ne = buildEditableDateChip(task.due_date); input.replaceWith(ne); } });
+    });
+    return el;
+  }
+  meta.appendChild(buildEditableDateChip(task.due_date));
+
+  card.appendChild(meta);
 
   // Tags
   const tags = Array.isArray(task.tags) ? task.tags.filter(t => !['hidden','starred'].includes(t)) : [];
@@ -196,53 +259,8 @@ function buildTaskCard(task) {
     card.appendChild(tagRow);
   }
 
-  // Action row: Edit, Archive
-  const actions = document.createElement('div');
-  actions.className = 'card-actions';
-
-  const editBtn = document.createElement('button');
-  editBtn.className = 'card-action-btn';
-  editBtn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit';
-  editBtn.title = 'Edit task';
-  editBtn.addEventListener('click', e => { e.stopPropagation(); openTaskDetail(task.id); });
-  actions.appendChild(editBtn);
-
-  const archBtn = document.createElement('button');
-  archBtn.className = 'card-action-btn';
-  archBtn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg> Archive';
-  archBtn.title = 'Archive task';
-  archBtn.addEventListener('click', async e => {
-    e.stopPropagation();
-    try {
-      await apiPatch('/notes/' + task.id, { archived: true });
-      card.style.transition = 'opacity 0.3s';
-      card.style.opacity = '0';
-      setTimeout(() => card.remove(), 300);
-      toast('Task archived');
-    } catch(e) { toast('Error: ' + e.message); }
-  });
-  actions.appendChild(archBtn);
-
-  const toNoteBtn = document.createElement('button');
-  toNoteBtn.className = 'card-action-btn';
-  toNoteBtn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> To note';
-  toNoteBtn.title = 'Convert to note';
-  toNoteBtn.addEventListener('click', async e => {
-    e.stopPropagation();
-    try {
-      await apiPatch('/notes/' + task.id, { is_task: 0, due_date: null, priority: null, completed_at: null });
-      card.style.transition = 'opacity 0.3s';
-      card.style.opacity = '0';
-      setTimeout(() => card.remove(), 300);
-      toast('Converted to note');
-    } catch(e) { toast('Error: ' + e.message); }
-  });
-  actions.appendChild(toNoteBtn);
-
-  card.appendChild(actions);
-
   card.addEventListener('click', e => {
-    if (e.target.closest('.card-action-btn') || e.target === cb) return;
+    if (e.target === cb) return;
     openTaskDetail(task.id);
   });
 
@@ -553,6 +571,18 @@ async function openTaskDetail(taskId) {
 
   dueInput.onchange = () => saveTaskFields(taskId, { due_date: dueInput.value || null });
   prioSelect.onchange = () => saveTaskFields(taskId, { priority: prioSelect.value !== '' ? parseInt(prioSelect.value) : null });
+
+  const notifDaysInput = document.getElementById('td-notif-days');
+  const notifTimeInput = document.getElementById('td-notif-time');
+  if (notifDaysInput) notifDaysInput.value = task.notif_days_before != null ? String(task.notif_days_before) : '';
+  if (notifTimeInput) notifTimeInput.value = task.notif_time || '';
+  const saveNotif = () => {
+    const days = notifDaysInput && notifDaysInput.value !== '' ? parseInt(notifDaysInput.value) : null;
+    const time = notifTimeInput && notifTimeInput.value ? notifTimeInput.value : null;
+    saveTaskFields(taskId, { notif_days_before: days, notif_time: time });
+  };
+  if (notifDaysInput) notifDaysInput.onchange = saveNotif;
+  if (notifTimeInput) notifTimeInput.onchange = saveNotif;
 
   // Tags section
   const tagsEl = document.getElementById('td-tags');

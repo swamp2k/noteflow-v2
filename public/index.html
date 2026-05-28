@@ -1570,12 +1570,6 @@
             </div>
           </div>
           <div id="notif-channels-section" style="display:none">
-            <div class="settings-row">
-              <div><div class="settings-label">Send notifications at</div></div>
-              <div class="settings-control">
-                <input type="time" id="setting-notif-send-time" value="08:00" style="border:1px solid var(--border);border-radius:7px;padding:5px 8px;font-size:13px;background:var(--bg);color:var(--text);font-family:var(--font-body)">
-              </div>
-            </div>
             <div class="settings-section-title" style="font-size:11px;padding:10px 16px 4px">Channels</div>
             <div class="settings-row">
               <div><div class="settings-label">Email</div></div>
@@ -1604,25 +1598,6 @@
               </div>
               <div class="settings-control">
                 <label class="toggle"><input type="checkbox" id="setting-notif-push"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
-              </div>
-            </div>
-            <div class="settings-section-title" style="font-size:11px;padding:10px 16px 4px">Triggers</div>
-            <div class="settings-row">
-              <div><div class="settings-label">Due today</div></div>
-              <div class="settings-control">
-                <label class="toggle"><input type="checkbox" id="setting-notif-trigger-today"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
-              </div>
-            </div>
-            <div class="settings-row">
-              <div><div class="settings-label">Overdue</div></div>
-              <div class="settings-control">
-                <label class="toggle"><input type="checkbox" id="setting-notif-trigger-overdue"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
-              </div>
-            </div>
-            <div class="settings-row">
-              <div><div class="settings-label">Due within 24 hours</div></div>
-              <div class="settings-control">
-                <label class="toggle"><input type="checkbox" id="setting-notif-trigger-soon"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
               </div>
             </div>
           </div>
@@ -1779,6 +1754,16 @@
           <option value="3">Low</option>
         </select>
       </div>
+    </div>
+    <!-- Notification -->
+    <div style="margin-top:12px">
+      <div style="font-size:11px;text-transform:uppercase;color:var(--muted);letter-spacing:0.05em;margin-bottom:6px">Notification</div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span style="font-size:13px;color:var(--muted)">Notification</span>
+        <input type="number" id="td-notif-days" min="0" max="365" placeholder="days" style="width:65px;border:1px solid var(--border);border-radius:7px;padding:5px 8px;font-size:13px;background:var(--bg);color:var(--text);font-family:var(--font-body)">
+        <input type="time" id="td-notif-time" style="border:1px solid var(--border);border-radius:7px;padding:5px 8px;font-size:13px;background:var(--bg);color:var(--text);font-family:var(--font-body)">
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px">Days before due date · time of day (UTC)</div>
     </div>
     <!-- Tags -->
     <div style="margin-top:12px">
