@@ -554,29 +554,51 @@ async function openTaskDetail(taskId) {
     attachMdToolbar(toolbar, textarea);
   }
 
+  // Live task copy — updated as user changes fields, used to rebuild card on close
+  const liveTask = { ...task };
+
   // Auto-save on blur
   textarea.onblur = async () => {
     const updated = await saveTaskFields(taskId, { content: textarea.value });
     if (updated) {
+      liveTask.content = textarea.value;
       const firstLine = (textarea.value || '').split('\n')[0].slice(0, 80);
       if (titleEl) titleEl.textContent = firstLine || 'Task';
     }
   };
 
-  dueInput.onchange = () => saveTaskFields(taskId, { due_date: dueInput.value || null });
-  prioSelect.onchange = () => saveTaskFields(taskId, { priority: prioSelect.value !== '' ? parseInt(prioSelect.value) : null });
+  dueInput.onchange = () => {
+    liveTask.due_date = dueInput.value || null;
+    saveTaskFields(taskId, { due_date: liveTask.due_date });
+  };
+  prioSelect.onchange = () => {
+    liveTask.priority = prioSelect.value !== '' ? parseInt(prioSelect.value) : null;
+    saveTaskFields(taskId, { priority: liveTask.priority });
+  };
 
   const notifDaysInput = document.getElementById('td-notif-days');
   const notifTimeInput = document.getElementById('td-notif-time');
   if (notifDaysInput) notifDaysInput.value = task.notif_days_before != null ? String(task.notif_days_before) : '';
   if (notifTimeInput) notifTimeInput.value = task.notif_time || '';
   const saveNotif = () => {
-    const days = notifDaysInput && notifDaysInput.value !== '' ? parseInt(notifDaysInput.value) : null;
-    const time = notifTimeInput && notifTimeInput.value ? notifTimeInput.value : null;
-    saveTaskFields(taskId, { notif_days_before: days, notif_time: time });
+    liveTask.notif_days_before = notifDaysInput && notifDaysInput.value !== '' ? parseInt(notifDaysInput.value) : null;
+    liveTask.notif_time = notifTimeInput && notifTimeInput.value ? notifTimeInput.value : null;
+    saveTaskFields(taskId, { notif_days_before: liveTask.notif_days_before, notif_time: liveTask.notif_time });
   };
   if (notifDaysInput) notifDaysInput.onchange = saveNotif;
   if (notifTimeInput) notifTimeInput.onchange = saveNotif;
+
+  // Rebuild the task card and overlay row when the modal closes
+  const _obs = new MutationObserver(() => {
+    if (!modal.classList.contains('open')) {
+      _obs.disconnect();
+      const cardEl = document.querySelector('.task-card[data-memo-name="' + taskId + '"]');
+      if (cardEl) cardEl.replaceWith(buildTaskCard(liveTask));
+      const rowEl = document.querySelector('.task-row[data-task-id="' + taskId + '"]');
+      if (rowEl) rowEl.replaceWith(buildTaskRow(liveTask, rowEl.parentElement));
+    }
+  });
+  _obs.observe(modal, { attributes: true, attributeFilter: ['class'] });
 
   // Tags section
   const tagsEl = document.getElementById('td-tags');
@@ -592,6 +614,7 @@ async function openTaskDetail(taskId) {
       chip.addEventListener('click', async () => {
         const newTags = tags.filter(x => x !== t);
         await saveTaskFields(taskId, { tags: newTags });
+        liveTask.tags = newTags;
         chip.remove();
       });
       tagsEl.appendChild(chip);

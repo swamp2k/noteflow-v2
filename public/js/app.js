@@ -206,10 +206,17 @@ if (initAuth()) {
           const item = document.querySelector(selector);
           if (item) item.classList.add('active');
         }
-        loadMemos();
-        // Load project AI conversation if landing directly on a project URL
-        if (currentView === 'tag' && currentTag && currentTag.startsWith('project:')) {
-          if (typeof loadProjectConversation === 'function') loadProjectConversation(currentTag);
+        if (currentView === 'tasks') {
+          // Tasks view needs its own renderer, not the notes feed
+          document.getElementById('composer').style.display = 'none';
+          document.getElementById('load-more').style.display = 'none';
+          renderTasksFeed();
+        } else {
+          loadMemos();
+          // Load project AI conversation if landing directly on a project URL
+          if (currentView === 'tag' && currentTag && currentTag.startsWith('project:')) {
+            if (typeof loadProjectConversation === 'function') loadProjectConversation(currentTag);
+          }
         }
       }
     } catch(e) {
