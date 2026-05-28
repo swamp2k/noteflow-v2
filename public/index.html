@@ -574,6 +574,8 @@
     white-space: nowrap;
   }
   #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  body.tasks-overlay-open #toast { bottom: auto; top: 20px; transform: translateX(-50%) translateY(-16px); }
+  body.tasks-overlay-open #toast.show { transform: translateX(-50%) translateY(0); }
 
   /* ── Spinner ────────────────────────────────────────────────────── */
   .spinner {

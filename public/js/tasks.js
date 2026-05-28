@@ -367,6 +367,7 @@ function openTasksOverlay() {
   overlay.classList.add('open');
   backdrop.classList.add('open');
   tasksOverlayOpen = true;
+  document.body.classList.add('tasks-overlay-open');
   renderTasksOverlay();
 }
 
@@ -377,6 +378,7 @@ function closeTasksOverlay() {
   overlay.classList.remove('open');
   backdrop.classList.remove('open');
   tasksOverlayOpen = false;
+  document.body.classList.remove('tasks-overlay-open');
 }
 
 async function renderTasksOverlay() {

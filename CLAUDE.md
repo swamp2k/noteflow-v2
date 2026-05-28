@@ -21,9 +21,10 @@ noteflow-v2/
 │   ├── lib/
 │   │   ├── utils.js           ← nanoid, extractTags, corsHeaders, openCors, json, jsonOpen, err, errOpen, sha256hex
 │   │   ├── auth.js            ← checkPartnerPassword, resolveModel, verifyJWT, ensureUser
-│   │   └── ai.js              ← ensureTagEmbeddingsTable, buildTrackerContext, callTrackerAI, callPartnerAI, shouldIndex, indexDocument
+│   │   ├── ai.js              ← ensureTagEmbeddingsTable, buildTrackerContext, callTrackerAI, callPartnerAI, shouldIndex, indexDocument
+│   │   └── notifications.js   ← runTaskNotifications(env) — cron handler for task due-date alerts
 │   └── handlers/
-│       ├── notes.js           ← /api/notes, /api/notes/:id, /api/notes/version, /api/notes/tag-contexts
+│       ├── notes.js           ← /api/notes, /api/notes/:id, /api/notes/:id/complete, /api/notes/version, /api/notes/tag-contexts
 │       ├── tags.js            ← /api/tags, /api/tags/graph
 │       ├── attachments.js     ← /api/attachments, /api/attachments/:id, /api/admin/reindex
 │       ├── tracker.js         ← /api/trackers, /api/trackers/:id, etc.
@@ -31,8 +32,10 @@ noteflow-v2/
 │       ├── user.js            ← /api/boot, /api/me, /api/user/settings
 │       ├── search.js          ← /api/search, /api/notes/autotag
 │       ├── email.js           ← /api/email/send
+│       ├── push.js            ← /api/push/vapid-key (GET), /api/push/subscribe (POST, DELETE)
+│       ├── project-ai.js      ← /api/project-ai (project context AI panel)
 │       └── public.js          ← service-worker.js, icons, manifest, /api/public/notes/:id, /api/public/attachments/:id
-├── wrangler.toml              ← Worker deployment config (main = "worker/index.js")
+├── wrangler.toml              ← Worker deployment config; includes [triggers] crons = ["0 * * * *"]
 ├── service-worker.js          ← Source for the browser service worker
 ├── schema.sql                 ← D1 schema reference (never auto-run)
 └── public/                    ← Cloudflare Pages (deployed as static files)
@@ -52,9 +55,12 @@ noteflow-v2/
         ├── composer.js        ← aiTags, addFile, renderImagePreviews, mdInsert, attachMdToolbar, setupComposer IIFE
         ├── notes.js           ← loadMemos, fetchAllMemos, getViewTitle, toggleArchive, confirmDelete, renderFeed, updateCard, removeCard
         ├── card.js            ← buildCard, makeActionBtn, openProjectPopover, openMorePopover, toggleTag, openShareModal
+        ├── tasks.js           ← renderTasksFeed, openTasksOverlay, closeTasksOverlay, openTaskDetail, quickAddTask, completeTask, saveTaskFields, buildTaskCard
         ├── lightbox.js        ← openLightbox, openFilePreview, renderLightbox, closeLightbox, touch/zoom IIFE
         ├── view-nav.js        ← renderProjectsNav, initCollapsibleSections, switchView, initNavItems, infiniteObserver
         ├── offline.js         ← ensureOfflineUI, setOffline, updateQueueBadge, checkSharePending, openComposerWithContent
+        ├── project-ai.js      ← project AI panel rendering (shown when viewing a project tag)
+        ├── push.js            ← subscribeToPush, unsubscribeFromPush (Web Push)
         └── app.js             ← marked.use() config, initAuth(), checkPublicShare IIFE, boot sequence, SW registration
 ```
 
@@ -99,12 +105,15 @@ The old Pages project `noteflow-frontend-dge` has been decommissioned — do not
 ## Worker Secrets
 
 ```
-TEAM_DOMAIN     = https://hadus.cloudflareaccess.com
-POLICY_AUD      = 3ec90fd4d...b647bba19b5  (CF Access audience tag)
-ANTHROPIC_KEY   = sk-ant-...              (AI features)
-VOYAGE_KEY      = pa-...                  (tag embeddings via voyage-4)
-RESEND_KEY      = re_...                  (email send feature)
-RESEND_FROM     = NoteFlow <noteflow@jeppesen.cc>
+TEAM_DOMAIN        = https://hadus.cloudflareaccess.com
+POLICY_AUD         = 3ec90fd4d...b647bba19b5  (CF Access audience tag)
+ANTHROPIC_KEY      = sk-ant-...              (AI features)
+VOYAGE_KEY         = pa-...                  (tag embeddings via voyage-4)
+RESEND_KEY         = re_...                  (email send feature)
+RESEND_FROM        = NoteFlow <noteflow@jeppesen.cc>
+VAPID_PUBLIC_KEY   = BFGSFyPT9QR...          (Web Push — set via: echo "..." | npx wrangler secret put VAPID_PUBLIC_KEY)
+VAPID_PRIVATE_KEY  = ncUi3S5y...             (Web Push)
+VAPID_SUBJECT      = mailto:martin@jeppesen.cc
 ```
 
 ---
@@ -201,8 +210,9 @@ Script load order in `index.html` (bottom of `<body>`):
 2. `api.js`, `utils.js`, `cache.js` — utilities
 3. `settings.js`, `email.js`, `account.js` — feature modules
 4. `composer.js`, `notes.js`, `card.js` — core UI
-5. `lightbox.js`, `view-nav.js`, `offline.js` — UI/UX
-6. `app.js` — boot sequence (must be last)
+5. `tasks.js`, `lightbox.js`, `view-nav.js`, `offline.js` — UI/UX
+6. `project-ai.js`, `push.js` — late feature modules
+7. `app.js` — boot sequence (must be last)
 
 ---
 
@@ -243,6 +253,39 @@ After every note save, update the version:
 saveNotesCache(allMemos, newVersion);
 setCachedVersion(Math.max(getCachedVersion(), newVersion));
 ```
+
+### Tasks feature state (state.js)
+```javascript
+let taskSortOrder    = localStorage.getItem('noteflow_task_sort') || 'priority';
+let tasksOverlayOpen = false;
+```
+`taskSortOrder` is the one settings value stored in localStorage (not D1) because it's a transient UI preference, not a user setting.
+
+New `settings` object keys for tasks and notifications:
+```
+tasks_hide_from_main_feed, tasks_default_priority, tasks_show_completed
+notif_enabled, notif_send_time, notif_discord_enabled, notif_discord_webhook
+notif_email_enabled, notif_email_address, notif_push_enabled
+notif_trigger_due_today, notif_trigger_overdue, notif_trigger_due_soon
+```
+
+### Tasks API query params (`GET /api/notes`)
+- `?is_task=1` — return only tasks with `completed_at IS NULL`
+- `?completed=1` — combined with `is_task=1`, return completed tasks
+- `?hide_tasks=1` — exclude tasks from main notes feed (appended client-side when `settings.tasks_hide_from_main_feed` is true)
+- `?sort=priority|due_date|created` — task sort order (NULLS LAST via `CASE WHEN`)
+
+`PATCH /api/notes/:id/complete` — sets `completed_at` to current ISO timestamp or `null`. Note: `completed_at` is TEXT ISO 8601, while `created_at`/`updated_at` are INTEGER Unix seconds — intentional, documented in `schema.sql`.
+
+### D1 table: push_subscriptions
+```sql
+push_subscriptions (id TEXT PK, user_id TEXT, endpoint TEXT UNIQUE,
+                    p256dh TEXT, auth_key TEXT, created_at INTEGER)
+```
+`/api/push/vapid-key` returns only `{ publicKey }` — never exposes `p256dh` or `auth_key` to the client.
+
+### Cron trigger
+`wrangler.toml` has `[triggers] crons = ["0 * * * *"]`. `worker/index.js` exports `scheduled(event, env, ctx)` which calls `runTaskNotifications(env)` from `worker/lib/notifications.js`. The handler runs every hour and checks each user's `notif_send_time` setting before sending alerts.
 
 ---
 
@@ -335,6 +378,8 @@ Anthropic calls use `anthropic-beta: prompt-caching-2024-07-31` with `cache_cont
 
 9. **When editing a worker handler, return `null` for unmatched routes** — do not return a 404 from inside a handler. The router in `worker/index.js` emits the final 404.
 
+10. **Never remove the `tasks-overlay-open` body class toggle from `openTasksOverlay()`/`closeTasksOverlay()`.** The toast (`#toast`, fixed at `bottom: 24px`) overlaps the tasks bottom-sheet on mobile. CSS in `index.html` uses `body.tasks-overlay-open #toast` to reposition the toast to `top: 20px` when the overlay is open. Removing the toggle breaks toast visibility during task operations.
+
 ---
 
 ## Testing Checklist After Any Change
@@ -357,13 +402,18 @@ Anthropic calls use `anthropic-beta: prompt-caching-2024-07-31` with `cache_cont
 
 | File | Role |
 |------|------|
-| `worker/index.js` | Router only (~74 lines) |
+| `worker/index.js` | Router + `scheduled()` cron export |
 | `worker/lib/utils.js` | Shared utilities (nanoid, CORS, JSON helpers) |
 | `worker/lib/auth.js` | JWT verification + user resolution |
 | `worker/lib/ai.js` | AI + embedding helpers (Anthropic, Voyage) |
-| `worker/handlers/*.js` | 9 route handler modules |
-| `public/index.html` | Main app shell (~1539 lines, no inline JS) |
+| `worker/lib/notifications.js` | Cron task notification logic |
+| `worker/handlers/*.js` | 11 route handler modules |
+| `schema.sql` | D1 schema reference (never auto-run) |
+| `public/index.html` | Main app shell (no inline JS) |
 | `public/js/state.js` | Global state (must load first) |
+| `public/js/tasks.js` | Tasks overlay, feed, detail modal, quick-add |
+| `public/js/push.js` | Web Push subscription management |
+| `public/js/project-ai.js` | Project AI panel |
 | `public/js/app.js` | Boot sequence (must load last) |
-| `public/js/*.js` | 14 frontend modules (plain scripts, shared scope) |
-| `service-worker.js` | Offline + queue support |
+| `public/js/*.js` | 17 frontend modules total (plain scripts, shared scope) |
+| `public/service-worker.js` | Offline queue + push notification handler (v24) |
