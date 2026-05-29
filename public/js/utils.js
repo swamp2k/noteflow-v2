@@ -34,16 +34,18 @@ function fileIcon(mime) {
   return '📎';
 }
 
-// ── Toast ─────────────────────────────────────────────────────────────────────
+// ── Activity Log ──────────────────────────────────────────────────────────────
 function toast(msg, duration = 2200) {
-  const el = document.getElementById('toast');
-  if (!el) return;
-  el.textContent = msg;
-  el.classList.add('show');
-  clearTimeout(toastTimer);
-  if (duration !== null) {
-    toastTimer = setTimeout(() => el.classList.remove('show'), duration);
-  }
+  _activityLog.push({ ts: new Date(), msg: String(msg) });
+  if (_activityLog.length > LOG_MAX) _activityLog.shift();
+  _logUnreadCount++;
+  _updateLogBadge();
+}
+function _updateLogBadge() {
+  const badge = document.getElementById('log-badge');
+  if (!badge) return;
+  badge.textContent = _logUnreadCount;
+  badge.style.display = _logUnreadCount > 0 ? 'inline-flex' : 'none';
 }
 
 // ── Date ──────────────────────────────────────────────────────────────────────

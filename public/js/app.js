@@ -137,6 +137,7 @@ function initAuth() { return true; }
 initSettingsControls();
 initCollapsibleSections();
 initNavItems();
+initProjectAI();
 if (initAuth()) {
   const params = new URLSearchParams(location.search);
   const q = params.get('q');
@@ -177,6 +178,9 @@ if (initAuth()) {
         renderProjectsNav();
       }
 
+      // Show alert task count badge on Tasks nav item
+      if (typeof updateTasksNavBadge === 'function') updateTasksNavBadge(boot.taskAlertCount || 0);
+
       // Restore state from URL
       if (q) {
         searchInput.value = q;
@@ -205,7 +209,18 @@ if (initAuth()) {
           const item = document.querySelector(selector);
           if (item) item.classList.add('active');
         }
-        loadMemos();
+        if (currentView === 'tasks') {
+          // Tasks view needs its own renderer, not the notes feed
+          document.getElementById('composer').style.display = 'none';
+          document.getElementById('load-more').style.display = 'none';
+          renderTasksFeed();
+        } else {
+          loadMemos();
+          // Load project AI conversation if landing directly on a project URL
+          if (currentView === 'tag' && currentTag && currentTag.startsWith('project:')) {
+            if (typeof loadProjectConversation === 'function') loadProjectConversation(currentTag);
+          }
+        }
       }
     } catch(e) {
       console.error('Boot failed, falling back to individual calls:', e);

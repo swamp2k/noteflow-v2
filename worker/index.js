@@ -8,7 +8,10 @@ import { tagsHandler } from "./handlers/tags.js";
 import { attachmentsHandler } from "./handlers/attachments.js";
 import { trackerHandler } from "./handlers/tracker.js";
 import { searchHandler } from "./handlers/search.js";
+import { projectAIHandler } from "./handlers/project-ai.js";
 import { emailHandler } from "./handlers/email.js";
+import { pushHandler } from "./handlers/push.js";
+import { runTaskNotifications } from "./lib/notifications.js";
 
 export default {
   async fetch(request, env, ctx) {
@@ -61,7 +64,13 @@ export default {
       res = await searchHandler(request, env, ctx, url, path, method, userId, origin);
       if (res) return res;
 
+      res = await projectAIHandler(request, env, ctx, url, path, method, userId, origin);
+      if (res) return res;
+
       res = await emailHandler(request, env, ctx, url, path, method, userId, origin);
+      if (res) return res;
+
+      res = await pushHandler(request, env, ctx, url, path, method, userId, origin);
       if (res) return res;
 
       return err("Not found", 404, origin);
@@ -69,5 +78,9 @@ export default {
       console.error("API error:", e.message, e.stack);
       return err("Internal server error", 500, origin);
     }
+  },
+
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(runTaskNotifications(env));
   }
 };

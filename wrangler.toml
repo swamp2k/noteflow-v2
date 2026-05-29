@@ -13,12 +13,18 @@ binding = "ATTACHMENTS"
 bucket_name = "noteflow-attachments"
 
 # Secrets — set via: npx wrangler secret put <NAME>
-# TEAM_DOMAIN   = https://hadus.cloudflareaccess.com
-# POLICY_AUD    = 3ec90fd4d44c80d81b5b2e35387ed0160410ea878adb234279738b647bba19b5
-# ANTHROPIC_KEY = sk-ant-...
-# VOYAGE_KEY    = pa-...    (Voyage AI — for tag embeddings)
-# RESEND_KEY    = re_...    (email feature)
-# RESEND_FROM   = NoteFlow <noteflow@jeppesen.cc>
+# TEAM_DOMAIN      = https://hadus.cloudflareaccess.com
+# POLICY_AUD       = 3ec90fd4d44c80d81b5b2e35387ed0160410ea878adb234279738b647bba19b5
+# ANTHROPIC_KEY    = sk-ant-...
+# VOYAGE_KEY       = pa-...    (Voyage AI — for tag embeddings)
+# RESEND_KEY       = re_...    (email feature)
+# RESEND_FROM      = NoteFlow <noteflow@jeppesen.cc>
+# VAPID_PUBLIC_KEY = <base64url> (generate: npx web-push generate-vapid-keys)
+# VAPID_PRIVATE_KEY= <base64url>
+# VAPID_SUBJECT    = mailto:martin@jeppesen.cc
+
+[triggers]
+crons = ["0 * * * *"]  # every hour — handler checks notif_send_time per user
 
 [pages_build_config]
 build_command = ""

@@ -221,6 +221,36 @@ function syncSettingsControls() {
   document.querySelectorAll('.theme-swatch').forEach((sw, i) => {
     sw.classList.toggle('active', THEMES[i]?.id === s.theme);
   });
+
+  // Task settings
+  const taskHideCb    = el('setting-tasks-hide-from-feed');
+  const taskPrioSel   = el('setting-tasks-default-priority');
+  const taskBadgeCb   = el('setting-tasks-show-count-badge');
+  if (taskHideCb)  taskHideCb.checked  = !!s.tasks_hide_from_main_feed;
+  if (taskPrioSel) taskPrioSel.value   = s.tasks_default_priority != null ? String(s.tasks_default_priority) : '';
+  if (taskBadgeCb) taskBadgeCb.checked = s.tasks_show_count_badge !== false;
+
+  // Notification settings
+  const notifEnabledCb     = el('setting-notif-enabled');
+  const notifDiscordCb     = el('setting-notif-discord');
+  const notifDiscordInput  = el('setting-notif-discord-webhook');
+  const notifEmailCb       = el('setting-notif-email');
+  const notifEmailInput    = el('setting-notif-email-address');
+  const notifPushCb        = el('setting-notif-push');
+  const notifChannels      = el('notif-channels-section');
+
+  if (notifEnabledCb)     notifEnabledCb.checked     = !!s.notif_enabled;
+  if (notifDiscordCb)     notifDiscordCb.checked      = !!s.notif_discord_enabled;
+  if (notifDiscordInput)  notifDiscordInput.value     = s.notif_discord_webhook || '';
+  if (notifEmailCb)       notifEmailCb.checked        = !!s.notif_email_enabled;
+  if (notifEmailInput)    notifEmailInput.value       = s.notif_email_address || '';
+  if (notifPushCb)        notifPushCb.checked         = !!s.notif_push_enabled;
+  if (notifChannels)      notifChannels.style.display = s.notif_enabled ? '' : 'none';
+  // Show/hide discord webhook input based on discord toggle
+  const discordWebhookRow = el('notif-discord-webhook-row');
+  if (discordWebhookRow) discordWebhookRow.style.display = s.notif_discord_enabled ? '' : 'none';
+  const emailAddressRow = el('notif-email-address-row');
+  if (emailAddressRow) emailAddressRow.style.display = s.notif_email_enabled ? '' : 'none';
 }
 
 // ── Settings page controls ────────────────────────────────────────────────────
@@ -337,6 +367,72 @@ function initSettingsControls() {
   tagCategoriesInput.addEventListener('input', () => { settings.tagCategories = tagCategoriesInput.value; saveSettings(); });
   tagPeopleInput.addEventListener('input',     () => { settings.tagPeople     = tagPeopleInput.value;     saveSettings(); });
 
+  // ── Task settings ─────────────────────────────────────────────────────────
+  const taskHideCb  = document.getElementById('setting-tasks-hide-from-feed');
+  const taskPrioSel = document.getElementById('setting-tasks-default-priority');
+  if (taskHideCb) taskHideCb.addEventListener('change', () => {
+    settings.tasks_hide_from_main_feed = taskHideCb.checked;
+    saveSettings();
+    if (currentView === 'all') loadMemos();
+  });
+  if (taskPrioSel) taskPrioSel.addEventListener('change', () => {
+    settings.tasks_default_priority = taskPrioSel.value !== '' ? parseInt(taskPrioSel.value) : null;
+    saveSettings();
+  });
+  const taskBadgeCb = document.getElementById('setting-tasks-show-count-badge');
+  if (taskBadgeCb) taskBadgeCb.addEventListener('change', () => {
+    settings.tasks_show_count_badge = taskBadgeCb.checked;
+    saveSettings();
+    if (typeof updateTasksNavBadge === 'function') updateTasksNavBadge(_alertTaskCount);
+  });
+
+  // ── Notification settings ──────────────────────────────────────────────────
+  const notifEnabledCb     = document.getElementById('setting-notif-enabled');
+  const notifDiscordCb     = document.getElementById('setting-notif-discord');
+  const notifDiscordInput  = document.getElementById('setting-notif-discord-webhook');
+  const notifEmailCb       = document.getElementById('setting-notif-email');
+  const notifEmailInput    = document.getElementById('setting-notif-email-address');
+  const notifPushCb        = document.getElementById('setting-notif-push');
+  const notifChannels      = document.getElementById('notif-channels-section');
+  const discordWebhookRow  = document.getElementById('notif-discord-webhook-row');
+  const emailAddressRow    = document.getElementById('notif-email-address-row');
+
+  if (notifEnabledCb) notifEnabledCb.addEventListener('change', () => {
+    settings.notif_enabled = notifEnabledCb.checked;
+    if (notifChannels) notifChannels.style.display = notifEnabledCb.checked ? '' : 'none';
+    saveSettings();
+  });
+  if (notifDiscordCb) notifDiscordCb.addEventListener('change', () => {
+    settings.notif_discord_enabled = notifDiscordCb.checked;
+    if (discordWebhookRow) discordWebhookRow.style.display = notifDiscordCb.checked ? '' : 'none';
+    saveSettings();
+  });
+  if (notifDiscordInput) notifDiscordInput.addEventListener('input', () => {
+    settings.notif_discord_webhook = notifDiscordInput.value.trim();
+    saveSettings();
+  });
+  if (notifEmailCb) notifEmailCb.addEventListener('change', () => {
+    settings.notif_email_enabled = notifEmailCb.checked;
+    if (emailAddressRow) emailAddressRow.style.display = notifEmailCb.checked ? '' : 'none';
+    saveSettings();
+  });
+  if (notifEmailInput) notifEmailInput.addEventListener('input', () => {
+    settings.notif_email_address = notifEmailInput.value.trim();
+    saveSettings();
+  });
+  if (notifPushCb) notifPushCb.addEventListener('change', async () => {
+    if (notifPushCb.checked) {
+      if (typeof subscribeToPush === 'function') {
+        const ok = await subscribeToPush();
+        if (!ok) { notifPushCb.checked = false; return; }
+      }
+    } else {
+      if (typeof unsubscribeFromPush === 'function') await unsubscribeFromPush();
+    }
+    settings.notif_push_enabled = notifPushCb.checked;
+    saveSettings();
+  });
+
   tagAllBtn.addEventListener('click', async () => {
     if (tagAllBtn.disabled) return;
     tagAllBtn.disabled = true;
@@ -356,6 +452,39 @@ function initSettingsControls() {
     }
     tagAllBtn.disabled = false;
   });
+
+  // ── Activity log ──────────────────────────────────────────────────────────
+  const logBtn = document.getElementById('btn-view-logs');
+  if (logBtn) {
+    logBtn.addEventListener('click', () => {
+      _logUnreadCount = 0;
+      _updateLogBadge();
+      const container = document.getElementById('log-modal-entries');
+      container.innerHTML = '';
+      if (!_activityLog.length) {
+        container.innerHTML = '<span style="color:var(--muted)">No log entries yet.</span>';
+      } else {
+        [..._activityLog].reverse().forEach(entry => {
+          const row = document.createElement('div');
+          row.style.cssText = 'padding:4px 6px;border-radius:4px;background:var(--surface-alt);word-break:break-word;line-height:1.4';
+          const time = entry.ts.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+          const date = entry.ts.toLocaleDateString('en-GB', { day:'2-digit', month:'short' });
+          row.innerHTML = `<span style="color:var(--muted)">[${date} ${time}]</span> ${escHtml(entry.msg)}`;
+          container.appendChild(row);
+        });
+      }
+      document.getElementById('log-modal').classList.add('open');
+    });
+  }
+  const logClearBtn = document.getElementById('btn-log-clear');
+  if (logClearBtn) {
+    logClearBtn.addEventListener('click', () => {
+      _activityLog = [];
+      _logUnreadCount = 0;
+      _updateLogBadge();
+      document.getElementById('log-modal-entries').innerHTML = '<span style="color:var(--muted)">Log cleared.</span>';
+    });
+  }
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────

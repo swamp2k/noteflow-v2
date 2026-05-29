@@ -6,6 +6,7 @@ async function loadMemos(append = false) {
     else if (currentView === 'starred') qs.set('filter', 'starred');
     else if (currentView === 'hidden')  qs.set('filter', 'hidden');
     else if (currentView === 'shared')  qs.set('filter', 'shared');
+    else if (settings.tasks_hide_from_main_feed) qs.set('hide_tasks', '1');
     if (currentView === 'tag' && currentTag) qs.set('tag', currentTag);
     if (append && nextCursor) qs.set('cursor', nextCursor);
 
@@ -57,7 +58,7 @@ async function fetchAllMemos() {
 // ── Render feed ───────────────────────────────────────────────────────────────
 function getViewTitle(view) {
   if (view === 'tag' && currentTag) return currentTag.replace('project:', '');
-  return { all:'All notes', offline:'Offline', starred:'Starred', hidden:'Hidden', archived:'Archive', shared:'Shared', attachments:'Attachments' }[view] || 'Notes';
+  return { all:'All notes', tasks:'Tasks', offline:'Offline', starred:'Starred', hidden:'Hidden', archived:'Archive', shared:'Shared', attachments:'Attachments' }[view] || 'Notes';
 }
 
 // ── Archive / Delete ──────────────────────────────────────────────────────────
@@ -104,6 +105,7 @@ async function deleteAllArchived() {
 // Inline editing — handled per-card in buildCard
 
 function renderFeed(appendMode = false) {
+  if (currentView === 'tasks') return;
   const feed = document.getElementById('feed');
 
   if (!appendMode) {
@@ -116,6 +118,8 @@ function renderFeed(appendMode = false) {
     // Archive view: inject "Delete all" toolbar
     const existingDeleteAll = document.getElementById('delete-all-bar');
     if (existingDeleteAll) existingDeleteAll.remove();
+    if (typeof updateProjectAIVisibility === 'function') updateProjectAIVisibility();
+
     if (currentView === 'archived' && allMemos.length > 0) {
       const bar = document.createElement('div');
       bar.id = 'delete-all-bar';

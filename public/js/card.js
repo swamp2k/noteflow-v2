@@ -314,65 +314,68 @@ function buildCard(memo) {
   if (memo.attachments && memo.attachments.length) {
     const attRow = document.createElement('div');
     attRow.className = 'card-images';
+    // Images first
     memo.attachments.forEach(att => {
-      if (!att.id) return;
+      if (!att.id || !isImageAttachment(att)) return;
+      const url = attachmentUrl(att);
+      const img = document.createElement('img');
+      img.loading = 'lazy';
+      img.style.opacity = '0.4';
+      // Fetch with auth token (checks offline cache first)
+      getAttachmentBlob(att, url)
+        .then(blob => {
+          img.src = URL.createObjectURL(blob);
+          img.style.opacity = '1';
+          img._blobUrl = img.src; // store for lightbox
+        })
+        .catch(() => { img.alt = att.filename || 'image'; img.style.opacity = '0.3'; });
+      img.addEventListener('click', () => {
+        if (!img._blobUrl) return;
+        // Collect all loaded blob URLs from this card's image row
+        const allUrls = Array.from(attRow.querySelectorAll('img'))
+          .map(i => i._blobUrl).filter(Boolean);
+        openLightbox(img._blobUrl, allUrls);
+      });
+      attRow.appendChild(img);
+    });
+    // Non-image file chips after
+    memo.attachments.forEach(att => {
+      if (!att.id || isImageAttachment(att)) return;
       const url = attachmentUrl(att);
       const mime = att.mime_type || att.type || '';
-      if (isImageAttachment(att)) {
-        const img = document.createElement('img');
-        img.loading = 'lazy';
-        img.style.opacity = '0.4';
-        // Fetch with auth token (checks offline cache first)
-        getAttachmentBlob(att, url)
-          .then(blob => {
-            img.src = URL.createObjectURL(blob);
-            img.style.opacity = '1';
-            img._blobUrl = img.src; // store for lightbox
-          })
-          .catch(() => { img.alt = att.filename || 'image'; img.style.opacity = '0.3'; });
-        img.addEventListener('click', () => {
-          if (!img._blobUrl) return;
-          // Collect all loaded blob URLs from this card's image row
-          const allUrls = Array.from(attRow.querySelectorAll('img'))
-            .map(i => i._blobUrl).filter(Boolean);
-          openLightbox(img._blobUrl, allUrls);
-        });
-        attRow.appendChild(img);
-      } else {
-        const fname = att.filename || att.id || 'file';
-        const ext = fname.split('.').pop().toLowerCase();
-        const isPdf     = mime === 'application/pdf' || ext === 'pdf';
-        const isVideo   = mime.startsWith('video/') || ['mp4','webm','mov','mkv'].includes(ext);
-        const isAudio   = mime.startsWith('audio/') || ['mp3','ogg','wav','flac','m4a'].includes(ext);
-        const isText    = mime.startsWith('text/') || ['txt','md','csv','json','xml','html','js','css'].includes(ext);
-        const isIndexed = ['docx','doc','xlsx','xls','odt','ods','odp'].includes(ext);
-        const canPreview = isPdf || isVideo || isAudio || isText || isIndexed;
+      const fname = att.filename || att.id || 'file';
+      const ext = fname.split('.').pop().toLowerCase();
+      const isPdf     = mime === 'application/pdf' || ext === 'pdf';
+      const isVideo   = mime.startsWith('video/') || ['mp4','webm','mov','mkv'].includes(ext);
+      const isAudio   = mime.startsWith('audio/') || ['mp3','ogg','wav','flac','m4a'].includes(ext);
+      const isText    = mime.startsWith('text/') || ['txt','md','csv','json','xml','html','js','css'].includes(ext);
+      const isIndexed = ['docx','doc','xlsx','xls','odt','ods','odp'].includes(ext);
+      const canPreview = isPdf || isVideo || isAudio || isText || isIndexed;
 
-        const chip = document.createElement('button');
-        chip.className = 'file-chip' + (canPreview ? ' file-chip-preview' : '');
-        const isIndexing = att._indexing === true;
-        chip.innerHTML = fileIcon(mime) + ' <span>' + escHtml(fname) + '</span>' + (isIndexing ? ' <small style="opacity:0.6;font-size:10px">⏳</small>' : (canPreview ? ' <small style="opacity:0.5;font-size:10px">▶</small>' : ''));
-        chip.title = isIndexing ? 'Indexing for preview…' : (canPreview ? 'Preview ' + fname : 'Download ' + fname);
+      const chip = document.createElement('button');
+      chip.className = 'file-chip' + (canPreview ? ' file-chip-preview' : '');
+      const isIndexing = att._indexing === true;
+      chip.innerHTML = fileIcon(mime) + ' <span>' + escHtml(fname) + '</span>' + (isIndexing ? ' <small style="opacity:0.6;font-size:10px">⏳</small>' : (canPreview ? ' <small style="opacity:0.5;font-size:10px">▶</small>' : ''));
+      chip.title = isIndexing ? 'Indexing for preview…' : (canPreview ? 'Preview ' + fname : 'Download ' + fname);
 
-        chip.addEventListener('click', async () => {
-          if (canPreview) {
-            openFilePreview(att, fname, mime, url, isPdf, isVideo, isAudio, isText, isIndexed);
-          } else {
-            chip.style.opacity = '0.6';
-            try {
-              const r = await fetch(url, { credentials: 'omit', headers: authHeaders() });
-              if (!r.ok) throw new Error('Download failed: ' + r.status);
-              const blob = await r.blob();
-              const blobUrl = URL.createObjectURL(blob);
-              const a = document.createElement('a');
-              a.href = blobUrl; a.download = fname; a.click();
-              setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
-            } catch(e) { toast('Download failed: ' + e.message); }
-            chip.style.opacity = '1';
-          }
-        });
-        attRow.appendChild(chip);
-      }
+      chip.addEventListener('click', async () => {
+        if (canPreview) {
+          openFilePreview(att, fname, mime, url, isPdf, isVideo, isAudio, isText, isIndexed);
+        } else {
+          chip.style.opacity = '0.6';
+          try {
+            const r = await fetch(url, { credentials: 'omit', headers: authHeaders() });
+            if (!r.ok) throw new Error('Download failed: ' + r.status);
+            const blob = await r.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = blobUrl; a.download = fname; a.click();
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+          } catch(e) { toast('Download failed: ' + e.message); }
+          chip.style.opacity = '1';
+        }
+      });
+      attRow.appendChild(chip);
     });
     if (attRow.children.length) card.appendChild(attRow);
   }
@@ -513,6 +516,28 @@ function openMorePopover(memo, anchorBtn) {
     await toggleTag(memo, 'keep-offline');
   });
   pop.appendChild(offlineBtn);
+
+  // Convert to task (notes only)
+  if (!memo.is_task) {
+    const div2 = document.createElement('div');
+    div2.className = 'project-popover-divider';
+    pop.appendChild(div2);
+
+    const toTaskBtn = document.createElement('button');
+    toTaskBtn.className = 'project-popover-item';
+    toTaskBtn.innerHTML = '<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;margin-right:8px"><polyline points="9 11 12 14 20 6"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg> Convert to task';
+    toTaskBtn.addEventListener('click', async () => {
+      closeMorePopover();
+      try {
+        await apiPatch('/notes/' + memo.id, { is_task: 1, priority: null, due_date: null });
+        const idx = allMemos.findIndex(m => m.id === memo.id);
+        if (idx !== -1) allMemos.splice(idx, 1);
+        removeCard(memo.id);
+        toast('Converted to task');
+      } catch(e) { toast('Error: ' + e.message); }
+    });
+    pop.appendChild(toTaskBtn);
+  }
 
   // Position below anchor
   document.body.appendChild(pop);
