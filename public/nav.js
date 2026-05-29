@@ -97,7 +97,7 @@
     // ── Notes section (index only) ──
     if (isIndex) {
       nav.appendChild(navBtn('notes', 'All notes', { view: 'all', active: true, id: 'nav-all' }));
-      nav.appendChild(navBtn('tasks', 'Tasks', { view: 'tasks' }));
+      nav.appendChild(navBtn('tasks', '<span id="nav-tasks-label">Tasks</span>', { view: 'tasks', id: 'nav-tasks-btn' }));
       nav.appendChild(navBtn('offline', 'Offline', { view: 'offline' }));
       nav.appendChild(navBtn('hidden', 'Hidden', { view: 'hidden' }));
       nav.appendChild(navBtn('archive', 'Archive', { view: 'archived' }));
@@ -264,6 +264,14 @@
     hamburger?.addEventListener('click', () => { sidebar?.classList.toggle('open'); overlay?.classList.toggle('open'); });
     overlay?.addEventListener('click', close);
   }
+
+  // ── Task alert badge ─────────────────────────────────────────────────────────
+  window.updateTasksNavBadge = function(count) {
+    const label = document.getElementById('nav-tasks-label');
+    if (!label) return;
+    const settingsEnabled = typeof settings === 'undefined' || settings.tasks_show_count_badge !== false;
+    label.textContent = (settingsEnabled && count > 0) ? 'Tasks (' + count + ')' : 'Tasks';
+  };
 
   // ── Init ─────────────────────────────────────────────────────────────────────
   buildSidebar();

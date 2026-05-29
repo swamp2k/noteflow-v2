@@ -7,6 +7,17 @@
 const PRIORITY_COLORS = { 1: '#ef4444', 2: '#f59e0b', 3: '#22c55e', null: '#9ca3af' };
 const PRIORITY_LABELS = { 1: 'High', 2: 'Medium', 3: 'Low', null: 'None' };
 
+let _alertTaskCount = 0;
+
+function countAlertTasks(tasks) {
+  const today = new Date().toISOString().slice(0, 10);
+  return tasks.filter(t => t.priority === 1 || t.due_date === today || (t.due_date && t.due_date < today)).length;
+}
+
+function refreshTaskBadge() {
+  if (typeof updateTasksNavBadge === 'function') updateTasksNavBadge(_alertTaskCount);
+}
+
 function priorityDot(priority) {
   const color = PRIORITY_COLORS[priority] || PRIORITY_COLORS[null];
   const d = document.createElement('span');
@@ -78,6 +89,7 @@ async function quickAddTask(text, feedEl) {
   try {
     const result = await apiPost('/notes', { content, is_task: 1, priority });
     optimisticRow.replaceWith(buildTaskRow(result.note, feedEl));
+    if (priority === 1) { _alertTaskCount++; refreshTaskBadge(); }
   } catch(e) {
     optimisticRow.remove();
     toast('Failed to create task: ' + e.message);
@@ -155,6 +167,11 @@ function buildTaskCard(task) {
     card.style.opacity = '0.5';
     const updated = await completeTask(task.id, done);
     if (updated) {
+      if (done) {
+        const today = new Date().toISOString().slice(0, 10);
+        const wasAlert = task.priority === 1 || task.due_date === today || (task.due_date && task.due_date < today);
+        if (wasAlert) { _alertTaskCount = Math.max(0, _alertTaskCount - 1); refreshTaskBadge(); }
+      }
       card.style.transition = 'opacity 0.3s';
       card.style.opacity = '0';
       setTimeout(() => card.remove(), 300);
@@ -312,6 +329,9 @@ async function renderTasksFeed() {
     const data = await apiGet('/notes?is_task=1&sort=' + sortParam + '&pageSize=100');
     const tasks = data.notes || [];
 
+    _alertTaskCount = countAlertTasks(tasks);
+    refreshTaskBadge();
+
     if (tasks.length === 0) {
       const empty = document.createElement('div');
       empty.className = 'empty-state';
@@ -428,6 +448,9 @@ async function renderTasksOverlay() {
     const data = await apiGet('/notes?is_task=1&sort=' + sortParam + '&pageSize=100');
     const tasks = data.notes || [];
     feedEl.innerHTML = '';
+
+    _alertTaskCount = countAlertTasks(tasks);
+    refreshTaskBadge();
 
     if (!tasks.length) {
       feedEl.innerHTML = '<div style="padding:20px;color:var(--muted);font-size:13px">No active tasks.</div>';

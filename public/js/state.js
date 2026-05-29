@@ -38,6 +38,7 @@ let settings = {
   tasks_hide_from_main_feed:  true,
   tasks_default_priority:     null,
   tasks_show_completed:       false,
+  tasks_show_count_badge:     true,
   // Notification settings
   notif_enabled:              false,
   notif_send_time:            '08:00',

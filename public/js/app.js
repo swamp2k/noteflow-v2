@@ -178,6 +178,9 @@ if (initAuth()) {
         renderProjectsNav();
       }
 
+      // Show alert task count badge on Tasks nav item
+      if (typeof updateTasksNavBadge === 'function') updateTasksNavBadge(boot.taskAlertCount || 0);
+
       // Restore state from URL
       if (q) {
         searchInput.value = q;

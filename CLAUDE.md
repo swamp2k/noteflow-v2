@@ -282,7 +282,7 @@ let tasksOverlayOpen = false;
 
 `settings` object keys for tasks and notifications:
 ```
-tasks_hide_from_main_feed, tasks_default_priority, tasks_show_completed
+tasks_hide_from_main_feed, tasks_default_priority, tasks_show_completed, tasks_show_count_badge
 notif_enabled
 notif_discord_enabled, notif_discord_webhook
 notif_email_enabled, notif_email_address

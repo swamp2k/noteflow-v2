@@ -225,8 +225,10 @@ function syncSettingsControls() {
   // Task settings
   const taskHideCb    = el('setting-tasks-hide-from-feed');
   const taskPrioSel   = el('setting-tasks-default-priority');
+  const taskBadgeCb   = el('setting-tasks-show-count-badge');
   if (taskHideCb)  taskHideCb.checked  = !!s.tasks_hide_from_main_feed;
   if (taskPrioSel) taskPrioSel.value   = s.tasks_default_priority != null ? String(s.tasks_default_priority) : '';
+  if (taskBadgeCb) taskBadgeCb.checked = s.tasks_show_count_badge !== false;
 
   // Notification settings
   const notifEnabledCb     = el('setting-notif-enabled');
@@ -376,6 +378,12 @@ function initSettingsControls() {
   if (taskPrioSel) taskPrioSel.addEventListener('change', () => {
     settings.tasks_default_priority = taskPrioSel.value !== '' ? parseInt(taskPrioSel.value) : null;
     saveSettings();
+  });
+  const taskBadgeCb = document.getElementById('setting-tasks-show-count-badge');
+  if (taskBadgeCb) taskBadgeCb.addEventListener('change', () => {
+    settings.tasks_show_count_badge = taskBadgeCb.checked;
+    saveSettings();
+    if (typeof updateTasksNavBadge === 'function') updateTasksNavBadge(_alertTaskCount);
   });
 
   // ── Notification settings ──────────────────────────────────────────────────
