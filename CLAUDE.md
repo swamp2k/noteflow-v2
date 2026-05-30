@@ -200,13 +200,14 @@ After boot, the frontend (`app.js`):
 2. Caches display prefs to localStorage
 3. Checks cache version — clears offline cache if stale
 4. Renders sidebar (trackers + project tags) immediately
-5. Checks URL hash for Android widget deep links (`#/tasks`, `#/task/<id>`, `#/new-task`) — these take priority over `?v=` param
+5. Checks URL hash for deep links (`#/tasks`, `#/task/<id>`, `#/new-task`, `#/new-note`) — these take priority over `?v=` param
 6. Falls back to `?v=` URL param to restore view. If view is `tasks`, calls `renderTasksFeed()`. Otherwise calls `loadMemos()`.
 
-**Hash deep-links** (added for Android widget):
+**Hash deep-links** (used by Android widget and PWA shortcuts):
 - `#/tasks` → switches to tasks view
 - `#/task/<id>` → switches to tasks view, then calls `openTaskDetail(id)` after 300ms
 - `#/new-task` → switches to tasks view, then calls `quickAddTask()` after 300ms
+- `#/new-note` → stays on notes view, focuses `#composer-textarea` after 300ms
 
 **Critical:** Never call `loadMemos()` when the view is `tasks`. The tasks feed uses `renderTasksFeed()` (defined in `tasks.js`). `loadMemos()` fetches regular notes and calls `renderFeed()`, which produces an empty or wrong result in the tasks view.
 
@@ -275,6 +276,16 @@ removeCard(memoId) // removes one card from DOM
 `renderFeed()` is only for full list rebuilds (view switches, new notes, pagination).
 
 For tasks specifically, use `buildTaskCard(task)` and replace the existing card DOM node directly. `renderTasksFeed()` is only for full task list rebuilds.
+
+### Swipe left to archive (mobile gesture)
+An IIFE at the bottom of `public/js/card.js` attaches `touchstart`/`touchmove`/`touchend` to `document` using event delegation on `.memo-card` elements. Works for both note cards (main feed) and task cards (tasks view).
+
+- Threshold: 80px left swipe (horizontal movement must exceed vertical to avoid scroll conflicts)
+- `touchmove` uses `{ passive: false }` and calls `e.preventDefault()` once a horizontal swipe is confirmed, to block page scroll during the gesture
+- Visual feedback: card translates with finger; background turns `#fde8e8` at threshold
+- On release past threshold: card flies out left + fades, then `apiPatch('/notes/:id', { archived: true })` is called
+- On API error: card snaps back; on release before threshold: card snaps back
+- Does NOT fire when touching `button, a, input, textarea, select, label` elements
 
 ### Tag system
 Tags are strings in `note_tags`. Special prefixes:

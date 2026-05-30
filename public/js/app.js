@@ -199,9 +199,9 @@ if (initAuth()) {
           loadMemos();
         }
       } else {
-        // Hash deep-links from Android widget (#/tasks, #/task/<id>, #/new-task)
+        // Hash deep-links from Android widget (#/tasks, #/task/<id>, #/new-task, #/new-note)
         const hash = window.location.hash;
-        let _hashTaskId = null, _hashNewTask = false;
+        let _hashTaskId = null, _hashNewTask = false, _hashNewNote = false;
         if (hash === '#/tasks') {
           currentView = 'tasks';
         } else if (hash.startsWith('#/task/')) {
@@ -210,6 +210,8 @@ if (initAuth()) {
         } else if (hash === '#/new-task') {
           currentView = 'tasks';
           _hashNewTask = true;
+        } else if (hash === '#/new-note') {
+          _hashNewNote = true;
         } else if (v) {
           currentView = v;
           if (v === 'tag' && t) currentTag = t;
@@ -236,6 +238,12 @@ if (initAuth()) {
           if (_hashNewTask) setTimeout(() => { if (typeof quickAddTask === 'function') quickAddTask(); }, 300);
         } else {
           loadMemos();
+          if (_hashNewNote) {
+            setTimeout(function() {
+              const ta = document.getElementById('composer-textarea');
+              if (ta) { ta.focus(); ta.scrollIntoView({ behavior: 'smooth' }); }
+            }, 300);
+          }
           // Load project AI conversation if landing directly on a project URL
           if (currentView === 'tag' && currentTag && currentTag.startsWith('project:')) {
             if (typeof loadProjectConversation === 'function') loadProjectConversation(currentTag);

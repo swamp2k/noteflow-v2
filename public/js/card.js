@@ -624,3 +624,76 @@ document.getElementById('copy-link-btn').addEventListener('click', () => {
     input.select(); document.execCommand('copy'); toast('Link copied!');
   });
 });
+
+// ── Swipe left to archive (mobile gesture) ───────────────────────────────────
+(function() {
+  let startX = 0, startY = 0, activeCard = null, isSwiping = false;
+
+  function getCard(el) {
+    while (el && el !== document.body) {
+      if (el.classList && el.classList.contains('memo-card')) return el;
+      el = el.parentElement;
+    }
+    return null;
+  }
+
+  document.addEventListener('touchstart', function(e) {
+    if (e.touches.length !== 1) return;
+    const card = getCard(e.target);
+    if (!card) return;
+    if (e.target.closest('button, a, input, textarea, select, label')) return;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    activeCard = card;
+    isSwiping = false;
+    card.style.transition = '';
+  }, { passive: true });
+
+  document.addEventListener('touchmove', function(e) {
+    if (!activeCard) return;
+    const dx = e.touches[0].clientX - startX;
+    const dy = Math.abs(e.touches[0].clientY - startY);
+
+    if (!isSwiping) {
+      if (Math.abs(dx) < 8 && dy < 8) return;
+      if (dy > Math.abs(dx) || dx > 0) { activeCard = null; return; }
+      isSwiping = true;
+    }
+
+    e.preventDefault();
+    const clamped = Math.max(dx, -activeCard.offsetWidth);
+    activeCard.style.transform = 'translateX(' + clamped + 'px)';
+    activeCard.style.background = Math.abs(clamped) >= 80 ? '#fde8e8' : '';
+  }, { passive: false });
+
+  document.addEventListener('touchend', function(e) {
+    if (!activeCard || !isSwiping) { activeCard = null; isSwiping = false; return; }
+    const dx = e.changedTouches[0].clientX - startX;
+    const card = activeCard;
+    activeCard = null;
+    isSwiping = false;
+
+    if (dx < -80) {
+      const id = card.dataset.memoName;
+      card.style.transition = 'transform 0.25s ease, opacity 0.25s ease';
+      card.style.transform = 'translateX(-110%)';
+      card.style.opacity = '0';
+      apiPatch('/notes/' + id, { archived: true }).then(() => {
+        const idx = allMemos.findIndex(function(m) { return m.id === id; });
+        if (idx !== -1) allMemos.splice(idx, 1);
+        setTimeout(function() { if (card.parentElement) card.remove(); }, 260);
+        toast('Archived');
+      }).catch(function(err) {
+        card.style.transition = 'transform 0.3s ease, opacity 0.3s ease, background 0.2s';
+        card.style.transform = '';
+        card.style.opacity = '';
+        card.style.background = '';
+        toast('Error: ' + err.message);
+      });
+    } else {
+      card.style.transition = 'transform 0.3s ease, background 0.2s';
+      card.style.transform = '';
+      card.style.background = '';
+    }
+  }, { passive: true });
+})();
