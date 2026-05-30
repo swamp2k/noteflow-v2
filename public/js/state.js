@@ -34,6 +34,22 @@ let settings = {
   reminderEmail:   '',
   emailMakePublic: false,
   _semanticCoords: null,
+  // Task settings
+  tasks_hide_from_main_feed:  true,
+  tasks_default_priority:     null,
+  tasks_show_completed:       false,
+  tasks_show_count_badge:     true,
+  // Notification settings
+  notif_enabled:              false,
+  notif_send_time:            '08:00',
+  notif_discord_enabled:      false,
+  notif_discord_webhook:      '',
+  notif_email_enabled:        false,
+  notif_email_address:        '',
+  notif_push_enabled:         false,
+  notif_trigger_due_today:    true,
+  notif_trigger_overdue:      true,
+  notif_trigger_due_soon:     false,
 };
 // Read ONLY display preferences from localStorage for instant boot theming.
 // Sensitive keys (voyageApiKey etc.) live in D1 only and are never touched here.
@@ -56,6 +72,7 @@ let _pendingShareContent = null;
 const NOTES_CACHE_KEY     = 'noteflow_notes_cache';
 const NOTES_CACHE_VERSION = 'noteflow_cache_version';
 const ATT_CACHE_NAME      = 'noteflow-attachments-v1';
+const TASKS_CACHE_KEY     = 'noteflow_tasks_cache';
 
 let _prefetchRunning = false;
 
@@ -71,6 +88,11 @@ let _searchDebounce = null;
 
 let _loadingMore = false;
 
+// ── Tasks ─────────────────────────────────────────────────────────────────────
+let taskSortOrder    = localStorage.getItem('noteflow_task_sort') || 'priority';
+// 'priority' | 'due_date' | 'created'
+let tasksOverlayOpen = false;
+
 // ── Lightbox ──────────────────────────────────────────────────────────────────
 let lbImages = [];
 let lbIndex  = 0;
@@ -79,8 +101,11 @@ let _lbPinching = false, _lbPinchDist0 = 0;
 let _lbDragging = false, _lbDragOX = 0, _lbDragOY = 0;
 let _lbLastTap = 0;
 
-// ── Toast ─────────────────────────────────────────────────────────────────────
-let toastTimer;
+// ── Activity Log ──────────────────────────────────────────────────────────────
+let toastTimer; // kept for backwards compat (unused)
+let _activityLog = [];   // { ts: Date, msg: string }[]  capped at LOG_MAX
+let _logUnreadCount = 0;
+const LOG_MAX = 50;
 
 // ── Themes ────────────────────────────────────────────────────────────────────
 const THEMES = [

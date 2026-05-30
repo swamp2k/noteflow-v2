@@ -564,16 +564,6 @@
   }
   #lightbox-counter.hidden { display: none; }
 
-  /* ── Toast ──────────────────────────────────────────────────────── */
-  #toast {
-    position: fixed; bottom: 24px; left: 50%;
-    transform: translateX(-50%) translateY(16px);
-    background: var(--text); color: #fff;
-    padding: 7px 16px; border-radius: 20px; font-size: 13px;
-    opacity: 0; transition: all 0.2s; pointer-events: none; z-index: 400;
-    white-space: nowrap;
-  }
-  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
   /* ── Spinner ────────────────────────────────────────────────────── */
   .spinner {
@@ -586,11 +576,13 @@
   /* ── Search bar ─────────────────────────────────────────────────── */
   #search-bar {
     display: none; margin-bottom: 12px;
-    position: relative;
   }
-  #search-bar.visible { display: block; }
+  #search-bar.visible { display: flex; align-items: center; }
+  #search-input-wrap {
+    position: relative; flex: 1; min-width: 0;
+  }
   #search-input {
-    width: 100%; border: 1px solid var(--border); border-radius: 8px;
+    width: 100%; border: 1px solid var(--border); border-radius: 8px 0 0 8px;
     padding: 7px 32px 7px 32px; font-size: 13px;
     font-family: var(--font-body); background: var(--surface);
     color: var(--text); outline: none; transition: border-color 0.15s;
@@ -645,6 +637,27 @@
 
   /* ── Card delete button (danger) ───────────────────────────────── */
   .card-action-btn.danger:hover { background: #fde8e8; color: var(--danger); }
+
+  /* ── Tasks overlay bottom sheet ─────────────────────────────────── */
+  .tasks-overlay {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    max-height: 85vh; background: var(--surface);
+    border-radius: 16px 16px 0 0; border-top: 1px solid var(--border);
+    z-index: 150; transform: translateY(100%);
+    transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .tasks-overlay.open { transform: translateY(0); }
+  .tasks-overlay-backdrop {
+    display: none; position: fixed; inset: 0; z-index: 149;
+    background: rgba(0,0,0,0.3);
+  }
+  .tasks-overlay-backdrop.open { display: block; }
+  #content.sidebar-visible ~ .tasks-overlay,
+  #content.sidebar-visible ~ .tasks-overlay-backdrop { left: var(--sidebar-w, 220px); }
+  @media (min-width: 701px) {
+    .tasks-overlay { left: var(--sidebar-w, 220px); }
+  }
 
 
 
@@ -1098,6 +1111,25 @@
   .tracker-ai-send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
   .tracker-ai-send-btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; pointer-events: none; }
 
+  /* ── Project AI chat panel ─────────────────────────────────────────────────── */
+  #project-ai-panel { display: none; margin-bottom: 12px; background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; }
+  #project-ai-panel.visible { display: block; }
+  .project-ai-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; cursor: pointer; user-select: none; background: var(--bg); font-size: 13px; font-weight: 500; }
+  .project-ai-header:hover { background: var(--accent-bg); }
+  .project-ai-body { display: none; flex-direction: column; }
+  .project-ai-body.open { display: flex; border-top: 1px solid var(--border); }
+  .project-ai-messages { max-height: 320px; overflow-y: auto; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+  .project-ai-quick { display: flex; gap: 6px; padding: 8px 14px; flex-wrap: wrap; border-top: 1px solid var(--border); }
+  .project-ai-quick button { background: var(--bg); border: 1px solid var(--border); border-radius: 20px; padding: 4px 10px; font-size: 12px; cursor: pointer; color: var(--text-soft); font-family: var(--font-body); transition: background 0.12s; }
+  .project-ai-quick button:hover { background: var(--accent-bg); color: var(--accent); border-color: var(--accent); }
+  .project-ai-input-row { display: flex; gap: 8px; padding: 8px 14px 12px; border-top: 1px solid var(--border); align-items: flex-end; }
+  .project-ai-input-row textarea { flex: 1; border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px; font-size: 13.5px; font-family: var(--font-body); background: var(--bg); color: var(--text); outline: none; resize: none; min-height: 36px; max-height: 120px; line-height: 1.5; overflow-y: auto; }
+  .project-ai-input-row textarea:focus { border-color: var(--accent); }
+  .project-ai-send-btn { flex-shrink: 0; width: 36px; height: 36px; border-radius: 8px; border: none; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: opacity 0.15s; }
+  .project-ai-send-btn:hover { opacity: 0.85; }
+  .project-ai-send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .project-ai-send-btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; pointer-events: none; }
+
   /* ── Tracker modals ───────────────────────────────────────────────────────── */
   .tracker-instructions-textarea {
     width: 100%; min-height: 90px; resize: vertical;
@@ -1245,11 +1277,41 @@
         </div>
       </div>
 
-      <!-- Search bar -->
-      <div id="search-bar" class="visible">
-        <svg id="search-icon" viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" id="search-input" placeholder="Search notes…" autocomplete="off">
-        <button id="search-clear">✕</button>
+      <!-- Search bar + Tasks pill -->
+      <div id="search-tasks-bar" style="margin-bottom:12px">
+        <div id="search-bar" class="visible" style="margin-bottom:0">
+          <div id="search-input-wrap">
+            <svg id="search-icon" viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="search-input" placeholder="Search notes…" autocomplete="off">
+            <button id="search-clear">✕</button>
+          </div>
+          <button id="tasks-pill-btn" title="Open tasks" onclick="openTasksOverlay()" style="display:flex;align-items:center;gap:5px;padding:0 11px;height:34px;border-radius:0 8px 8px 0;border:1px solid var(--border);border-left:none;background:var(--surface-alt);color:var(--text);font-size:12px;font-family:var(--font-body);cursor:pointer;white-space:nowrap;flex-shrink:0;transition:background 0.15s">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 20 6"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg>
+            Tasks
+          </button>
+        </div>
+      </div>
+
+      <!-- Project AI panel — shown only when viewing a project tag -->
+      <div id="project-ai-panel">
+        <div class="project-ai-header" id="project-ai-toggle">
+          <span>✦ Project AI</span>
+          <span id="project-ai-chevron">▼</span>
+        </div>
+        <div class="project-ai-body" id="project-ai-body">
+          <div class="project-ai-messages" id="project-ai-messages"></div>
+          <div class="project-ai-quick">
+            <button data-prompt="Summarise all notes in this project">📋 Summarise</button>
+            <button data-prompt="What are the key themes and topics in this project?">🔍 Themes</button>
+            <button data-prompt="What should I focus on next in this project?">🎯 Next steps</button>
+          </div>
+          <div class="project-ai-input-row">
+            <textarea id="project-ai-input" placeholder="Ask about this project…" rows="1"></textarea>
+            <button class="project-ai-send-btn" id="project-ai-send" title="Send (Ctrl+Enter)">
+              <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+          </div>
+        </div>
       </div>
 
       <div id="feed"></div>
@@ -1467,6 +1529,119 @@
 
 
       </div>
+
+        <!-- Tasks settings -->
+        <div class="settings-section">
+          <div class="settings-section-title">Tasks</div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Hide tasks from main notes feed</div>
+              <div class="settings-desc">Tasks only appear in the Tasks view, not in All Notes</div>
+            </div>
+            <div class="settings-control">
+              <label class="toggle"><input type="checkbox" id="setting-tasks-hide-from-feed"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Default priority for new tasks</div>
+            </div>
+            <div class="settings-control">
+              <select id="setting-tasks-default-priority" style="border:1px solid var(--border);border-radius:7px;padding:5px 8px;font-size:13px;background:var(--bg);color:var(--text);font-family:var(--font-body)">
+                <option value="">None</option>
+                <option value="1">High</option>
+                <option value="2">Medium</option>
+                <option value="3">Low</option>
+              </select>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Show urgent task count in sidebar</div>
+              <div class="settings-desc">Displays a count of high priority, overdue, and due-today tasks next to "Tasks"</div>
+            </div>
+            <div class="settings-control">
+              <label class="toggle"><input type="checkbox" id="setting-tasks-show-count-badge"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notifications settings -->
+        <div class="settings-section">
+          <div class="settings-section-title">Notifications</div>
+          <div class="settings-desc" style="padding:0 16px 10px;font-size:12px;color:var(--muted)">Send reminders for due and overdue tasks.</div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Enable notifications</div>
+            </div>
+            <div class="settings-control">
+              <label class="toggle"><input type="checkbox" id="setting-notif-enabled"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+            </div>
+          </div>
+          <div id="notif-channels-section" style="display:none">
+            <div class="settings-section-title" style="font-size:11px;padding:10px 16px 4px">Channels</div>
+            <div class="settings-row">
+              <div><div class="settings-label">Email</div></div>
+              <div class="settings-control">
+                <label class="toggle"><input type="checkbox" id="setting-notif-email"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+              </div>
+            </div>
+            <div id="notif-email-address-row" class="settings-row" style="display:none;flex-direction:column;align-items:flex-start;gap:6px">
+              <div class="settings-label">Email address</div>
+              <input type="email" id="setting-notif-email-address" placeholder="martin@jeppesen.cc" style="width:100%;padding:6px 10px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;box-sizing:border-box;font-family:var(--font-body)">
+            </div>
+            <div class="settings-row">
+              <div><div class="settings-label">Discord</div></div>
+              <div class="settings-control">
+                <label class="toggle"><input type="checkbox" id="setting-notif-discord"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+              </div>
+            </div>
+            <div id="notif-discord-webhook-row" class="settings-row" style="display:none;flex-direction:column;align-items:flex-start;gap:6px">
+              <div class="settings-label">Discord webhook URL</div>
+              <input type="url" id="setting-notif-discord-webhook" placeholder="https://discord.com/api/webhooks/…" style="width:100%;padding:6px 10px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;box-sizing:border-box;font-family:var(--font-body)">
+            </div>
+            <div class="settings-row">
+              <div>
+                <div class="settings-label">Push (browser)</div>
+                <div class="settings-desc">Requires browser permission</div>
+              </div>
+              <div class="settings-control">
+                <label class="toggle"><input type="checkbox" id="setting-notif-push"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Android Widget -->
+        <div class="settings-section">
+          <div class="settings-section-title">Android Widget</div>
+          <div class="settings-row" style="flex-direction:column;align-items:flex-start;gap:8px">
+            <div class="settings-label">Widget Token</div>
+            <div class="settings-desc">Generate a token and enter it in the NoteFlow Widget Android app. The token grants read access to your pending tasks.</div>
+            <div id="widget-token-wrap" style="display:flex;gap:8px;width:100%;align-items:center">
+              <input type="text" id="widget-token-display" readonly placeholder="No token generated"
+                style="flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:7px;font-family:monospace;font-size:12px;background:var(--surface);color:var(--text);box-sizing:border-box">
+              <button id="btn-copy-widget-token" style="font-size:13px;padding:6px 14px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text);cursor:pointer;white-space:nowrap">Copy</button>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button id="btn-generate-widget-token" style="font-size:13px;padding:6px 14px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text);cursor:pointer">Generate Token</button>
+              <button id="btn-revoke-widget-token" style="font-size:13px;padding:6px 14px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--danger,#e74c3c);cursor:pointer">Revoke</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Activity Log -->
+        <div class="settings-section">
+          <div class="settings-section-title">Activity Log</div>
+          <div class="settings-row" style="flex-direction:column;align-items:flex-start;gap:6px">
+            <div class="settings-desc">Recent app events captured silently.</div>
+            <button id="btn-view-logs" style="font-size:13px;padding:6px 14px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text);cursor:pointer;display:flex;align-items:center;gap:8px">
+              View logs
+              <span id="log-badge" style="display:none;background:var(--accent);color:#fff;border-radius:10px;padding:1px 7px;font-size:11px;font-weight:600;align-items:center;justify-content:center"></span>
+            </button>
+          </div>
+        </div>
+
       </div><!-- /settings-page -->
 
     </main>
@@ -1511,7 +1686,19 @@
   <div id="lightbox-counter"></div>
 </div>
 
-<!-- Toast -->
+<!-- Activity Log modal -->
+<div class="modal-backdrop" id="log-modal">
+  <div class="modal" style="width:560px;max-width:95vw;max-height:80vh;overflow:hidden;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <h3 style="margin:0;font-size:15px;font-weight:600">Activity Log</h3>
+      <button onclick="document.getElementById('log-modal').classList.remove('open')" style="background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:2px 6px;line-height:1">✕</button>
+    </div>
+    <div id="log-modal-entries" style="flex:1;overflow-y:auto;font-size:12px;font-family:monospace;display:flex;flex-direction:column;gap:4px"></div>
+    <div style="margin-top:12px;text-align:right">
+      <button id="btn-log-clear" style="font-size:12px;padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--muted);cursor:pointer">Clear</button>
+    </div>
+  </div>
+</div>
 
 <!-- New tracker modal -->
 <div class="modal-backdrop" id="tracker-new-modal">
@@ -1537,8 +1724,88 @@
 </div>
 
 
-<div id="toast"></div>
-<div style="position:fixed;bottom:6px;right:10px;font-size:10px;color:var(--muted);opacity:0.5;pointer-events:none;z-index:1;user-select:none">NoteFlow v1.4</div>
+<!-- Tasks overlay bottom sheet -->
+<div id="tasks-overlay-backdrop" class="tasks-overlay-backdrop" onclick="closeTasksOverlay()"></div>
+<div id="tasks-overlay" class="tasks-overlay">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px 8px;border-bottom:1px solid var(--border)">
+    <div style="display:flex;align-items:center;gap:12px">
+      <span style="font-size:14px;font-weight:600">Tasks</span>
+      <div style="display:flex;gap:4px">
+        <button onclick="taskSortOrder='priority';try{localStorage.setItem('noteflow_task_sort','priority')}catch(e){}renderTasksOverlay()" style="padding:3px 9px;border-radius:12px;font-size:11px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;font-family:var(--font-body)" id="overlay-sort-priority">Priority</button>
+        <button onclick="taskSortOrder='due_date';try{localStorage.setItem('noteflow_task_sort','due_date')}catch(e){}renderTasksOverlay()" style="padding:3px 9px;border-radius:12px;font-size:11px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;font-family:var(--font-body)" id="overlay-sort-due">Due Date</button>
+        <button onclick="taskSortOrder='created';try{localStorage.setItem('noteflow_task_sort','created')}catch(e){}renderTasksOverlay()" style="padding:3px 9px;border-radius:12px;font-size:11px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;font-family:var(--font-body)" id="overlay-sort-created">Newest</button>
+      </div>
+    </div>
+    <button onclick="closeTasksOverlay()" style="background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:2px 6px;line-height:1">✕</button>
+  </div>
+  <div id="tasks-overlay-feed" style="flex:1;overflow-y:auto"></div>
+  <div style="padding:10px 14px;border-top:1px solid var(--border)">
+    <div style="display:flex;gap:8px">
+      <input type="text" id="overlay-quick-add" placeholder="Quick add a task…" style="flex:1;border:1px solid var(--border);border-radius:8px;padding:7px 12px;font-size:13px;font-family:var(--font-body);background:var(--surface);color:var(--text);outline:none">
+      <button id="overlay-quick-add-btn" style="padding:7px 14px;border-radius:8px;border:none;background:var(--accent);color:var(--bg);font-size:13px;font-family:var(--font-body);cursor:pointer">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- Task Detail modal -->
+<div class="modal-backdrop" id="task-detail-modal">
+  <div class="modal" style="width:560px;max-width:95vw;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <input type="checkbox" id="td-complete-cb" style="width:17px;height:17px;cursor:pointer;flex-shrink:0;accent-color:#22c55e">
+      <h3 id="td-title" style="flex:1;margin:0;font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Task</h3>
+      <button onclick="convertTaskToNote(_taskDetailId)" style="background:none;border:1px solid var(--border);border-radius:7px;padding:4px 9px;font-size:11px;color:var(--muted);cursor:pointer;font-family:var(--font-body)" title="Convert to regular note">→ Note</button>
+      <button onclick="document.getElementById('task-detail-modal').classList.remove('open')" style="background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:2px 4px;line-height:1">✕</button>
+    </div>
+    <div id="td-completed-label" style="display:none;font-size:11px;color:#22c55e;margin-bottom:10px"></div>
+    <!-- Md toolbar -->
+    <div class="md-toolbar" id="td-toolbar" style="display:flex;gap:2px;flex-wrap:wrap;padding:4px;background:var(--surface-alt);border-radius:7px 7px 0 0;border:1px solid var(--border);border-bottom:none">
+      <button class="md-btn" data-md="bold" title="Bold" style="padding:3px 7px;border:none;background:none;cursor:pointer;border-radius:4px;font-size:12px;font-family:var(--font-body);color:var(--text)"><b>B</b></button>
+      <button class="md-btn" data-md="italic" title="Italic" style="padding:3px 7px;border:none;background:none;cursor:pointer;border-radius:4px;font-size:12px;font-family:var(--font-body);color:var(--text)"><i>I</i></button>
+      <button class="md-btn" data-md="code" title="Code" style="padding:3px 7px;border:none;background:none;cursor:pointer;border-radius:4px;font-size:12px;font-family:monospace;color:var(--text)">&lt;/&gt;</button>
+      <button class="md-btn" data-md="ul" title="List" style="padding:3px 7px;border:none;background:none;cursor:pointer;border-radius:4px;font-size:12px;font-family:var(--font-body);color:var(--text)">• List</button>
+      <button class="md-btn" data-md="link" title="Link" style="padding:3px 7px;border:none;background:none;cursor:pointer;border-radius:4px;font-size:12px;font-family:var(--font-body);color:var(--text)">🔗</button>
+    </div>
+    <textarea id="td-textarea" style="width:100%;min-height:120px;border:1px solid var(--border);border-radius:0 0 7px 7px;padding:10px 12px;font-size:13px;font-family:var(--font-body);background:var(--surface);color:var(--text);resize:vertical;outline:none;box-sizing:border-box;line-height:1.6"></textarea>
+    <!-- Due date + priority -->
+    <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap;align-items:flex-end">
+      <div>
+        <div style="font-size:11px;text-transform:uppercase;color:var(--muted);letter-spacing:0.05em;margin-bottom:4px">Due date</div>
+        <input type="date" id="td-due-date" style="border:1px solid var(--border);border-radius:7px;padding:5px 8px;font-size:13px;background:var(--bg);color:var(--text);font-family:var(--font-body)">
+      </div>
+      <div>
+        <div style="font-size:11px;text-transform:uppercase;color:var(--muted);letter-spacing:0.05em;margin-bottom:4px">Priority</div>
+        <select id="td-priority" style="border:1px solid var(--border);border-radius:7px;padding:5px 8px;font-size:13px;background:var(--bg);color:var(--text);font-family:var(--font-body)">
+          <option value="">None</option>
+          <option value="1">High</option>
+          <option value="2">Medium</option>
+          <option value="3">Low</option>
+        </select>
+      </div>
+    </div>
+    <!-- Notification -->
+    <div style="margin-top:12px">
+      <div style="font-size:11px;text-transform:uppercase;color:var(--muted);letter-spacing:0.05em;margin-bottom:6px">Notification</div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span style="font-size:13px;color:var(--muted)">Notification</span>
+        <input type="number" id="td-notif-days" min="0" max="365" placeholder="days" style="width:65px;border:1px solid var(--border);border-radius:7px;padding:5px 8px;font-size:13px;background:var(--bg);color:var(--text);font-family:var(--font-body)">
+        <input type="time" id="td-notif-time" style="border:1px solid var(--border);border-radius:7px;padding:5px 8px;font-size:13px;background:var(--bg);color:var(--text);font-family:var(--font-body)">
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px">Days before due date · time of day (UTC)</div>
+    </div>
+    <!-- Tags -->
+    <div style="margin-top:12px">
+      <div style="font-size:11px;text-transform:uppercase;color:var(--muted);letter-spacing:0.05em;margin-bottom:6px">Tags</div>
+      <div id="td-tags" style="display:flex;flex-wrap:wrap;gap:4px;min-height:24px"></div>
+    </div>
+    <!-- Footer actions -->
+    <div class="modal-actions" style="margin-top:16px">
+      <button class="btn-ghost" onclick="document.getElementById('task-detail-modal').classList.remove('open')">Close</button>
+      <button id="td-footer-btn" style="padding:8px 18px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-family:var(--font-body);font-weight:500">Mark complete</button>
+    </div>
+  </div>
+</div>
+
+<div style="position:fixed;bottom:6px;right:10px;font-size:10px;color:var(--muted);opacity:0.5;pointer-events:none;z-index:1;user-select:none">NoteFlow v1.5</div>
 
 <script src="/js/state.js"></script>
 <script src="/js/api.js"></script>
@@ -1550,9 +1817,12 @@
 <script src="/js/composer.js"></script>
 <script src="/js/notes.js"></script>
 <script src="/js/card.js"></script>
+<script src="/js/tasks.js"></script>
 <script src="/js/lightbox.js"></script>
 <script src="/js/view-nav.js"></script>
 <script src="/js/offline.js"></script>
+<script src="/js/project-ai.js"></script>
+<script src="/js/push.js"></script>
 <script src="/js/app.js"></script>
 
 

@@ -30,6 +30,13 @@ function loadNotesCache() {
   try { return JSON.parse(localStorage.getItem(NOTES_CACHE_KEY)) || []; } catch(e) { return []; }
 }
 
+function saveTasksCache(tasks) {
+  try { localStorage.setItem(TASKS_CACHE_KEY, JSON.stringify(tasks)); } catch(e) {}
+}
+function loadTasksCache() {
+  try { return JSON.parse(localStorage.getItem(TASKS_CACHE_KEY)) || []; } catch(e) { return []; }
+}
+
 // Fetch image blob — checks offline cache first, then network (and caches if setting enabled)
 async function getAttachmentBlob(att, url) {
   const cacheKey = new Request('/offline-att/' + att.id);
@@ -99,6 +106,16 @@ async function prefetchOfflineCache() {
     }
 
     saveNotesCache(allNotes);
+
+    // 3. Fetch all active tasks (no date window)
+    let taskCount = 0;
+    try {
+      const tdata = await apiGet('/notes?is_task=1&pageSize=500');
+      const tasks = tdata.notes || [];
+      saveTasksCache(tasks);
+      taskCount = tasks.length;
+    } catch(e) { console.warn('Task cache fetch failed:', e); }
+
     // Record the max updated_at so checkCacheVersion knows this cache is fresh
     if (allNotes.length > 0) {
       const maxVersion = Math.max(...allNotes.map(n => n.updated_at || 0));
@@ -126,7 +143,7 @@ async function prefetchOfflineCache() {
         }
       }
     }
-    toast('Offline cache synced: ' + allNotes.length + ' notes ✓');
+    toast('Offline cache synced: ' + allNotes.length + ' notes, ' + taskCount + ' tasks ✓');
   } catch(e) {
     console.warn('Offline prefetch failed:', e);
     toast('Offline sync failed');
