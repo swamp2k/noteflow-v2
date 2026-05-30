@@ -132,6 +132,14 @@ CREATE TABLE IF NOT EXISTS project_ai_conversations (
   created_at  INTEGER NOT NULL
 );
 
+-- Android widget tokens (added May 2026)
+-- One token per user; generated via POST /api/widget/token (requires session auth)
+CREATE TABLE IF NOT EXISTS widget_tokens (
+  token      TEXT PRIMARY KEY,
+  user_id    TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+
 -- Push notification subscriptions (added May 2026)
 CREATE TABLE IF NOT EXISTS push_subscriptions (
   id         TEXT PRIMARY KEY,

@@ -199,7 +199,18 @@ if (initAuth()) {
           loadMemos();
         }
       } else {
-        if (v) {
+        // Hash deep-links from Android widget (#/tasks, #/task/<id>, #/new-task)
+        const hash = window.location.hash;
+        let _hashTaskId = null, _hashNewTask = false;
+        if (hash === '#/tasks') {
+          currentView = 'tasks';
+        } else if (hash.startsWith('#/task/')) {
+          currentView = 'tasks';
+          _hashTaskId = hash.slice(7);
+        } else if (hash === '#/new-task') {
+          currentView = 'tasks';
+          _hashNewTask = true;
+        } else if (v) {
           currentView = v;
           if (v === 'tag' && t) currentTag = t;
           document.getElementById('header-title').textContent = getViewTitle(currentView);
@@ -210,10 +221,19 @@ if (initAuth()) {
           if (item) item.classList.add('active');
         }
         if (currentView === 'tasks') {
+          if (_hashTaskId || _hashNewTask) {
+            // Update header and nav for hash-driven task view
+            document.getElementById('header-title').textContent = getViewTitle('tasks');
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            const ti = document.querySelector('.nav-item[data-view="tasks"]');
+            if (ti) ti.classList.add('active');
+          }
           // Tasks view needs its own renderer, not the notes feed
           document.getElementById('composer').style.display = 'none';
           document.getElementById('load-more').style.display = 'none';
           renderTasksFeed();
+          if (_hashTaskId) setTimeout(() => { if (typeof openTaskDetail === 'function') openTaskDetail(_hashTaskId); }, 300);
+          if (_hashNewTask) setTimeout(() => { if (typeof quickAddTask === 'function') quickAddTask(); }, 300);
         } else {
           loadMemos();
           // Load project AI conversation if landing directly on a project URL

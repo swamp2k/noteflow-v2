@@ -453,6 +453,56 @@ function initSettingsControls() {
     tagAllBtn.disabled = false;
   });
 
+  // ── Android Widget token ─────────────────────────────────────────────────
+  const widgetTokenDisplay  = document.getElementById('widget-token-display');
+  const btnCopyWidgetToken  = document.getElementById('btn-copy-widget-token');
+  const btnGenWidgetToken   = document.getElementById('btn-generate-widget-token');
+  const btnRevokeWidgetToken = document.getElementById('btn-revoke-widget-token');
+
+  async function loadWidgetTokenStatus() {
+    try {
+      const data = await apiGet('/widget/token');
+      if (widgetTokenDisplay) {
+        widgetTokenDisplay.value = data.exists ? data.preview : '';
+        widgetTokenDisplay.placeholder = data.exists ? '' : 'No token generated';
+      }
+    } catch(e) { /* non-fatal */ }
+  }
+  loadWidgetTokenStatus();
+
+  if (btnGenWidgetToken) btnGenWidgetToken.addEventListener('click', async () => {
+    btnGenWidgetToken.disabled = true;
+    btnGenWidgetToken.textContent = 'Generating…';
+    try {
+      const r = await fetch(API_BASE + '/widget/token', { method: 'POST', credentials: 'omit', headers: authHeaders() });
+      if (!r.ok) throw new Error(r.status);
+      const { token } = await r.json();
+      if (widgetTokenDisplay) { widgetTokenDisplay.value = token; widgetTokenDisplay.placeholder = ''; }
+      toast('Token generated — copy it now, it won\'t be shown again');
+    } catch(e) {
+      toast('Failed to generate token');
+    }
+    btnGenWidgetToken.disabled = false;
+    btnGenWidgetToken.textContent = 'Generate Token';
+  });
+
+  if (btnRevokeWidgetToken) btnRevokeWidgetToken.addEventListener('click', async () => {
+    if (!confirm('Revoke widget token? The Android app will stop working until you generate a new one.')) return;
+    try {
+      await fetch(API_BASE + '/widget/token', { method: 'DELETE', credentials: 'omit', headers: authHeaders() });
+      if (widgetTokenDisplay) { widgetTokenDisplay.value = ''; widgetTokenDisplay.placeholder = 'No token generated'; }
+      toast('Widget token revoked');
+    } catch(e) {
+      toast('Failed to revoke token');
+    }
+  });
+
+  if (btnCopyWidgetToken) btnCopyWidgetToken.addEventListener('click', () => {
+    const val = widgetTokenDisplay ? widgetTokenDisplay.value : '';
+    if (!val) { toast('No token to copy'); return; }
+    navigator.clipboard.writeText(val).then(() => toast('Token copied')).catch(() => toast('Copy failed'));
+  });
+
   // ── Activity log ──────────────────────────────────────────────────────────
   const logBtn = document.getElementById('btn-view-logs');
   if (logBtn) {

@@ -31,8 +31,19 @@ NoteFlow is a personal PWA note-taking app for one user (Martin, martin@jeppesen
 
 ```
 noteflow-v2/
+├── noteflow-widget/           ← Android companion app (Expo / React Native)
+│   ├── app/                   ← Expo Router screens
+│   │   ├── _layout.tsx        ← Root layout (dark theme header)
+│   │   └── index.tsx          ← Setup screen (URL + token entry, test connection)
+│   ├── widget/
+│   │   ├── TasksWidget.tsx    ← Widget UI (FlexWidget/ListWidget from react-native-android-widget)
+│   │   ├── tasksBridge.ts     ← fetchTasks(), formatDue(), priorityDot(), isOverdue()
+│   │   └── widgetTaskHandler.ts ← registerWidgetTaskHandler + background refresh task
+│   ├── constants/theme.ts     ← Color palette
+│   ├── app.json               ← Expo config (react-native-android-widget plugin)
+│   └── package.json           ← Expo SDK ~52, react-native-android-widget, AsyncStorage
 ├── worker/                    ← Cloudflare Worker (ES modules)
-│   ├── index.js               ← Router only — imports handlers, orchestrates auth (74 lines)
+│   ├── index.js               ← Router only — imports handlers, orchestrates auth
 │   ├── lib/
 │   │   ├── utils.js           ← nanoid, extractTags, corsHeaders, openCors, json, jsonOpen, err, errOpen, sha256hex
 │   │   ├── auth.js            ← checkPartnerPassword, resolveModel, verifyJWT, ensureUser
@@ -44,6 +55,7 @@ noteflow-v2/
 │       ├── attachments.js     ← /api/attachments, /api/attachments/:id, /api/admin/reindex
 │       ├── tracker.js         ← /api/trackers, /api/trackers/:id, etc.
 │       ├── partner.js         ← /partner page, /api/partner/:token/*, /api/trackers/:id/partner-tokens
+│       ├── widget.js          ← /api/widget/tasks (public), /api/widget/token (GET/POST/DELETE, auth)
 │       ├── user.js            ← /api/boot, /api/me, /api/user/settings
 │       ├── search.js          ← /api/search, /api/notes/autotag
 │       ├── email.js           ← /api/email/send
@@ -188,7 +200,13 @@ After boot, the frontend (`app.js`):
 2. Caches display prefs to localStorage
 3. Checks cache version — clears offline cache if stale
 4. Renders sidebar (trackers + project tags) immediately
-5. Reads `?v=` URL param to restore view. If `v=tasks`, calls `renderTasksFeed()`. Otherwise calls `loadMemos()` for the notes feed.
+5. Checks URL hash for Android widget deep links (`#/tasks`, `#/task/<id>`, `#/new-task`) — these take priority over `?v=` param
+6. Falls back to `?v=` URL param to restore view. If view is `tasks`, calls `renderTasksFeed()`. Otherwise calls `loadMemos()`.
+
+**Hash deep-links** (added for Android widget):
+- `#/tasks` → switches to tasks view
+- `#/task/<id>` → switches to tasks view, then calls `openTaskDetail(id)` after 300ms
+- `#/new-task` → switches to tasks view, then calls `quickAddTask()` after 300ms
 
 **Critical:** Never call `loadMemos()` when the view is `tasks`. The tasks feed uses `renderTasksFeed()` (defined in `tasks.js`). `loadMemos()` fetches regular notes and calls `renderFeed()`, which produces an empty or wrong result in the tasks view.
 
@@ -215,6 +233,10 @@ The router in `worker/index.js` calls handlers sequentially; the first non-null 
 2. After auth: handles `/api/trackers/:id/partner-tokens`
 
 Inside `partnerHandler`, the guard `if (!userId) return null` prevents the auth-required partner-token routes from running pre-auth.
+
+**Special case — `widgetHandler`** is also called **twice** (same pattern):
+1. Before auth: handles `GET /api/widget/tasks?token=...` — authenticates via widget token, not session
+2. After auth: handles `GET /api/widget/token` (preview), `POST /api/widget/token` (generate), `DELETE /api/widget/token` (revoke)
 
 ---
 
@@ -328,6 +350,17 @@ push_subscriptions (id TEXT PK, user_id TEXT, endpoint TEXT UNIQUE,
                     p256dh TEXT, auth_key TEXT, created_at INTEGER)
 ```
 `/api/push/vapid-key` returns only `{ publicKey }` — never exposes `p256dh` or `auth_key` to the client.
+
+### D1 table: widget_tokens
+```sql
+widget_tokens (token TEXT PK, user_id TEXT NOT NULL, created_at INTEGER NOT NULL)
+```
+One token per user. Generated via `POST /api/widget/token` (requires session auth); revoked via `DELETE /api/widget/token`. Used by `GET /api/widget/tasks?token=<token>` (public, pre-auth). The GET endpoint returns only a `preview` (first8…last4) — the full token is shown once on generation.
+
+**D1 migration required** (not auto-run):
+```bash
+npx wrangler d1 execute noteflow --command "CREATE TABLE IF NOT EXISTS widget_tokens (token TEXT PRIMARY KEY, user_id TEXT NOT NULL, created_at INTEGER NOT NULL);"
+```
 
 ### Cron trigger
 `wrangler.toml` has `[triggers] crons = ["0 * * * *"]`. `worker/index.js` exports `scheduled(event, env, ctx)` which calls `runTaskNotifications(env)` from `worker/lib/notifications.js`. The handler runs every hour and fires notifications for tasks whose per-task `notif_days_before` + `notif_time` matches the current date and UTC hour.

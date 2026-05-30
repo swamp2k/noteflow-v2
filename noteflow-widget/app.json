@@ -1,0 +1,54 @@
+{
+  "expo": {
+    "name": "NoteFlow Widget",
+    "slug": "noteflow-widget",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "scheme": "noteflowwidget",
+    "android": {
+      "package": "cc.jeppesen.noteflow.widget",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1a1a2e"
+      }
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "react-native-android-widget",
+        {
+          "widgets": [
+            {
+              "name": "TasksWidget",
+              "label": "NoteFlow Tasks",
+              "description": "Displays your pending NoteFlow tasks",
+              "minWidth": "250dp",
+              "minHeight": "200dp",
+              "targetWidth": "250dp",
+              "targetHeight": "354dp",
+              "resizeMode": "both",
+              "updatePeriodMillis": 1800000,
+              "previewLayout": "@layout/tasks_widget_preview"
+            }
+          ],
+          "widgetTaskHandler": "./widget/widgetTaskHandler"
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35,
+            "minSdkVersion": 26
+          }
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

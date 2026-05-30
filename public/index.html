@@ -1612,6 +1612,24 @@
           </div>
         </div>
 
+        <!-- Android Widget -->
+        <div class="settings-section">
+          <div class="settings-section-title">Android Widget</div>
+          <div class="settings-row" style="flex-direction:column;align-items:flex-start;gap:8px">
+            <div class="settings-label">Widget Token</div>
+            <div class="settings-desc">Generate a token and enter it in the NoteFlow Widget Android app. The token grants read access to your pending tasks.</div>
+            <div id="widget-token-wrap" style="display:flex;gap:8px;width:100%;align-items:center">
+              <input type="text" id="widget-token-display" readonly placeholder="No token generated"
+                style="flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:7px;font-family:monospace;font-size:12px;background:var(--surface);color:var(--text);box-sizing:border-box">
+              <button id="btn-copy-widget-token" style="font-size:13px;padding:6px 14px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text);cursor:pointer;white-space:nowrap">Copy</button>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button id="btn-generate-widget-token" style="font-size:13px;padding:6px 14px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text);cursor:pointer">Generate Token</button>
+              <button id="btn-revoke-widget-token" style="font-size:13px;padding:6px 14px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--danger,#e74c3c);cursor:pointer">Revoke</button>
+            </div>
+          </div>
+        </div>
+
         <!-- Activity Log -->
         <div class="settings-section">
           <div class="settings-section-title">Activity Log</div>

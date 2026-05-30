@@ -2,6 +2,7 @@ import { corsHeaders, openCors, err } from "./lib/utils.js";
 import { verifyJWT, ensureUser } from "./lib/auth.js";
 import { publicHandler } from "./handlers/public.js";
 import { partnerHandler } from "./handlers/partner.js";
+import { widgetHandler } from "./handlers/widget.js";
 import { userHandler } from "./handlers/user.js";
 import { notesHandler } from "./handlers/notes.js";
 import { tagsHandler } from "./handlers/tags.js";
@@ -28,6 +29,9 @@ export default {
     if (res) return res;
 
     res = await partnerHandler(request, env, ctx, url, path, method, null, origin);
+    if (res) return res;
+
+    res = await widgetHandler(request, env, ctx, url, path, method, null, origin);
     if (res) return res;
 
     if (!path.startsWith("/api/")) return new Response("NoteFlow API v2", { headers: cors });
@@ -71,6 +75,9 @@ export default {
       if (res) return res;
 
       res = await pushHandler(request, env, ctx, url, path, method, userId, origin);
+      if (res) return res;
+
+      res = await widgetHandler(request, env, ctx, url, path, method, userId, origin);
       if (res) return res;
 
       return err("Not found", 404, origin);
