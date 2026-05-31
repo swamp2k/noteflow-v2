@@ -26,14 +26,10 @@
               "description": "Displays your pending NoteFlow tasks",
               "minWidth": "250dp",
               "minHeight": "200dp",
-              "targetWidth": "250dp",
-              "targetHeight": "354dp",
-              "resizeMode": "both",
-              "updatePeriodMillis": 1800000,
-              "previewLayout": "@layout/tasks_widget_preview"
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 1800000
             }
-          ],
-          "widgetTaskHandler": "./widget/widgetTaskHandler"
+          ]
         }
       ],
       [

@@ -1,6 +1,6 @@
 import React from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { registerWidgetTaskHandler } from 'react-native-android-widget';
+import { registerWidgetTaskHandler, requestWidgetUpdate } from 'react-native-android-widget';
 import * as TaskManager from 'expo-task-manager';
 import * as BackgroundFetch from 'expo-background-fetch';
 import { TasksWidget } from './TasksWidget';
@@ -15,23 +15,19 @@ async function getWidgetData() {
 }
 
 // Handles all widget lifecycle events: added, updated, clicked, etc.
-registerWidgetTaskHandler(async ({ widgetAction, widgetName }) => {
-  if (widgetName !== 'TasksWidget') return;
+// 0.17.x API: renderWidget callback is passed in, not returned
+registerWidgetTaskHandler(async ({ widgetInfo, widgetAction, renderWidget }) => {
+  if (widgetInfo.widgetName !== 'TasksWidget') return;
+  if (widgetAction === 'WIDGET_DELETED') return;
 
   const { tasks, url } = await getWidgetData();
-
-  return {
-    widgetName: 'TasksWidget',
-    renderWidget: () => React.createElement(TasksWidget, { tasks, url }),
-  };
+  renderWidget(React.createElement(TasksWidget, { tasks, url }));
 });
 
 // Background task — fetches tasks and triggers widget re-render
 TaskManager.defineTask(WIDGET_REFRESH_TASK, async () => {
   try {
     const { tasks, url } = await getWidgetData();
-    // requestWidgetUpdate re-invokes the widget task handler with WIDGET_UPDATE
-    const { requestWidgetUpdate } = await import('react-native-android-widget');
     await requestWidgetUpdate({
       widgetName: 'TasksWidget',
       renderWidget: () => React.createElement(TasksWidget, { tasks, url }),
