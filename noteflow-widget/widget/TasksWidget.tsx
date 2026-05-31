@@ -32,13 +32,15 @@ export function TasksWidget({ tasks, url }: Props) {
           backgroundColor: colors.bg,
         }}
       >
-        <TextWidget
-          text="✓ NoteFlow Tasks"
-          style={{ color: colors.text, fontSize: 15, fontWeight: 'bold', flex: 1 }}
-        />
+        <FlexWidget style={{ flex: 1 }}>
+          <TextWidget
+            text="✓ NoteFlow Tasks"
+            style={{ color: colors.text, fontSize: 15, fontWeight: 'bold' }}
+          />
+        </FlexWidget>
         <TextWidget
           text="↺"
-          clickAction={{ type: 'broadcast', action: 'noteflow.WIDGET_REFRESH' }}
+          clickAction="WIDGET_REFRESH"
           style={{ color: colors.muted, fontSize: 18, padding: 4 }}
         />
       </FlexWidget>
@@ -57,14 +59,15 @@ export function TasksWidget({ tasks, url }: Props) {
           />
         </FlexWidget>
       ) : (
-        <ListWidget style={{ flex: 1 }}>
+        <ListWidget>
           {tasks.map((task) => {
             const overdue = isOverdue(task.due_at);
             const dueLabel = formatDue(task.due_at);
             return (
               <FlexWidget
                 key={task.id}
-                clickAction={{ type: 'openUrl', url: `${url}/#/task/${task.id}` }}
+                clickAction="OPEN_URI"
+                clickActionData={{ uri: `${url}/#/task/${task.id}` }}
                 style={{
                   flexDirection: 'row',
                   alignItems: 'center',
@@ -77,15 +80,16 @@ export function TasksWidget({ tasks, url }: Props) {
                   text={priorityDot(task.priority)}
                   style={{ fontSize: 13, marginRight: 8 }}
                 />
-                <TextWidget
-                  text={task.title}
-                  style={{
-                    flex: 1,
-                    color: overdue ? colors.overdue : colors.text,
-                    fontSize: 14,
-                  }}
-                  maxLines={1}
-                />
+                <FlexWidget style={{ flex: 1 }}>
+                  <TextWidget
+                    text={task.title}
+                    style={{
+                      color: overdue ? colors.overdue : colors.text,
+                      fontSize: 14,
+                    }}
+                    maxLines={1}
+                  />
+                </FlexWidget>
                 {dueLabel ? (
                   <TextWidget
                     text={dueLabel}
@@ -117,12 +121,14 @@ export function TasksWidget({ tasks, url }: Props) {
       >
         <TextWidget
           text="+ New"
-          clickAction={{ type: 'openUrl', url: `${url}/#/new-task` }}
+          clickAction="OPEN_URI"
+          clickActionData={{ uri: `${url}/#/new-task` }}
           style={{ color: colors.accent, fontSize: 13, padding: 4 }}
         />
         <TextWidget
           text="Open app"
-          clickAction={{ type: 'openUrl', url: `${url}/#/tasks` }}
+          clickAction="OPEN_URI"
+          clickActionData={{ uri: `${url}/#/tasks` }}
           style={{ color: colors.accent, fontSize: 13, padding: 4 }}
         />
       </FlexWidget>

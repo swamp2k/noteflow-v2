@@ -11,4 +11,4 @@ export const colors = {
   high: '#e74c3c',
   medium: '#f39c12',
   low: '#27ae60',
-};
+} as const;
