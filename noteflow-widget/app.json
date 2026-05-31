@@ -45,6 +45,15 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "401f59c5-5d07-44c0-a458-d729afc32964"
+      }
+    },
+    "owner": "hadus"
   }
 }

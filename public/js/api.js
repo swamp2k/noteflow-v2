@@ -44,16 +44,16 @@ async function apiDelete(path) {
   return r.json();
 }
 async function uploadAttachment(file, noteId) {
-  const base64 = await new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result.split(',')[1]);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
+  const token = getCFToken();
+  const headers = { 'Content-Type': file.type || 'application/octet-stream' };
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+  const params = new URLSearchParams({ note_id: noteId, filename: file.name });
+  const r = await fetch(API_BASE + '/attachments?' + params, {
+    method: 'POST',
+    credentials: 'omit',
+    headers,
+    body: file,
   });
-  return apiPost('/attachments', {
-    note_id:  noteId,
-    filename: file.name,
-    type:     file.type || 'application/octet-stream',
-    content:  base64,
-  });
+  if (!r.ok) throw new Error('POST ' + r.status);
+  return r.json();
 }
