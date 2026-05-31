@@ -119,7 +119,7 @@ export default function SetupScreen() {
           onPress={handleSaveAndTest}
           disabled={status.type === 'loading'}
         >
-          <Text style={styles.btnTextPrimary}>Save &amp; Test</Text>
+          <Text style={styles.btnTextPrimary}>{'Save & Test'}</Text>
         </Pressable>
 
         <Pressable
