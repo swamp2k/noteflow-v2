@@ -76,19 +76,26 @@ async function quickAddTask(text, feedEl) {
   if (!text || !text.trim()) return;
   const content = text.trim();
   const priority = settings.tasks_default_priority || null;
+  const isMainFeed = feedEl && feedEl.id === 'feed';
 
-  // Optimistic prepend — track the row so we can roll back on failure
-  const optimisticRow = buildTaskRow({ id: '_opt_' + Date.now(), content, is_task: 1, due_date: null, priority, completed_at: null }, feedEl);
+  const taskObj = { id: '_opt_' + Date.now(), content, is_task: 1, due_date: null, priority, completed_at: null };
+  const optimisticRow = isMainFeed ? buildTaskCard(taskObj) : buildTaskRow(taskObj, feedEl);
   optimisticRow.style.opacity = '0.6';
-  if (feedEl.firstChild && feedEl.firstChild.classList && feedEl.firstChild.classList.contains('tasks-sort-bar')) {
-    feedEl.firstChild.after(optimisticRow);
+
+  // Insert after the quick-add row (main feed) or sort bar (overlay), not before them
+  const qaRow = feedEl.querySelector('.tasks-qa-row');
+  const sortBar = feedEl.querySelector('.tasks-sort-bar');
+  const anchor = qaRow || sortBar;
+  if (anchor) {
+    anchor.after(optimisticRow);
   } else {
     feedEl.prepend(optimisticRow);
   }
 
   try {
     const result = await apiPost('/notes', { content, is_task: 1, priority });
-    optimisticRow.replaceWith(buildTaskRow(result.note, feedEl));
+    const newCard = isMainFeed ? buildTaskCard(result.note) : buildTaskRow(result.note, feedEl);
+    optimisticRow.replaceWith(newCard);
     if (priority === 1) { _alertTaskCount++; refreshTaskBadge(); }
   } catch(e) {
     optimisticRow.remove();
@@ -278,8 +285,16 @@ function buildTaskCard(task) {
   return card;
 }
 
+let _tasksFeedRefreshTimer = null;
+
 // ── renderTasksFeed ───────────────────────────────────────────────────────────
 async function renderTasksFeed() {
+  // Reset auto-refresh timer on each render
+  if (_tasksFeedRefreshTimer) { clearTimeout(_tasksFeedRefreshTimer); _tasksFeedRefreshTimer = null; }
+  _tasksFeedRefreshTimer = setTimeout(() => {
+    if (typeof currentView !== 'undefined' && currentView === 'tasks' && !document.hidden) renderTasksFeed();
+  }, 60000);
+
   const feed = document.getElementById('feed');
   feed.innerHTML = '<div class="empty-state" style="padding:40px 20px">Loading tasks…</div>';
 
@@ -301,6 +316,7 @@ async function renderTasksFeed() {
 
   // Quick add row
   const qaRow = document.createElement('div');
+  qaRow.className = 'tasks-qa-row';
   qaRow.style.cssText = 'display:flex;gap:8px;margin-bottom:14px';
   const qaInput = document.createElement('input');
   qaInput.type = 'text';
@@ -744,7 +760,7 @@ async function openTaskDetail(taskId) {
 
 // ── Task Detail modal: "Convert to note" ─────────────────────────────────────
 async function convertTaskToNote(taskId) {
-  await saveTaskFields(taskId, { is_task: 0, due_date: null, priority: null, completed_at: null });
+  await saveTaskFields(taskId, { is_task: 0, due_date: null, priority: null, completed_at: null, created_at: Math.floor(Date.now() / 1000) });
   const modal = document.getElementById('task-detail-modal');
   if (modal) modal.classList.remove('open');
   toast('Converted to note');
@@ -781,6 +797,13 @@ async function convertTaskToNote(taskId) {
   }
   tryWire();
 })();
+
+// ── Auto-refresh tasks when tab becomes visible ───────────────────────────────
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && typeof currentView !== 'undefined' && currentView === 'tasks') {
+    renderTasksFeed();
+  }
+});
 
 // ── Init overlay swipe-to-dismiss ─────────────────────────────────────────────
 (function initTasksOverlayGestures() {
