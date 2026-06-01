@@ -1490,6 +1490,32 @@
           </div>
         </div>
 
+        <!-- Email to Task -->
+        <div class="settings-section">
+          <div class="settings-section-title">Email to Task</div>
+          <div class="settings-desc" style="font-size:13px;color:var(--muted);margin-bottom:12px">
+            Forward emails to this address to create tasks automatically.
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">Your task inbox</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <code id="task-email-address" style="font-size:13px;background:var(--bg);padding:6px 10px;border-radius:6px;border:1px solid var(--border)">task@jeppesen.cc</code>
+              <button style="font-size:13px;padding:5px 12px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text);cursor:pointer" onclick="navigator.clipboard.writeText('task@jeppesen.cc').then(()=>toast('Copied!'))">Copy</button>
+            </div>
+          </div>
+          <div class="settings-row" style="flex-direction:column;align-items:flex-start;gap:6px">
+            <label class="settings-label" for="email-task-senders">Approved senders</label>
+            <textarea
+              id="email-task-senders"
+              rows="3"
+              placeholder="one@email.com, two@email.com"
+              style="width:100%;padding:6px 10px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;box-sizing:border-box;font-family:var(--font-body);resize:vertical"
+              oninput="settings.emailTaskApprovedSenders=this.value;saveSettings()"
+            ></textarea>
+            <div class="settings-desc">Only emails from these addresses will create tasks. Comma or newline separated.</div>
+          </div>
+        </div>
+
         <div class="settings-section">
           <div class="settings-section-title">Tags</div>
           <div class="settings-row">

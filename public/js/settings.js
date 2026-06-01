@@ -251,6 +251,9 @@ function syncSettingsControls() {
   if (discordWebhookRow) discordWebhookRow.style.display = s.notif_discord_enabled ? '' : 'none';
   const emailAddressRow = el('notif-email-address-row');
   if (emailAddressRow) emailAddressRow.style.display = s.notif_email_enabled ? '' : 'none';
+
+  const emailTaskSenders = el('email-task-senders');
+  if (emailTaskSenders) emailTaskSenders.value = s.emailTaskApprovedSenders || '';
 }
 
 // ── Settings page controls ────────────────────────────────────────────────────

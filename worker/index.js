@@ -13,6 +13,7 @@ import { projectAIHandler } from "./handlers/project-ai.js";
 import { emailHandler } from "./handlers/email.js";
 import { pushHandler } from "./handlers/push.js";
 import { runTaskNotifications } from "./lib/notifications.js";
+import { handleInboundEmail } from "./handlers/email-inbound.js";
 
 export default {
   async fetch(request, env, ctx) {
@@ -89,5 +90,9 @@ export default {
 
   async scheduled(event, env, ctx) {
     ctx.waitUntil(runTaskNotifications(env));
+  },
+
+  async email(message, env, ctx) {
+    ctx.waitUntil(handleInboundEmail(message, env));
   }
 };

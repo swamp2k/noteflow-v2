@@ -61,6 +61,7 @@ noteflow-v2/
 │       ├── email.js           ← /api/email/send
 │       ├── push.js            ← /api/push/vapid-key (GET), /api/push/subscribe (POST, DELETE)
 │       ├── project-ai.js      ← /api/project-ai (project context AI panel)
+│       ├── email-inbound.js   ← handleInboundEmail() — Cloudflare Email Routing handler (email() export)
 │       └── public.js          ← service-worker.js, icons, manifest, /api/public/notes/:id, /api/public/attachments/:id
 ├── wrangler.toml              ← Worker deployment config; includes [triggers] crons = ["0 * * * *"]
 ├── service-worker.js          ← Source for the browser service worker
@@ -327,6 +328,7 @@ let tasksOverlayOpen = false;
 tasks_hide_from_main_feed, tasks_default_priority, tasks_show_completed, tasks_show_count_badge
 notif_enabled
 notif_discord_enabled, notif_discord_webhook
+emailTaskApprovedSenders
 notif_email_enabled, notif_email_address
 notif_push_enabled
 ```
@@ -573,6 +575,7 @@ noteflow-v2/
 │       ├── email.js           ← /api/email/send
 │       ├── push.js            ← /api/push/vapid-key (GET), /api/push/subscribe (POST, DELETE)
 │       ├── project-ai.js      ← /api/project-ai (project context AI panel)
+│       ├── email-inbound.js   ← handleInboundEmail() — Cloudflare Email Routing handler (email() export)
 │       └── public.js          ← service-worker.js, icons, manifest, /api/public/notes/:id, /api/public/attachments/:id
 ├── wrangler.toml              ← Worker deployment config; includes [triggers] crons = ["0 * * * *"]
 ├── service-worker.js          ← Source for the browser service worker
