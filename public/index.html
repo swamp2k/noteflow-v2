@@ -1453,11 +1453,10 @@
 
         <div class="settings-section">
           <div class="settings-section-title">AI</div>
-          <div class="settings-desc" style="font-size:13px;color:var(--muted);margin-bottom:12px">
+          <div class="settings-desc" style="font-size:13px;color:var(--muted);padding:0 16px 12px;border-bottom:1px solid var(--border)">
             NoteFlow uses Anthropic (Claude) for all AI features. The model used for tracker
             conversations can be set per tracker. Tagging and document indexing always use the built-in key.
           </div>
-          <div class="settings-row" style="flex-direction:column;align-items:flex-start;gap:6px">
           <div class="settings-row" style="flex-direction:column;align-items:flex-start;gap:6px">
             <div class="settings-label">Voyage AI key</div>
             <div class="settings-desc">The Voyage AI key is now stored as a Cloudflare Worker secret (<code>VOYAGE_KEY</code>) and no longer needs to be entered here. Set it with: <code>npx wrangler secret put VOYAGE_KEY</code></div>
@@ -1466,7 +1465,7 @@
 
         <div class="settings-section">
           <div class="settings-section-title">Email</div>
-          <div class="settings-desc" style="font-size:13px;color:var(--muted);margin-bottom:12px">
+          <div class="settings-desc" style="font-size:13px;color:var(--muted);padding:0 16px 12px;border-bottom:1px solid var(--border)">
             Send notes to yourself via email. Uses the NoteFlow server — no setup needed beyond a recipient address.
           </div>
           <div class="settings-row" style="flex-direction:column;align-items:flex-start;gap:6px">
@@ -1493,7 +1492,7 @@
         <!-- Email to Task -->
         <div class="settings-section">
           <div class="settings-section-title">Email to Task</div>
-          <div class="settings-desc" style="font-size:13px;color:var(--muted);margin-bottom:12px">
+          <div class="settings-desc" style="font-size:13px;color:var(--muted);padding:0 16px 12px;border-bottom:1px solid var(--border)">
             Forward emails to this address to create tasks automatically.
           </div>
           <div class="settings-row">
@@ -1595,7 +1594,7 @@
         <!-- Notifications settings -->
         <div class="settings-section">
           <div class="settings-section-title">Notifications</div>
-          <div class="settings-desc" style="padding:0 16px 10px;font-size:12px;color:var(--muted)">Send reminders for due and overdue tasks.</div>
+          <div class="settings-desc" style="font-size:13px;color:var(--muted);padding:0 16px 12px;border-bottom:1px solid var(--border)">Send reminders for due and overdue tasks.</div>
           <div class="settings-row">
             <div>
               <div class="settings-label">Enable notifications</div>
@@ -1605,7 +1604,6 @@
             </div>
           </div>
           <div id="notif-channels-section" style="display:none">
-            <div class="settings-section-title" style="font-size:11px;padding:10px 16px 4px">Channels</div>
             <div class="settings-row">
               <div><div class="settings-label">Email</div></div>
               <div class="settings-control">
