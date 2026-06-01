@@ -236,11 +236,12 @@ document.getElementById('file-input').addEventListener('change', async e => {
   e.target.value = '';
 });
 document.getElementById('composer').addEventListener('paste', async e => {
-  const items = e.clipboardData?.items || [];
-  for (const item of items) {
-    if (item.type.startsWith('image/')) {
-      e.preventDefault();
-      await addFile(item.getAsFile());
-    }
+  const items = Array.from(e.clipboardData?.items || []);
+  const fileItems = items.filter(i => i.kind === 'file');
+  if (fileItems.length === 0) return;
+  e.preventDefault();
+  for (const item of fileItems) {
+    const file = item.getAsFile();
+    if (file) await addFile(file);
   }
 });

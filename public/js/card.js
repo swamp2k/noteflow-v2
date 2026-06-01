@@ -190,9 +190,42 @@ function buildCard(memo) {
   inlineFileInput.style.display = 'none';
   inlineAttachBtn.addEventListener('click', () => inlineFileInput.click());
   let inlinePendingFiles = [];
+
+  const inlinePreviewArea = document.createElement('div');
+  inlinePreviewArea.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;min-height:0';
+
+  function renderInlinePreviews() {
+    inlinePreviewArea.innerHTML = '';
+    inlinePendingFiles.forEach((file, i) => {
+      const wrap = document.createElement('div');
+      if (file.type.startsWith('image/')) {
+        wrap.className = 'img-preview-wrap';
+        const img = document.createElement('img');
+        img.src = URL.createObjectURL(file);
+        wrap.appendChild(img);
+      } else {
+        wrap.className = 'img-preview-wrap';
+        wrap.style.cssText = 'display:flex;align-items:center;justify-content:center;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;width:auto;height:auto;padding:6px 10px;gap:6px;font-size:13px;max-width:180px';
+        const icon = document.createElement('span');
+        icon.textContent = fileIcon(file.type);
+        const name = document.createElement('span');
+        name.textContent = file.name;
+        name.style.cssText = 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px';
+        wrap.appendChild(icon);
+        wrap.appendChild(name);
+      }
+      const rm = document.createElement('button');
+      rm.className = 'img-remove'; rm.textContent = '✕';
+      rm.onclick = ev => { ev.stopPropagation(); inlinePendingFiles.splice(i, 1); renderInlinePreviews(); };
+      wrap.appendChild(rm);
+      inlinePreviewArea.appendChild(wrap);
+    });
+  }
+
   inlineFileInput.addEventListener('change', async e => {
     for (const f of e.target.files) inlinePendingFiles.push(f);
-    inlineAttachBtn.textContent = '📎 ' + inlinePendingFiles.length + ' file(s)';
+    e.target.value = '';
+    renderInlinePreviews();
   });
 
   inlineLeft.appendChild(inlineAttachBtn);
@@ -209,6 +242,7 @@ function buildCard(memo) {
     e.stopPropagation();
     card.classList.remove('card-editing');
     inlinePendingFiles = [];
+    renderInlinePreviews();
   });
 
   const inlineSaveBtn = document.createElement('button');
@@ -268,8 +302,22 @@ function buildCard(memo) {
   inlineRight.appendChild(inlineSaveBtn);
   inlineFooter.appendChild(inlineLeft);
   inlineFooter.appendChild(inlineRight);
+  inlineWrap.appendChild(inlinePreviewArea);
   inlineWrap.appendChild(inlineFooter);
   card.appendChild(inlineWrap);
+
+  // Paste files/images into the inline editor
+  inlineTextarea.addEventListener('paste', e => {
+    const items = Array.from(e.clipboardData?.items || []);
+    const fileItems = items.filter(i => i.kind === 'file');
+    if (fileItems.length === 0) return;
+    e.preventDefault();
+    for (const item of fileItems) {
+      const file = item.getAsFile();
+      if (file) inlinePendingFiles.push(file);
+    }
+    renderInlinePreviews();
+  });
 
   // Double-click/double-tap to enter edit mode
   card.addEventListener('dblclick', e => {
@@ -280,6 +328,7 @@ function buildCard(memo) {
       .replace(/<!-- ocr -->[\s\S]*?<\/details>/gi, '')
       .trim();
     inlinePendingFiles = [];
+    renderInlinePreviews();
     inlineAttachBtn.innerHTML = '<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;pointer-events:none"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg> Attach';
     inlineTextarea.value = _ec;
     // Reset preview state so edit mode starts with raw textarea

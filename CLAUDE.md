@@ -267,6 +267,15 @@ function saveSettings() {
 }
 ```
 
+### Attachment paste/attach support
+File and image attachments are supported in three places:
+
+1. **Composer (new notes)** — paste handler in `lightbox.js` catches any `kind === 'file'` clipboard item (images, PDFs, etc.) and calls `addFile()`. Files queue in `pendingImages` (state.js) and are uploaded via `uploadAttachment()` after the note saves.
+
+2. **Inline note editor** (`card.js`) — paste handler on `inlineTextarea` catches file clipboard items, pushes to `inlinePendingFiles`. Attach button opens a file picker. Both show previews via `renderInlinePreviews()` (image thumbnails + file chips in `inlinePreviewArea`). Files are uploaded on Save.
+
+3. **Task detail modal** (`tasks.js`) — `openTaskDetail()` renders existing `task.attachments` as chips in `#td-attachment-list`. Attach button (`#td-attach-btn`) + file input (`#td-file-input`) for click-to-upload. Paste handler on `#td-textarea` uploads files immediately. Delete button calls `DELETE /api/attachments/:id`. Uses `.onclick`/`.onchange`/`.onpaste` assignment to prevent stacking on re-open.
+
 ### Targeted card updates (performance)
 Do NOT call `renderFeed()` for single-note operations. Use:
 ```javascript

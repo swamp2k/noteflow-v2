@@ -644,6 +644,101 @@ async function openTaskDetail(taskId) {
     });
   }
 
+  // Attachments section
+  const attList = document.getElementById('td-attachment-list');
+  const tdAttachBtn = document.getElementById('td-attach-btn');
+  const tdFileInput = document.getElementById('td-file-input');
+
+  function renderTaskAttachments() {
+    if (!attList) return;
+    attList.innerHTML = '';
+    (liveTask.attachments || []).forEach(att => {
+      const chip = document.createElement('span');
+      chip.style.cssText = 'display:inline-flex;align-items:center;gap:5px;background:var(--surface-alt);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer;max-width:200px';
+      chip.title = att.filename;
+      const iconSpan = document.createElement('span');
+      iconSpan.textContent = isImageAttachment(att) ? '🖼️' : fileIcon(att.mime_type);
+      const nameSpan = document.createElement('span');
+      nameSpan.style.cssText = 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px';
+      nameSpan.textContent = att.filename;
+      const delBtn = document.createElement('button');
+      delBtn.style.cssText = 'background:none;border:none;cursor:pointer;color:var(--muted);font-size:11px;padding:0;line-height:1;flex-shrink:0';
+      delBtn.textContent = '✕';
+      delBtn.title = 'Remove';
+      delBtn.onclick = async ev => {
+        ev.stopPropagation();
+        try {
+          await apiDelete('/attachments/' + att.id);
+          liveTask.attachments = (liveTask.attachments || []).filter(a => a.id !== att.id);
+          const idx = allMemos.findIndex(m => m.id === taskId);
+          if (idx !== -1) allMemos[idx].attachments = liveTask.attachments;
+          renderTaskAttachments();
+        } catch(e) { toast('Delete failed: ' + e.message); }
+      };
+      chip.addEventListener('click', ev => {
+        if (ev.target === delBtn) return;
+        const url = attachmentUrl(att);
+        if (isImageAttachment(att)) {
+          getAttachmentBlob(att, url).then(blob => {
+            const blobUrl = URL.createObjectURL(blob);
+            openLightbox(blobUrl, [blobUrl]);
+          }).catch(() => window.open(API_BASE + url));
+        } else {
+          openFilePreview(att, att.filename, att.mime_type, API_BASE + url);
+        }
+      });
+      chip.appendChild(iconSpan);
+      chip.appendChild(nameSpan);
+      chip.appendChild(delBtn);
+      attList.appendChild(chip);
+    });
+  }
+
+  renderTaskAttachments();
+
+  if (tdAttachBtn && tdFileInput) {
+    tdAttachBtn.onclick = () => tdFileInput.click();
+    tdFileInput.value = '';
+    tdFileInput.onchange = async e => {
+      const files = Array.from(e.target.files);
+      e.target.value = '';
+      for (const file of files) {
+        try {
+          const result = await uploadAttachment(file, taskId);
+          if (result.attachment) {
+            if (!liveTask.attachments) liveTask.attachments = [];
+            liveTask.attachments = [...liveTask.attachments, result.attachment];
+            const idx = allMemos.findIndex(m => m.id === taskId);
+            if (idx !== -1) allMemos[idx].attachments = liveTask.attachments;
+            renderTaskAttachments();
+          }
+        } catch(err) { toast('Upload failed: ' + err.message); }
+      }
+    };
+  }
+
+  // Paste files/images into the task textarea
+  textarea.onpaste = async e => {
+    const items = Array.from(e.clipboardData?.items || []);
+    const fileItems = items.filter(i => i.kind === 'file');
+    if (fileItems.length === 0) return;
+    e.preventDefault();
+    for (const item of fileItems) {
+      const file = item.getAsFile();
+      if (!file) continue;
+      try {
+        const result = await uploadAttachment(file, taskId);
+        if (result.attachment) {
+          if (!liveTask.attachments) liveTask.attachments = [];
+          liveTask.attachments = [...liveTask.attachments, result.attachment];
+          const idx = allMemos.findIndex(m => m.id === taskId);
+          if (idx !== -1) allMemos[idx].attachments = liveTask.attachments;
+          renderTaskAttachments();
+        }
+      } catch(err) { toast('Upload failed: ' + err.message); }
+    }
+  };
+
   modal.classList.add('open');
 }
 
