@@ -40,6 +40,25 @@ function isDueToday(due_date) {
   return due_date === new Date().toISOString().slice(0, 10);
 }
 
+function relativeDue(due_date) {
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const [ty, tm, td] = todayStr.split('-').map(Number);
+  const [dy, dm, dd] = due_date.split('-').map(Number);
+  const diff = Math.round((Date.UTC(dy, dm - 1, dd) - Date.UTC(ty, tm - 1, td)) / 86400000);
+  if (diff === 0) return 'Today';
+  if (diff > 0) {
+    if (diff === 1) return '1 day';
+    if (diff <= 14) return diff + ' days';
+    if (diff < 90) return Math.round(diff / 7) + ' wks';
+    return Math.round(diff / 30) + ' mo';
+  }
+  const abs = Math.abs(diff);
+  if (abs === 1) return '1 day ago';
+  if (abs <= 14) return abs + ' days ago';
+  if (abs < 90) return Math.round(abs / 7) + ' wks ago';
+  return Math.round(abs / 30) + ' mo ago';
+}
+
 function dueDateChip(due_date) {
   if (!due_date) return null;
   const chip = document.createElement('span');
@@ -48,7 +67,8 @@ function dueDateChip(due_date) {
   chip.style.cssText = `font-size:11px;padding:2px 7px;border-radius:10px;font-weight:${overdue ? '700' : '400'};` +
     `background:${overdue ? '#fde8e8' : today ? '#fef3c7' : 'var(--surface-alt)'};` +
     `color:${overdue ? '#ef4444' : today ? '#d97706' : 'var(--muted)'};white-space:nowrap;flex-shrink:0`;
-  chip.textContent = overdue ? 'Overdue · ' + due_date : due_date;
+  chip.textContent = overdue ? 'Overdue · ' + relativeDue(due_date) : relativeDue(due_date);
+  chip.title = due_date;
   return chip;
 }
 
