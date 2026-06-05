@@ -1564,23 +1564,26 @@
               <label class="toggle"><input type="checkbox" id="setting-tasks-hide-from-feed"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
             </div>
           </div>
+          <div class="settings-row" style="flex-direction:column;align-items:flex-start;gap:6px">
+            <div class="settings-label">Task subjects</div>
+            <div class="settings-desc">Comma-separated categories for organising tasks (e.g. House, Office, Star Rewards)</div>
+            <input type="text" id="setting-task-subjects" placeholder="House, Office, Star Rewards"
+              style="width:100%;padding:6px 10px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;box-sizing:border-box;font-family:var(--font-body)">
+          </div>
           <div class="settings-row">
             <div>
-              <div class="settings-label">Default priority for new tasks</div>
+              <div class="settings-label">Default subject for new tasks</div>
             </div>
             <div class="settings-control">
-              <select id="setting-tasks-default-priority" style="border:1px solid var(--border);border-radius:7px;padding:5px 8px;font-size:13px;background:var(--bg);color:var(--text);font-family:var(--font-body)">
+              <select id="setting-tasks-default-subject" style="border:1px solid var(--border);border-radius:7px;padding:5px 8px;font-size:13px;background:var(--bg);color:var(--text);font-family:var(--font-body)">
                 <option value="">None</option>
-                <option value="1">High</option>
-                <option value="2">Medium</option>
-                <option value="3">Low</option>
               </select>
             </div>
           </div>
           <div class="settings-row">
             <div>
               <div class="settings-label">Show urgent task count in sidebar</div>
-              <div class="settings-desc">Displays a count of high priority, overdue, and due-today tasks next to "Tasks"</div>
+              <div class="settings-desc">Displays a count of overdue and due-today tasks next to "Tasks"</div>
             </div>
             <div class="settings-control">
               <label class="toggle"><input type="checkbox" id="setting-tasks-show-count-badge"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
@@ -1794,12 +1797,9 @@
         <input type="date" id="td-due-date" style="border:1px solid var(--border);border-radius:7px;padding:5px 8px;font-size:13px;background:var(--bg);color:var(--text);font-family:var(--font-body)">
       </div>
       <div>
-        <div style="font-size:11px;text-transform:uppercase;color:var(--muted);letter-spacing:0.05em;margin-bottom:4px">Priority</div>
-        <select id="td-priority" style="border:1px solid var(--border);border-radius:7px;padding:5px 8px;font-size:13px;background:var(--bg);color:var(--text);font-family:var(--font-body)">
+        <div style="font-size:11px;text-transform:uppercase;color:var(--muted);letter-spacing:0.05em;margin-bottom:4px">Subject</div>
+        <select id="td-subject" style="border:1px solid var(--border);border-radius:7px;padding:5px 8px;font-size:13px;background:var(--bg);color:var(--text);font-family:var(--font-body)">
           <option value="">None</option>
-          <option value="1">High</option>
-          <option value="2">Medium</option>
-          <option value="3">Low</option>
         </select>
       </div>
     </div>

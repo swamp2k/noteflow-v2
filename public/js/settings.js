@@ -224,11 +224,13 @@ function syncSettingsControls() {
 
   // Task settings
   const taskHideCb    = el('setting-tasks-hide-from-feed');
-  const taskPrioSel   = el('setting-tasks-default-priority');
   const taskBadgeCb   = el('setting-tasks-show-count-badge');
   if (taskHideCb)  taskHideCb.checked  = !!s.tasks_hide_from_main_feed;
-  if (taskPrioSel) taskPrioSel.value   = s.tasks_default_priority != null ? String(s.tasks_default_priority) : '';
   if (taskBadgeCb) taskBadgeCb.checked = s.tasks_show_count_badge !== false;
+
+  const taskSubjectsInput = el('setting-task-subjects');
+  if (taskSubjectsInput) taskSubjectsInput.value = (s.task_subjects || []).join(', ');
+  refreshSubjectDefaultSelect();
 
   // Notification settings
   const notifEnabledCb     = el('setting-notif-enabled');
@@ -254,6 +256,17 @@ function syncSettingsControls() {
 
   const emailTaskSenders = el('email-task-senders');
   if (emailTaskSenders) emailTaskSenders.value = s.emailTaskApprovedSenders || '';
+}
+
+function refreshSubjectDefaultSelect() {
+  const sel = document.getElementById('setting-tasks-default-subject');
+  if (!sel) return;
+  const subjects = settings.task_subjects || [];
+  sel.innerHTML = '<option value="">None</option>' + subjects.map(s => {
+    const escaped = s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+    const selected = settings.tasks_default_subject === s ? ' selected' : '';
+    return `<option value="${escaped}"${selected}>${escaped}</option>`;
+  }).join('');
 }
 
 // ── Settings page controls ────────────────────────────────────────────────────
@@ -372,14 +385,20 @@ function initSettingsControls() {
 
   // ── Task settings ─────────────────────────────────────────────────────────
   const taskHideCb  = document.getElementById('setting-tasks-hide-from-feed');
-  const taskPrioSel = document.getElementById('setting-tasks-default-priority');
   if (taskHideCb) taskHideCb.addEventListener('change', () => {
     settings.tasks_hide_from_main_feed = taskHideCb.checked;
     saveSettings();
     if (currentView === 'all') loadMemos();
   });
-  if (taskPrioSel) taskPrioSel.addEventListener('change', () => {
-    settings.tasks_default_priority = taskPrioSel.value !== '' ? parseInt(taskPrioSel.value) : null;
+  const taskSubjectsInput = document.getElementById('setting-task-subjects');
+  if (taskSubjectsInput) taskSubjectsInput.addEventListener('input', () => {
+    settings.task_subjects = taskSubjectsInput.value.split(',').map(s => s.trim()).filter(s => s.length > 0);
+    saveSettings();
+    refreshSubjectDefaultSelect();
+  });
+  const taskDefaultSubjectSel = document.getElementById('setting-tasks-default-subject');
+  if (taskDefaultSubjectSel) taskDefaultSubjectSel.addEventListener('change', () => {
+    settings.tasks_default_subject = taskDefaultSubjectSel.value || null;
     saveSettings();
   });
   const taskBadgeCb = document.getElementById('setting-tasks-show-count-badge');

@@ -3,28 +3,31 @@
 //          renderTasksOverlay, openTaskDetail, saveTaskFields,
 //          quickAddTask, completeTask, buildTaskCard
 
-// Priority configuration
-const PRIORITY_COLORS = { 1: '#ef4444', 2: '#f59e0b', 3: '#22c55e', null: '#9ca3af' };
-const PRIORITY_LABELS = { 1: 'High', 2: 'Medium', 3: 'Low', null: 'None' };
+// Subject/category color palette — color is derived deterministically from subject name
+const SUBJECT_PALETTE = [
+  { bg: '#e0e7ff', text: '#4338ca' }, { bg: '#fce7f3', text: '#be185d' },
+  { bg: '#dcfce7', text: '#15803d' }, { bg: '#fff7ed', text: '#c2410c' },
+  { bg: '#f0f9ff', text: '#0369a1' }, { bg: '#fef9c3', text: '#a16207' },
+  { bg: '#f3e8ff', text: '#7e22ce' }, { bg: '#fee2e2', text: '#b91c1c' },
+];
+function subjectColor(subject) {
+  if (!subject) return { bg: 'var(--surface-alt)', text: 'var(--muted)' };
+  let h = 0;
+  for (let i = 0; i < subject.length; i++) h = (h * 31 + subject.charCodeAt(i)) & 0xffffffff;
+  return SUBJECT_PALETTE[Math.abs(h) % SUBJECT_PALETTE.length];
+}
 
 let _alertTaskCount = 0;
 
 function countAlertTasks(tasks) {
   const today = new Date().toISOString().slice(0, 10);
-  return tasks.filter(t => t.priority === 1 || t.due_date === today || (t.due_date && t.due_date < today)).length;
+  return tasks.filter(t => t.due_date === today || (t.due_date && t.due_date < today)).length;
 }
 
 function refreshTaskBadge() {
   if (typeof updateTasksNavBadge === 'function') updateTasksNavBadge(_alertTaskCount);
 }
 
-function priorityDot(priority) {
-  const color = PRIORITY_COLORS[priority] || PRIORITY_COLORS[null];
-  const d = document.createElement('span');
-  d.style.cssText = `display:inline-block;width:9px;height:9px;border-radius:50%;background:${color};flex-shrink:0;margin-right:6px`;
-  d.title = 'Priority: ' + (PRIORITY_LABELS[priority] || 'None');
-  return d;
-}
 
 function isOverdue(due_date) {
   if (!due_date) return false;
@@ -75,10 +78,10 @@ async function saveTaskFields(id, patch) {
 async function quickAddTask(text, feedEl) {
   if (!text || !text.trim()) return;
   const content = text.trim();
-  const priority = settings.tasks_default_priority || null;
+  const subject = settings.tasks_default_subject || null;
   const isMainFeed = feedEl && feedEl.id === 'feed';
 
-  const taskObj = { id: '_opt_' + Date.now(), content, is_task: 1, due_date: null, priority, completed_at: null };
+  const taskObj = { id: '_opt_' + Date.now(), content, is_task: 1, due_date: null, priority: subject, completed_at: null };
   const optimisticRow = isMainFeed ? buildTaskCard(taskObj) : buildTaskRow(taskObj, feedEl);
   optimisticRow.style.opacity = '0.6';
 
@@ -93,10 +96,9 @@ async function quickAddTask(text, feedEl) {
   }
 
   try {
-    const result = await apiPost('/notes', { content, is_task: 1, priority });
+    const result = await apiPost('/notes', { content, is_task: 1, priority: subject });
     const newCard = isMainFeed ? buildTaskCard(result.note) : buildTaskRow(result.note, feedEl);
     optimisticRow.replaceWith(newCard);
-    if (priority === 1) { _alertTaskCount++; refreshTaskBadge(); }
   } catch(e) {
     optimisticRow.remove();
     toast('Failed to create task: ' + e.message);
@@ -176,7 +178,7 @@ function buildTaskCard(task) {
     if (updated) {
       if (done) {
         const today = new Date().toISOString().slice(0, 10);
-        const wasAlert = task.priority === 1 || task.due_date === today || (task.due_date && task.due_date < today);
+        const wasAlert = task.due_date === today || (task.due_date && task.due_date < today);
         if (wasAlert) { _alertTaskCount = Math.max(0, _alertTaskCount - 1); refreshTaskBadge(); }
       }
       card.style.transition = 'opacity 0.3s';
@@ -196,44 +198,44 @@ function buildTaskCard(task) {
 
   card.appendChild(header);
 
-  // Meta row: priority badge + due date chip (both inline-editable)
+  // Meta row: subject badge + due date chip (both inline-editable)
   const meta = document.createElement('div');
   meta.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap';
 
-  // Priority badge — click to cycle/change
-  function buildPriorityBadge(priority) {
-    const colors = { 1: { bg:'#fde8e8', text:'#ef4444' }, 2: { bg:'#fef3c7', text:'#d97706' }, 3: { bg:'#dcfce7', text:'#16a34a' }, null: { bg:'var(--surface-alt)', text:'var(--muted)' } };
-    const c = colors[priority] || colors[null];
+  // Subject badge — click to change
+  function buildSubjectBadge(subject) {
+    const c = subjectColor(subject);
     const badge = document.createElement('span');
     badge.style.cssText = `font-size:11px;padding:2px 8px;border-radius:10px;background:${c.bg};color:${c.text};cursor:pointer;user-select:none;white-space:nowrap`;
-    badge.textContent = PRIORITY_LABELS[priority] || 'No priority';
-    badge.title = 'Click to change priority';
+    badge.textContent = subject || 'No subject';
+    badge.title = 'Click to change subject';
     badge.addEventListener('click', e => {
       e.stopPropagation();
+      const subjects = settings.task_subjects || [];
       const sel = document.createElement('select');
       sel.style.cssText = 'font-size:11px;border:1px solid var(--border);border-radius:6px;padding:2px 4px;background:var(--bg);color:var(--text);font-family:var(--font-body)';
-      [['', 'No priority'], ['1', 'High'], ['2', 'Medium'], ['3', 'Low']].forEach(([val, label]) => {
+      [['', 'No subject'], ...subjects.map(s => [s, s])].forEach(([val, label]) => {
         const opt = document.createElement('option');
         opt.value = val;
         opt.textContent = label;
-        if ((priority == null && val === '') || String(priority) === val) opt.selected = true;
+        if ((!subject && val === '') || subject === val) opt.selected = true;
         sel.appendChild(opt);
       });
       badge.replaceWith(sel);
       sel.focus();
       const commit = async () => {
-        const newPrio = sel.value !== '' ? parseInt(sel.value) : null;
-        task.priority = newPrio;
-        await saveTaskFields(task.id, { priority: newPrio });
-        const newBadge = buildPriorityBadge(newPrio);
+        const newSubject = sel.value || null;
+        task.priority = newSubject;
+        await saveTaskFields(task.id, { priority: newSubject });
+        const newBadge = buildSubjectBadge(newSubject);
         sel.replaceWith(newBadge);
       };
       sel.addEventListener('change', commit);
-      sel.addEventListener('blur', () => { if (document.contains(sel)) { const nb = buildPriorityBadge(task.priority); sel.replaceWith(nb); } });
+      sel.addEventListener('blur', () => { if (document.contains(sel)) { const nb = buildSubjectBadge(task.priority); sel.replaceWith(nb); } });
     });
     return badge;
   }
-  meta.appendChild(buildPriorityBadge(task.priority));
+  meta.appendChild(buildSubjectBadge(task.priority));
 
   // Due date chip — click opens detail modal for editing
   function buildClickableDateChip(due_date) {
@@ -302,7 +304,7 @@ async function renderTasksFeed() {
   const sortBar = document.createElement('div');
   sortBar.className = 'tasks-sort-bar';
   sortBar.style.cssText = 'display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap';
-  [['priority','Priority'],['due_date','Due Date'],['created','Newest']].forEach(([val,label]) => {
+  [['subject','Subject'],['due_date','Due Date'],['created','Newest']].forEach(([val,label]) => {
     const btn = document.createElement('button');
     btn.style.cssText = 'padding:5px 12px;border-radius:16px;font-size:12px;font-family:var(--font-body);cursor:pointer;border:1px solid var(--border);transition:all 0.15s;background:' + (taskSortOrder===val?'var(--accent)':'var(--surface)') + ';color:' + (taskSortOrder===val?'var(--bg)':'var(--text)');
     btn.textContent = label;
@@ -341,7 +343,7 @@ async function renderTasksFeed() {
   feed.appendChild(qaRow);
 
   try {
-    const sortParam = taskSortOrder === 'due_date' ? 'due_date' : taskSortOrder === 'created' ? 'created' : 'priority';
+    const sortParam = taskSortOrder === 'due_date' ? 'due_date' : taskSortOrder === 'created' ? 'created' : 'subject';
     const data = await apiGet('/notes?is_task=1&sort=' + sortParam + '&pageSize=100');
     const tasks = data.notes || [];
 
@@ -460,7 +462,7 @@ async function renderTasksOverlay() {
   feedEl.innerHTML = '<div style="padding:20px;color:var(--muted);font-size:13px">Loading…</div>';
 
   try {
-    const sortParam = taskSortOrder === 'due_date' ? 'due_date' : taskSortOrder === 'created' ? 'created' : 'priority';
+    const sortParam = taskSortOrder === 'due_date' ? 'due_date' : taskSortOrder === 'created' ? 'created' : 'subject';
     const data = await apiGet('/notes?is_task=1&sort=' + sortParam + '&pageSize=100');
     const tasks = data.notes || [];
     feedEl.innerHTML = '';
@@ -552,8 +554,10 @@ async function openTaskDetail(taskId) {
   const dueInput = document.getElementById('td-due-date');
   dueInput.value = task.due_date || '';
 
-  const prioSelect = document.getElementById('td-priority');
-  prioSelect.value = task.priority != null ? String(task.priority) : '';
+  const subjectSelect = document.getElementById('td-subject');
+  const subjects = settings.task_subjects || [];
+  subjectSelect.innerHTML = '<option value="">None</option>' + subjects.map(s => `<option value="${s.replace(/"/g, '&quot;')}">${s.replace(/</g, '&lt;')}</option>`).join('');
+  subjectSelect.value = task.priority || '';
 
   const completedLabel = document.getElementById('td-completed-label');
   if (completedLabel) {
@@ -610,8 +614,8 @@ async function openTaskDetail(taskId) {
     liveTask.due_date = dueInput.value || null;
     saveTaskFields(taskId, { due_date: liveTask.due_date });
   };
-  prioSelect.onchange = () => {
-    liveTask.priority = prioSelect.value !== '' ? parseInt(prioSelect.value) : null;
+  subjectSelect.onchange = () => {
+    liveTask.priority = subjectSelect.value || null;
     saveTaskFields(taskId, { priority: liveTask.priority });
   };
 

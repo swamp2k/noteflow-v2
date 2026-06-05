@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS notes (
   -- Task fields (added May 2026)
   is_task           INTEGER NOT NULL DEFAULT 0,
   due_date          TEXT,           -- ISO 8601 date "YYYY-MM-DD", nullable
-  priority          INTEGER,        -- 1=High, 2=Medium, 3=Low, NULL=none
+  priority          TEXT,           -- subject/category label (user-defined text), NULL=none; column type stays in schema for compatibility but stores TEXT
   completed_at      TEXT,           -- ISO 8601 datetime, NULL=incomplete
   notif_days_before INTEGER,        -- days before due_date to send notification (0=on day), NULL=no notification
   notif_time        TEXT            -- "HH:MM" UTC time to send notification, NULL=no notification
