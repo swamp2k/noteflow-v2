@@ -325,7 +325,7 @@ let tasksOverlayOpen = false;
 
 `settings` object keys for tasks and notifications:
 ```
-tasks_hide_from_main_feed, tasks_default_priority, tasks_show_completed, tasks_show_count_badge
+tasks_hide_from_main_feed, task_subjects, tasks_default_subject, tasks_show_completed, tasks_show_count_badge
 notif_enabled
 notif_discord_enabled, notif_discord_webhook
 emailTaskApprovedSenders
@@ -338,10 +338,10 @@ Removed keys (no longer used): `notif_send_time`, `notif_trigger_due_today`, `no
 ### Task card layout (`buildTaskCard` in tasks.js)
 ```
 [ checkbox ] [ title (first line of content)         ]
-[ priority badge ] [ due date chip ] [ 🔔 notif chip ]
+[ subject badge ] [ due date chip ] [ 🔔 notif chip ]
 [ tags (optional) ]
 ```
-- Priority badge is clickable — replaces itself with a `<select>` for inline editing.
+- Subject badge is clickable — replaces itself with a `<select>` populated from `settings.task_subjects` for inline editing. Color is derived deterministically from the subject name via `SUBJECT_PALETTE` hash.
 - Due date chip and notification chip open the task detail modal on click (no inline input on the card — date inputs are too unreliable on mobile).
 - No Edit/Archive action buttons on the card — click anywhere to open the detail modal.
 - After `openTaskDetail` closes, a `MutationObserver` rebuilds the card from the updated `liveTask` object, so changes in the modal are immediately reflected without re-rendering the whole feed.
@@ -350,7 +350,7 @@ Removed keys (no longer used): `notif_send_time`, `notif_trigger_due_today`, `no
 Fields and their save behaviour:
 - **Content** (textarea) — saves on blur
 - **Due date** (`#td-due-date`) — saves on change
-- **Priority** (`#td-priority`) — saves on change
+- **Subject** (`#td-subject`) — dynamically populated from `settings.task_subjects`; saves on change (stored in `priority` DB column as TEXT)
 - **Notification days** (`#td-notif-days`) + **time** (`#td-notif-time`) — both saved together on either field's change event, writing `notif_days_before` and `notif_time` to D1
 
 A `liveTask` copy is maintained inside `openTaskDetail`. Each save handler updates `liveTask` as well as calling `saveTaskFields`. When the modal's `open` class is removed, the `MutationObserver` fires and rebuilds the task card and overlay row from `liveTask`.
@@ -359,7 +359,7 @@ A `liveTask` copy is maintained inside `openTaskDetail`. Each save handler updat
 - `?is_task=1` — return only tasks with `completed_at IS NULL`
 - `?completed=1` — combined with `is_task=1`, return completed tasks
 - `?hide_tasks=1` — exclude tasks from main notes feed (appended client-side when `settings.tasks_hide_from_main_feed` is true)
-- `?sort=priority|due_date|created` — task sort order (NULLS LAST via `CASE WHEN`)
+- `?sort=subject|due_date|created` — task sort order (`subject` sorts alphabetically by the `priority` text column, NULLs last)
 
 `PATCH /api/notes/:id/complete` — sets `completed_at` to current ISO timestamp or `null`. Note: `completed_at` is TEXT ISO 8601, while `created_at`/`updated_at` are INTEGER Unix seconds — intentional, documented in `schema.sql`.
 
@@ -394,7 +394,7 @@ npx wrangler d1 execute noteflow --command "CREATE TABLE IF NOT EXISTS widget_to
 ```sql
 is_task           INTEGER NOT NULL DEFAULT 0,
 due_date          TEXT,           -- ISO 8601 date "YYYY-MM-DD", nullable
-priority          INTEGER,        -- 1=High, 2=Medium, 3=Low, NULL=none
+priority          TEXT,           -- subject/category label (user-defined), NULL=none; repurposed from INTEGER — SQLite stores TEXT here
 completed_at      TEXT,           -- ISO 8601 datetime, NULL=incomplete
 notif_days_before INTEGER,        -- days before due_date to notify (0=on day), NULL=disabled
 notif_time        TEXT            -- "HH:MM" UTC, NULL=disabled
@@ -805,7 +805,7 @@ let tasksOverlayOpen = false;
 
 New `settings` object keys for tasks and notifications:
 ```
-tasks_hide_from_main_feed, tasks_default_priority, tasks_show_completed
+tasks_hide_from_main_feed, task_subjects, tasks_default_subject, tasks_show_completed
 notif_enabled, notif_send_time, notif_discord_enabled, notif_discord_webhook
 notif_email_enabled, notif_email_address, notif_push_enabled
 notif_trigger_due_today, notif_trigger_overdue, notif_trigger_due_soon
@@ -815,7 +815,7 @@ notif_trigger_due_today, notif_trigger_overdue, notif_trigger_due_soon
 - `?is_task=1` — return only tasks with `completed_at IS NULL`
 - `?completed=1` — combined with `is_task=1`, return completed tasks
 - `?hide_tasks=1` — exclude tasks from main notes feed (appended client-side when `settings.tasks_hide_from_main_feed` is true)
-- `?sort=priority|due_date|created` — task sort order (NULLS LAST via `CASE WHEN`)
+- `?sort=subject|due_date|created` — task sort order (`subject` sorts alphabetically by the `priority` text column, NULLs last)
 
 `PATCH /api/notes/:id/complete` — sets `completed_at` to current ISO timestamp or `null`. Note: `completed_at` is TEXT ISO 8601, while `created_at`/`updated_at` are INTEGER Unix seconds — intentional, documented in `schema.sql`.
 

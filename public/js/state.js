@@ -36,7 +36,8 @@ let settings = {
   _semanticCoords: null,
   // Task settings
   tasks_hide_from_main_feed:  true,
-  tasks_default_priority:     null,
+  task_subjects:              [],
+  tasks_default_subject:      null,
   tasks_show_completed:       false,
   tasks_show_count_badge:     true,
   // Notification settings
@@ -89,8 +90,9 @@ let _searchDebounce = null;
 let _loadingMore = false;
 
 // ── Tasks ─────────────────────────────────────────────────────────────────────
-let taskSortOrder    = localStorage.getItem('noteflow_task_sort') || 'priority';
-// 'priority' | 'due_date' | 'created'
+let _storedSort = localStorage.getItem('noteflow_task_sort');
+let taskSortOrder    = (_storedSort && _storedSort !== 'priority') ? _storedSort : 'subject';
+// 'subject' | 'due_date' | 'created'
 let tasksOverlayOpen = false;
 
 // ── Lightbox ──────────────────────────────────────────────────────────────────
