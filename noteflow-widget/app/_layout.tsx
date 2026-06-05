@@ -1,5 +1,4 @@
 import { Stack } from 'expo-router';
-import '../widget/widgetTaskHandler';
 
 export default function RootLayout() {
   return (

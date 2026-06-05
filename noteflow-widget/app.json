@@ -19,6 +19,7 @@
       [
         "react-native-android-widget",
         {
+          "widgetTaskHandler": "./widget/widgetTaskHandler",
           "widgets": [
             {
               "name": "TasksWidget",
