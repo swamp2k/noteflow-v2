@@ -258,95 +258,19 @@ function buildTaskCard(task) {
   }
   meta.appendChild(buildSubjectBadge(task.priority));
 
-  // Due date chip — click to edit inline
-  function buildClickableDateChip(due_date) {
-    const chip = dueDateChip(due_date) || (() => {
-      const p = document.createElement('span');
-      p.style.cssText = 'font-size:11px;padding:2px 7px;border-radius:10px;background:var(--surface-alt);color:var(--muted);cursor:pointer;user-select:none';
-      p.textContent = 'No due date';
-      return p;
-    })();
-    chip.style.cursor = 'pointer';
-    chip.addEventListener('click', e => {
-      e.stopPropagation();
-      const input = document.createElement('input');
-      input.type = 'date';
-      input.value = task.due_date || '';
-      input.style.cssText = 'font-size:11px;border:1px solid var(--border);border-radius:6px;padding:2px 4px;background:var(--bg);color:var(--text);font-family:var(--font-body)';
-      input.addEventListener('click', e => e.stopPropagation());
-      chip.replaceWith(input);
-      input.focus();
-      const commit = async () => {
-        task.due_date = input.value || null;
-        await saveTaskFields(task.id, { due_date: task.due_date });
-        input.replaceWith(buildClickableDateChip(task.due_date));
-      };
-      input.addEventListener('change', commit);
-      input.addEventListener('blur', () => { if (document.contains(input)) input.replaceWith(buildClickableDateChip(task.due_date)); });
-    });
-    return chip;
+  // Due date chip — display only; click bubbles to card to open detail modal
+  const dateChip = dueDateChip(task.due_date);
+  if (dateChip) meta.appendChild(dateChip);
+
+  // Notification chip — display only when configured; click bubbles to card to open detail modal
+  if (task.notif_days_before != null && task.notif_time) {
+    const notifChip = document.createElement('span');
+    notifChip.style.cssText = 'font-size:11px;padding:2px 7px;border-radius:10px;background:var(--surface-alt);color:var(--muted);display:inline-flex;align-items:center;gap:3px';
+    notifChip.innerHTML = '<svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>';
+    notifChip.appendChild(document.createTextNode(' ' + task.notif_days_before + 'd · ' + task.notif_time));
+    notifChip.title = 'Notification: ' + task.notif_days_before + ' day(s) before at ' + task.notif_time;
+    meta.appendChild(notifChip);
   }
-  meta.appendChild(buildClickableDateChip(task.due_date));
-
-  // Notification chip — always shown, click to edit inline
-  function buildNotifChip() {
-    const hasSetting = task.notif_days_before != null && task.notif_time;
-    const chip = document.createElement('span');
-    chip.style.cssText = 'font-size:11px;padding:2px 7px;border-radius:10px;background:var(--surface-alt);color:var(--muted);cursor:pointer;user-select:none;display:inline-flex;align-items:center;gap:3px';
-    chip.innerHTML = '<svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>';
-    chip.appendChild(document.createTextNode(hasSetting ? ' ' + task.notif_days_before + 'd · ' + task.notif_time : ' Remind'));
-    chip.title = hasSetting ? 'Notification: ' + task.notif_days_before + ' day(s) before at ' + task.notif_time : 'Add reminder';
-    chip.addEventListener('click', e => {
-      e.stopPropagation();
-      const wrap = document.createElement('span');
-      wrap.style.cssText = 'display:inline-flex;align-items:center;gap:3px;font-size:11px';
-      wrap.addEventListener('click', e => e.stopPropagation());
-
-      const daysInput = document.createElement('input');
-      daysInput.type = 'number'; daysInput.min = '0'; daysInput.max = '365';
-      daysInput.value = task.notif_days_before != null ? String(task.notif_days_before) : '';
-      daysInput.placeholder = '0';
-      daysInput.style.cssText = 'width:42px;font-size:11px;border:1px solid var(--border);border-radius:6px;padding:2px 4px;background:var(--bg);color:var(--text);font-family:var(--font-body)';
-
-      const timeInput = document.createElement('input');
-      timeInput.type = 'time';
-      timeInput.value = task.notif_time || '';
-      timeInput.style.cssText = 'font-size:11px;border:1px solid var(--border);border-radius:6px;padding:2px 4px;background:var(--bg);color:var(--text);font-family:var(--font-body)';
-
-      const clearBtn = document.createElement('button');
-      clearBtn.textContent = '×';
-      clearBtn.title = 'Clear reminder';
-      clearBtn.style.cssText = 'font-size:13px;border:none;background:none;cursor:pointer;color:var(--muted);padding:0 2px;line-height:1';
-      clearBtn.addEventListener('click', async e => {
-        e.stopPropagation();
-        task.notif_days_before = null; task.notif_time = null;
-        await saveTaskFields(task.id, { notif_days_before: null, notif_time: null });
-        wrap.replaceWith(buildNotifChip());
-      });
-
-      const tryCommit = async () => {
-        if (daysInput.value !== '' && timeInput.value) {
-          task.notif_days_before = parseInt(daysInput.value);
-          task.notif_time = timeInput.value;
-          await saveTaskFields(task.id, { notif_days_before: task.notif_days_before, notif_time: task.notif_time });
-        }
-      };
-      daysInput.addEventListener('change', tryCommit);
-      timeInput.addEventListener('change', tryCommit);
-
-      wrap.addEventListener('focusout', e => {
-        if (!wrap.contains(e.relatedTarget)) {
-          if (document.contains(wrap)) wrap.replaceWith(buildNotifChip());
-        }
-      });
-
-      wrap.append(daysInput, document.createTextNode(' d · '), timeInput, clearBtn);
-      chip.replaceWith(wrap);
-      daysInput.focus();
-    });
-    return chip;
-  }
-  meta.appendChild(buildNotifChip());
 
   card.appendChild(meta);
 
