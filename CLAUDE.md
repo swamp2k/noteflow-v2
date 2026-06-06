@@ -342,8 +342,11 @@ Removed keys (no longer used): `notif_send_time`, `notif_trigger_due_today`, `no
 [ tags (optional) ]
 ```
 - Subject badge is clickable — replaces itself with a `<select>` populated from `settings.task_subjects` for inline editing. Color is derived deterministically from the subject name via `SUBJECT_PALETTE` hash.
-- Due date chip and notification chip open the task detail modal on click (no inline input on the card — date inputs are too unreliable on mobile).
-- No Edit/Archive action buttons on the card — click anywhere to open the detail modal.
+- Due date chip is click-to-edit inline (replaces itself with `<input type="date">`; saves on change, restores chip on blur). Shows "No due date" placeholder when unset.
+- Notification chip is always visible ("Remind" when unset); click-to-edit inline shows days + time inputs and a clear button; saves when both fields have values; restores on focusout.
+- Both chips call `e.stopPropagation()` — they do NOT open the detail modal.
+- Clicking the card **title** (cursor:pointer span) or the card background/padding opens the detail modal — the card click handler fires for any click that isn't on an `input`, `select`, `button`, or `a`, and isn't stopped by a chip.
+- No Edit/Archive action buttons on the card.
 - After `openTaskDetail` closes, a `MutationObserver` rebuilds the card from the updated `liveTask` object, so changes in the modal are immediately reflected without re-rendering the whole feed.
 
 ### Task detail modal (openTaskDetail in tasks.js)
