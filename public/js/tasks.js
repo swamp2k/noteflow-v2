@@ -337,7 +337,7 @@ function buildViewOptionsBtn(feed) {
   const GROUP_OPTIONS = [['none','None'],['subject','Subject'],['due_date','Due Date'],['title','Title'],['created','Created'],['modified','Modified']];
 
   const wrap = document.createElement('div');
-  wrap.style.cssText = 'position:relative;display:flex;justify-content:flex-end;margin-bottom:14px';
+  wrap.style.cssText = 'position:relative;flex-shrink:0';
 
   const btn = document.createElement('button');
   btn.title = 'View options';
@@ -436,9 +436,9 @@ async function renderTasksFeed() {
   qaBtn.addEventListener('click', doAdd);
   qaRow.appendChild(qaInput);
   qaRow.appendChild(qaBtn);
+  qaRow.appendChild(viewOptsBtn);
 
   feed.innerHTML = '';
-  feed.appendChild(viewOptsBtn);
   feed.appendChild(qaRow);
 
   try {
