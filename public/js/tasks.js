@@ -214,140 +214,34 @@ function buildTaskCard(task) {
   const titleEl = document.createElement('span');
   titleEl.style.cssText = 'flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:500;cursor:pointer;' + (task.completed_at ? 'text-decoration:line-through;opacity:0.6' : '');
   titleEl.textContent = (task.content || '').split('\n')[0] || 'Task';
-  titleEl.title = 'Click to open task details';
   header.appendChild(titleEl);
 
   card.appendChild(header);
 
-  // Meta row: subject badge + due date chip (both inline-editable)
+  // Meta row: subject badge + due date chip + notif chip (display only — click card to edit in modal)
   const meta = document.createElement('div');
   meta.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap';
 
-  // Subject badge — click to change
-  function buildSubjectBadge(subject) {
-    const c = subjectColor(subject);
-    const badge = document.createElement('span');
-    badge.style.cssText = `font-size:11px;padding:2px 8px;border-radius:10px;background:${c.bg};color:${c.text};cursor:pointer;user-select:none;white-space:nowrap`;
-    badge.textContent = subject || 'No subject';
-    badge.title = 'Click to change subject';
-    badge.addEventListener('click', e => {
-      e.stopPropagation();
-      const subjects = settings.task_subjects || [];
-      const sel = document.createElement('select');
-      sel.style.cssText = 'font-size:11px;border:1px solid var(--border);border-radius:6px;padding:2px 4px;background:var(--bg);color:var(--text);font-family:var(--font-body)';
-      [['', 'No subject'], ...subjects.map(s => [s, s])].forEach(([val, label]) => {
-        const opt = document.createElement('option');
-        opt.value = val;
-        opt.textContent = label;
-        if ((!subject && val === '') || subject === val) opt.selected = true;
-        sel.appendChild(opt);
-      });
-      badge.replaceWith(sel);
-      sel.focus();
-      sel.addEventListener('click', e => e.stopPropagation());
-      const commit = async () => {
-        const newSubject = sel.value || null;
-        task.priority = newSubject;
-        await saveTaskFields(task.id, { priority: newSubject });
-        const newBadge = buildSubjectBadge(newSubject);
-        sel.replaceWith(newBadge);
-      };
-      sel.addEventListener('change', commit);
-      sel.addEventListener('blur', () => { if (document.contains(sel)) { const nb = buildSubjectBadge(task.priority); sel.replaceWith(nb); } });
-    });
-    return badge;
+  // Subject badge — display only
+  const c = subjectColor(task.priority);
+  const subjectBadge = document.createElement('span');
+  subjectBadge.style.cssText = `font-size:11px;padding:2px 8px;border-radius:10px;background:${c.bg};color:${c.text};white-space:nowrap`;
+  subjectBadge.textContent = task.priority || 'No subject';
+  meta.appendChild(subjectBadge);
+
+  // Due date chip — display only
+  const dateChip = dueDateChip(task.due_date);
+  if (dateChip) meta.appendChild(dateChip);
+
+  // Notification chip — display only, shown only when configured
+  if (task.notif_days_before != null && task.notif_time) {
+    const notifChip = document.createElement('span');
+    notifChip.style.cssText = 'font-size:11px;padding:2px 7px;border-radius:10px;background:var(--surface-alt);color:var(--muted);display:inline-flex;align-items:center;gap:3px';
+    notifChip.innerHTML = '<svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>';
+    notifChip.appendChild(document.createTextNode(' ' + task.notif_days_before + 'd · ' + task.notif_time));
+    notifChip.title = 'Notification: ' + task.notif_days_before + ' day(s) before at ' + task.notif_time;
+    meta.appendChild(notifChip);
   }
-  meta.appendChild(buildSubjectBadge(task.priority));
-
-  // Due date chip — click to edit inline
-  function buildClickableDateChip(due_date) {
-    const chip = dueDateChip(due_date) || (() => {
-      const p = document.createElement('span');
-      p.style.cssText = 'font-size:11px;padding:2px 7px;border-radius:10px;background:var(--surface-alt);color:var(--muted);cursor:pointer;user-select:none';
-      p.textContent = 'No due date';
-      return p;
-    })();
-    chip.style.cursor = 'pointer';
-    chip.addEventListener('click', e => {
-      e.stopPropagation();
-      const input = document.createElement('input');
-      input.type = 'date';
-      input.value = task.due_date || '';
-      input.style.cssText = 'font-size:11px;border:1px solid var(--border);border-radius:6px;padding:2px 4px;background:var(--bg);color:var(--text);font-family:var(--font-body)';
-      input.addEventListener('click', e => e.stopPropagation());
-      chip.replaceWith(input);
-      input.focus();
-      const commit = async () => {
-        task.due_date = input.value || null;
-        await saveTaskFields(task.id, { due_date: task.due_date });
-        input.replaceWith(buildClickableDateChip(task.due_date));
-      };
-      input.addEventListener('change', commit);
-      input.addEventListener('blur', () => { if (document.contains(input)) input.replaceWith(buildClickableDateChip(task.due_date)); });
-    });
-    return chip;
-  }
-  meta.appendChild(buildClickableDateChip(task.due_date));
-
-  // Notification chip — always shown, click to edit inline
-  function buildNotifChip() {
-    const hasSetting = task.notif_days_before != null && task.notif_time;
-    const chip = document.createElement('span');
-    chip.style.cssText = 'font-size:11px;padding:2px 7px;border-radius:10px;background:var(--surface-alt);color:var(--muted);cursor:pointer;user-select:none;display:inline-flex;align-items:center;gap:3px';
-    chip.innerHTML = '<svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>';
-    chip.appendChild(document.createTextNode(hasSetting ? ' ' + task.notif_days_before + 'd · ' + task.notif_time : ' Remind'));
-    chip.title = hasSetting ? 'Notification: ' + task.notif_days_before + ' day(s) before at ' + task.notif_time : 'Add reminder';
-    chip.addEventListener('click', e => {
-      e.stopPropagation();
-      const wrap = document.createElement('span');
-      wrap.style.cssText = 'display:inline-flex;align-items:center;gap:3px;font-size:11px';
-      wrap.addEventListener('click', e => e.stopPropagation());
-
-      const daysInput = document.createElement('input');
-      daysInput.type = 'number'; daysInput.min = '0'; daysInput.max = '365';
-      daysInput.value = task.notif_days_before != null ? String(task.notif_days_before) : '';
-      daysInput.placeholder = '0';
-      daysInput.style.cssText = 'width:42px;font-size:11px;border:1px solid var(--border);border-radius:6px;padding:2px 4px;background:var(--bg);color:var(--text);font-family:var(--font-body)';
-
-      const timeInput = document.createElement('input');
-      timeInput.type = 'time';
-      timeInput.value = task.notif_time || '';
-      timeInput.style.cssText = 'font-size:11px;border:1px solid var(--border);border-radius:6px;padding:2px 4px;background:var(--bg);color:var(--text);font-family:var(--font-body)';
-
-      const clearBtn = document.createElement('button');
-      clearBtn.textContent = '×';
-      clearBtn.title = 'Clear reminder';
-      clearBtn.style.cssText = 'font-size:13px;border:none;background:none;cursor:pointer;color:var(--muted);padding:0 2px;line-height:1';
-      clearBtn.addEventListener('click', async e => {
-        e.stopPropagation();
-        task.notif_days_before = null; task.notif_time = null;
-        await saveTaskFields(task.id, { notif_days_before: null, notif_time: null });
-        wrap.replaceWith(buildNotifChip());
-      });
-
-      const tryCommit = async () => {
-        if (daysInput.value !== '' && timeInput.value) {
-          task.notif_days_before = parseInt(daysInput.value);
-          task.notif_time = timeInput.value;
-          await saveTaskFields(task.id, { notif_days_before: task.notif_days_before, notif_time: task.notif_time });
-        }
-      };
-      daysInput.addEventListener('change', tryCommit);
-      timeInput.addEventListener('change', tryCommit);
-
-      wrap.addEventListener('focusout', e => {
-        if (!wrap.contains(e.relatedTarget)) {
-          if (document.contains(wrap)) wrap.replaceWith(buildNotifChip());
-        }
-      });
-
-      wrap.append(daysInput, document.createTextNode(' d · '), timeInput, clearBtn);
-      chip.replaceWith(wrap);
-      daysInput.focus();
-    });
-    return chip;
-  }
-  meta.appendChild(buildNotifChip());
 
   card.appendChild(meta);
 
@@ -366,7 +260,7 @@ function buildTaskCard(task) {
   }
 
   card.addEventListener('click', e => {
-    if (e.target.matches('input, select, button, a')) return;
+    if (e.target.closest('input, button, a')) return;
     openTaskDetail(task.id);
   });
 
