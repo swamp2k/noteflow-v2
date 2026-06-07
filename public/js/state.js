@@ -91,8 +91,10 @@ let _loadingMore = false;
 
 // ── Tasks ─────────────────────────────────────────────────────────────────────
 let _storedSort = localStorage.getItem('noteflow_task_sort');
-let taskSortOrder    = (_storedSort && _storedSort !== 'priority') ? _storedSort : 'subject';
-// 'subject' | 'due_date' | 'created'
+let taskSortOrder = (_storedSort && _storedSort !== 'priority') ? _storedSort : 'due_date';
+// 'subject' | 'due_date' | 'title' | 'created' | 'modified'
+let taskGroupBy = localStorage.getItem('noteflow_task_group') || 'none';
+// 'none' | 'subject' | 'due_date' | 'title' | 'created' | 'modified'
 let tasksOverlayOpen = false;
 
 // ── Lightbox ──────────────────────────────────────────────────────────────────

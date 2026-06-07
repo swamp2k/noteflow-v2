@@ -38,6 +38,12 @@ export async function notesHandler(request, env, ctx, url, path, method, userId,
         orderBy = "ORDER BY CASE WHEN n.priority IS NULL OR n.priority = '' THEN 'zzz' ELSE LOWER(n.priority) END ASC, CASE WHEN n.due_date IS NULL THEN 1 ELSE 0 END ASC, n.due_date ASC, n.created_at DESC";
       } else if (sort === "due_date") {
         orderBy = "ORDER BY CASE WHEN n.due_date IS NULL THEN 1 ELSE 0 END ASC, n.due_date ASC, n.created_at DESC";
+      } else if (sort === "title") {
+        orderBy = "ORDER BY LOWER(TRIM(n.content)) ASC, n.created_at DESC";
+      } else if (sort === "modified") {
+        orderBy = "ORDER BY n.updated_at DESC";
+      } else if (sort === "completed") {
+        orderBy = "ORDER BY n.completed_at DESC";
       } else {
         orderBy = "ORDER BY n.created_at DESC";
       }

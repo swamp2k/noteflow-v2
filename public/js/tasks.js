@@ -270,6 +270,134 @@ function buildTaskCard(task) {
 let _tasksFeedRefreshTimer = null;
 
 // ── renderTasksFeed ───────────────────────────────────────────────────────────
+// ── Task grouping ─────────────────────────────────────────────────────────────
+function groupTasks(tasks, groupBy) {
+  if (groupBy === 'none') return new Map([['', { label: '', tasks }]]);
+
+  const today = new Date().toISOString().slice(0, 10);
+  const [ty, tm, td] = today.split('-').map(Number);
+  const todayMs = Date.UTC(ty, tm - 1, td);
+
+  function dayBucket(isoDate) {
+    if (!isoDate) return { key: '__none__', label: 'No due date' };
+    const [dy, dm, dd] = isoDate.split('-').map(Number);
+    const diff = Math.round((Date.UTC(dy, dm - 1, dd) - todayMs) / 86400000);
+    if (diff < 0) return { key: '__overdue__', label: 'Overdue' };
+    if (diff === 0) return { key: '__today__', label: 'Today' };
+    if (diff === 1) return { key: '__tomorrow__', label: 'Tomorrow' };
+    if (diff <= 7) return { key: '__thisweek__', label: 'This week' };
+    return { key: '__later__', label: 'Later' };
+  }
+
+  function tsBucket(unixSec) {
+    if (!unixSec) return { key: '__none__', label: 'Unknown' };
+    const d = new Date(unixSec * 1000);
+    const dStr = d.toISOString().slice(0, 10);
+    const [dy, dm, dd2] = dStr.split('-').map(Number);
+    const diff = Math.round((todayMs - Date.UTC(dy, dm - 1, dd2)) / 86400000);
+    if (diff === 0) return { key: '__today__', label: 'Today' };
+    if (diff === 1) return { key: '__yesterday__', label: 'Yesterday' };
+    if (diff <= 7) return { key: '__thisweek__', label: 'This week' };
+    return { key: dStr.slice(0, 7), label: d.toLocaleString('default', { month: 'long', year: 'numeric' }) };
+  }
+
+  const map = new Map();
+  const addTo = (key, label, task) => {
+    if (!map.has(key)) map.set(key, { label, tasks: [] });
+    map.get(key).tasks.push(task);
+  };
+
+  tasks.forEach(task => {
+    if (groupBy === 'subject') {
+      const key = task.priority || '__none__';
+      const label = task.priority || 'No subject';
+      addTo(key, label, task);
+    } else if (groupBy === 'due_date') {
+      const { key, label } = dayBucket(task.due_date);
+      addTo(key, label, task);
+    } else if (groupBy === 'title') {
+      const first = (task.content || '').trim()[0] || '';
+      const key = /[a-zA-Z]/.test(first) ? first.toUpperCase() : '#';
+      addTo(key, key, task);
+    } else if (groupBy === 'created') {
+      const { key, label } = tsBucket(task.created_at);
+      addTo(key, label, task);
+    } else if (groupBy === 'modified') {
+      const { key, label } = tsBucket(task.updated_at);
+      addTo(key, label, task);
+    }
+  });
+
+  return map;
+}
+
+// ── View-options popover ──────────────────────────────────────────────────────
+function buildViewOptionsBtn(feed) {
+  const SORT_OPTIONS  = [['due_date','Due Date'],['subject','Subject'],['title','Title'],['created','Created'],['modified','Modified']];
+  const GROUP_OPTIONS = [['none','None'],['subject','Subject'],['due_date','Due Date'],['title','Title'],['created','Created'],['modified','Modified']];
+
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'position:relative;display:flex;justify-content:flex-end;margin-bottom:14px';
+
+  const btn = document.createElement('button');
+  btn.title = 'View options';
+  btn.style.cssText = 'display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:12px;font-family:var(--font-body);cursor:pointer';
+  btn.innerHTML = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg> View';
+  wrap.appendChild(btn);
+
+  let popover = null;
+
+  function buildPopover() {
+    const pop = document.createElement('div');
+    pop.style.cssText = 'position:absolute;top:calc(100% + 4px);right:0;z-index:50;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,0.15);padding:12px 14px;min-width:220px';
+
+    function buildSection(title, options, current, onSelect) {
+      const hdr = document.createElement('div');
+      hdr.style.cssText = 'font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);margin-bottom:7px;' + (title === 'Sort by' ? 'margin-top:12px;padding-top:12px;border-top:1px solid var(--border);' : '');
+      hdr.textContent = title;
+      pop.appendChild(hdr);
+
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;flex-wrap:wrap;gap:5px';
+      options.forEach(([val, label]) => {
+        const chip = document.createElement('button');
+        const active = current === val;
+        chip.style.cssText = 'padding:4px 10px;border-radius:14px;font-size:12px;font-family:var(--font-body);cursor:pointer;border:1px solid ' + (active ? 'var(--accent)' : 'var(--border)') + ';background:' + (active ? 'var(--accent)' : 'var(--surface-alt)') + ';color:' + (active ? 'var(--bg)' : 'var(--text)');
+        chip.textContent = label;
+        chip.addEventListener('click', e => { e.stopPropagation(); onSelect(val); });
+        row.appendChild(chip);
+      });
+      pop.appendChild(row);
+    }
+
+    buildSection('Group by', GROUP_OPTIONS, taskGroupBy, val => {
+      taskGroupBy = val;
+      try { localStorage.setItem('noteflow_task_group', val); } catch {}
+      renderTasksFeed();
+    });
+    buildSection('Sort by', SORT_OPTIONS, taskSortOrder, val => {
+      taskSortOrder = val;
+      try { localStorage.setItem('noteflow_task_sort', val); } catch {}
+      renderTasksFeed();
+    });
+
+    return pop;
+  }
+
+  btn.addEventListener('click', e => {
+    e.stopPropagation();
+    if (popover) { popover.remove(); popover = null; return; }
+    popover = buildPopover();
+    wrap.appendChild(popover);
+    setTimeout(() => document.addEventListener('click', function close() {
+      popover?.remove(); popover = null;
+      document.removeEventListener('click', close);
+    }), 0);
+  });
+
+  return wrap;
+}
+
 async function renderTasksFeed() {
   // Reset auto-refresh timer on each render
   if (_tasksFeedRefreshTimer) { clearTimeout(_tasksFeedRefreshTimer); _tasksFeedRefreshTimer = null; }
@@ -277,24 +405,15 @@ async function renderTasksFeed() {
     if (typeof currentView !== 'undefined' && currentView === 'tasks' && !document.hidden) renderTasksFeed();
   }, 60000);
 
+  // Hide search bar — it doesn't apply to tasks
+  const searchTasksBar = document.getElementById('search-tasks-bar');
+  if (searchTasksBar) searchTasksBar.style.display = 'none';
+
   const feed = document.getElementById('feed');
   feed.innerHTML = '<div class="empty-state" style="padding:40px 20px">Loading tasks…</div>';
 
-  // Sort controls bar
-  const sortBar = document.createElement('div');
-  sortBar.className = 'tasks-sort-bar';
-  sortBar.style.cssText = 'display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap';
-  [['subject','Subject'],['due_date','Due Date'],['created','Newest']].forEach(([val,label]) => {
-    const btn = document.createElement('button');
-    btn.style.cssText = 'padding:5px 12px;border-radius:16px;font-size:12px;font-family:var(--font-body);cursor:pointer;border:1px solid var(--border);transition:all 0.15s;background:' + (taskSortOrder===val?'var(--accent)':'var(--surface)') + ';color:' + (taskSortOrder===val?'var(--bg)':'var(--text)');
-    btn.textContent = label;
-    btn.addEventListener('click', () => {
-      taskSortOrder = val;
-      try { localStorage.setItem('noteflow_task_sort', val); } catch {}
-      renderTasksFeed();
-    });
-    sortBar.appendChild(btn);
-  });
+  // View options button (replaces sort bar)
+  const viewOptsBtn = buildViewOptionsBtn(feed);
 
   // Quick add row
   const qaRow = document.createElement('div');
@@ -319,12 +438,11 @@ async function renderTasksFeed() {
   qaRow.appendChild(qaBtn);
 
   feed.innerHTML = '';
-  feed.appendChild(sortBar);
+  feed.appendChild(viewOptsBtn);
   feed.appendChild(qaRow);
 
   try {
-    const sortParam = taskSortOrder === 'due_date' ? 'due_date' : taskSortOrder === 'created' ? 'created' : 'subject';
-    const data = await apiGet('/notes?is_task=1&sort=' + sortParam + '&pageSize=100');
+    const data = await apiGet('/notes?is_task=1&sort=' + taskSortOrder + '&pageSize=100');
     const tasks = data.notes || [];
 
     _alertTaskCount = countAlertTasks(tasks);
@@ -337,7 +455,38 @@ async function renderTasksFeed() {
       empty.textContent = 'No active tasks. Add one above!';
       feed.appendChild(empty);
     } else {
-      tasks.forEach(task => feed.appendChild(buildTaskCard(task)));
+      const groups = groupTasks(tasks, taskGroupBy);
+      const collapseState = new Map(); // groupKey → collapsed bool
+
+      groups.forEach(({ label, tasks: groupedTasks }, key) => {
+        if (taskGroupBy !== 'none') {
+          // Group header
+          const hdr = document.createElement('div');
+          hdr.style.cssText = 'display:flex;align-items:center;gap:6px;padding:6px 2px;margin-top:6px;cursor:pointer;user-select:none;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em';
+          const arrow = document.createElement('span');
+          arrow.style.cssText = 'font-size:10px;transition:transform 0.15s;display:inline-block';
+          arrow.textContent = '▾';
+          const labelEl = document.createElement('span');
+          labelEl.textContent = label + ' (' + groupedTasks.length + ')';
+          hdr.appendChild(arrow);
+          hdr.appendChild(labelEl);
+          feed.appendChild(hdr);
+
+          const body = document.createElement('div');
+          body.className = 'task-group-body';
+          groupedTasks.forEach(task => body.appendChild(buildTaskCard(task)));
+          feed.appendChild(body);
+
+          hdr.addEventListener('click', () => {
+            const collapsed = !collapseState.get(key);
+            collapseState.set(key, collapsed);
+            body.style.display = collapsed ? 'none' : '';
+            arrow.style.transform = collapsed ? 'rotate(-90deg)' : '';
+          });
+        } else {
+          groupedTasks.forEach(task => feed.appendChild(buildTaskCard(task)));
+        }
+      });
     }
 
     // "Show completed" toggle
@@ -361,7 +510,7 @@ async function renderTasksFeed() {
         completedLoaded = true;
         completedSection.innerHTML = '<div style="padding:10px 14px;font-size:13px;color:var(--muted)">Loading…</div>';
         try {
-          const cdata = await apiGet('/notes?is_task=1&completed=1&sort=' + sortParam + '&pageSize=100');
+          const cdata = await apiGet('/notes?is_task=1&completed=1&sort=completed&pageSize=100');
           const ctasks = cdata.notes || [];
           completedSection.innerHTML = '';
           if (!ctasks.length) {
@@ -373,7 +522,6 @@ async function renderTasksFeed() {
             completedSection.appendChild(divider);
             ctasks.forEach(task => {
               const card = buildTaskCard(task);
-              // Add reopen button for completed tasks
               const reopenBtn = document.createElement('button');
               reopenBtn.className = 'card-action-btn';
               reopenBtn.style.cssText = 'color:var(--accent)';

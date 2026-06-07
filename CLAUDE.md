@@ -318,10 +318,13 @@ setCachedVersion(Math.max(getCachedVersion(), newVersion));
 
 ### Tasks feature state (state.js)
 ```javascript
-let taskSortOrder    = localStorage.getItem('noteflow_task_sort') || 'priority';
+let taskSortOrder = localStorage.getItem('noteflow_task_sort') || 'due_date';
+// 'subject' | 'due_date' | 'title' | 'created' | 'modified'
+let taskGroupBy = localStorage.getItem('noteflow_task_group') || 'none';
+// 'none' | 'subject' | 'due_date' | 'title' | 'created' | 'modified'
 let tasksOverlayOpen = false;
 ```
-`taskSortOrder` is the one settings value stored in localStorage (not D1) because it's a transient UI preference, not a user setting.
+`taskSortOrder` and `taskGroupBy` are stored in localStorage (not D1) because they are transient UI preferences, not user settings.
 
 `settings` object keys for tasks and notifications:
 ```
@@ -362,7 +365,12 @@ A `liveTask` copy is maintained inside `openTaskDetail`. Each save handler updat
 - `?is_task=1` — return only tasks with `completed_at IS NULL`
 - `?completed=1` — combined with `is_task=1`, return completed tasks
 - `?hide_tasks=1` — exclude tasks from main notes feed (appended client-side when `settings.tasks_hide_from_main_feed` is true)
-- `?sort=subject|due_date|created` — task sort order (`subject` sorts alphabetically by the `priority` text column, NULLs last)
+- `?sort=subject` — alphabetical by `priority` column, NULLs last; secondary sort by due_date then created_at
+- `?sort=due_date` — due date ASC (NULLs last), then created_at DESC
+- `?sort=title` — alphabetical by content (first line), then created_at DESC
+- `?sort=created` — created_at DESC (default)
+- `?sort=modified` — updated_at DESC
+- `?sort=completed` — completed_at DESC (used for the completed tasks list)
 
 `PATCH /api/notes/:id/complete` — sets `completed_at` to current ISO timestamp or `null`. Note: `completed_at` is TEXT ISO 8601, while `created_at`/`updated_at` are INTEGER Unix seconds — intentional, documented in `schema.sql`.
 
@@ -818,7 +826,12 @@ notif_trigger_due_today, notif_trigger_overdue, notif_trigger_due_soon
 - `?is_task=1` — return only tasks with `completed_at IS NULL`
 - `?completed=1` — combined with `is_task=1`, return completed tasks
 - `?hide_tasks=1` — exclude tasks from main notes feed (appended client-side when `settings.tasks_hide_from_main_feed` is true)
-- `?sort=subject|due_date|created` — task sort order (`subject` sorts alphabetically by the `priority` text column, NULLs last)
+- `?sort=subject` — alphabetical by `priority` column, NULLs last; secondary sort by due_date then created_at
+- `?sort=due_date` — due date ASC (NULLs last), then created_at DESC
+- `?sort=title` — alphabetical by content (first line), then created_at DESC
+- `?sort=created` — created_at DESC (default)
+- `?sort=modified` — updated_at DESC
+- `?sort=completed` — completed_at DESC (used for the completed tasks list)
 
 `PATCH /api/notes/:id/complete` — sets `completed_at` to current ISO timestamp or `null`. Note: `completed_at` is TEXT ISO 8601, while `created_at`/`updated_at` are INTEGER Unix seconds — intentional, documented in `schema.sql`.
 
