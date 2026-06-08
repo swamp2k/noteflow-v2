@@ -15,8 +15,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { registerWidgetRefresh } from '../widget/widgetTaskHandler';
 import { colors } from '../constants/theme';
 
+const DEFAULT_API_URL = 'https://noteflow-api.jeppesen.cc';
+const DEFAULT_APP_URL = 'https://notes.jeppesen.cc';
+
 export default function SetupScreen() {
-  const [url, setUrl] = useState('');
+  const [apiUrl, setApiUrl] = useState(DEFAULT_API_URL);
+  const [appUrl, setAppUrl] = useState(DEFAULT_APP_URL);
   const [token, setToken] = useState('');
   const [status, setStatus] = useState<{ type: 'idle' | 'loading' | 'ok' | 'error'; msg: string }>({
     type: 'idle',
@@ -25,18 +29,24 @@ export default function SetupScreen() {
 
   useEffect(() => {
     (async () => {
-      const savedUrl = await AsyncStorage.getItem('noteflow_url');
+      // Fall back to the legacy single-URL key for older installs.
+      const savedApi =
+        (await AsyncStorage.getItem('noteflow_api_url')) ??
+        (await AsyncStorage.getItem('noteflow_url'));
+      const savedApp = await AsyncStorage.getItem('noteflow_app_url');
       const savedToken = await AsyncStorage.getItem('noteflow_token');
-      if (savedUrl) setUrl(savedUrl);
+      if (savedApi) setApiUrl(savedApi);
+      if (savedApp) setAppUrl(savedApp);
       if (savedToken) setToken(savedToken);
     })();
   }, []);
 
   async function handleSaveAndTest() {
-    const trimUrl = url.trim().replace(/\/$/, '');
+    const trimApi = apiUrl.trim().replace(/\/$/, '');
+    const trimApp = appUrl.trim().replace(/\/$/, '');
     const trimToken = token.trim();
-    if (!trimUrl || !trimToken) {
-      setStatus({ type: 'error', msg: 'Both URL and token are required.' });
+    if (!trimApi || !trimApp || !trimToken) {
+      setStatus({ type: 'error', msg: 'API URL, App URL and token are all required.' });
       return;
     }
     setStatus({ type: 'loading', msg: 'Testing connection…' });
@@ -44,7 +54,7 @@ export default function SetupScreen() {
       const ctrl = new AbortController();
       const tid = setTimeout(() => ctrl.abort(), 10000);
       const r = await fetch(
-        `${trimUrl}/api/widget/tasks?token=${encodeURIComponent(trimToken)}`,
+        `${trimApi}/api/widget/tasks?token=${encodeURIComponent(trimToken)}`,
         { signal: ctrl.signal }
       ).finally(() => clearTimeout(tid));
       if (!r.ok) {
@@ -54,8 +64,11 @@ export default function SetupScreen() {
       }
       const data = await r.json();
       const count = (data.tasks ?? []).length;
-      await AsyncStorage.setItem('noteflow_url', trimUrl);
+      await AsyncStorage.setItem('noteflow_api_url', trimApi);
+      await AsyncStorage.setItem('noteflow_app_url', trimApp);
       await AsyncStorage.setItem('noteflow_token', trimToken);
+      // Keep the legacy key in sync so existing widget code keeps working.
+      await AsyncStorage.setItem('noteflow_url', trimApi);
       await registerWidgetRefresh();
       setStatus({ type: 'ok', msg: `Connected! ${count} pending task${count !== 1 ? 's' : ''} found.` });
     } catch (e: any) {
@@ -79,15 +92,29 @@ export default function SetupScreen() {
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <Text style={styles.heading}>NoteFlow Widget</Text>
         <Text style={styles.subheading}>
-          Enter your NoteFlow URL and widget token to connect.{'\n'}
+          Enter your NoteFlow URLs and widget token to connect.{'\n'}
           Generate the token in NoteFlow → Settings → Android Widget.
         </Text>
 
-        <Text style={styles.label}>NoteFlow URL</Text>
+        <Text style={styles.label}>API URL</Text>
+        <Text style={styles.hint}>Where the widget fetches tasks from.</Text>
         <TextInput
           style={styles.input}
-          value={url}
-          onChangeText={setUrl}
+          value={apiUrl}
+          onChangeText={setApiUrl}
+          placeholder="https://noteflow-api.jeppesen.cc"
+          placeholderTextColor={colors.muted}
+          autoCapitalize="none"
+          autoCorrect={false}
+          keyboardType="url"
+        />
+
+        <Text style={styles.label}>App URL</Text>
+        <Text style={styles.hint}>Opened when you tap a task (your PWA).</Text>
+        <TextInput
+          style={styles.input}
+          value={appUrl}
+          onChangeText={setAppUrl}
           placeholder="https://notes.jeppesen.cc"
           placeholderTextColor={colors.muted}
           autoCapitalize="none"
@@ -160,8 +187,13 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: colors.text,
-    marginBottom: 6,
+    marginBottom: 2,
     marginTop: 16,
+  },
+  hint: {
+    fontSize: 12,
+    color: colors.muted,
+    marginBottom: 6,
   },
   input: {
     borderWidth: 1,

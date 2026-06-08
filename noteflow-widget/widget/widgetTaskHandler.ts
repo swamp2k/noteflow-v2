@@ -6,7 +6,11 @@ import { fetchTasks } from './tasksBridge';
 
 async function getWidgetData() {
   const tasks = await fetchTasks();
-  const url = (await AsyncStorage.getItem('noteflow_url')) ?? '';
+  // Deep links open the PWA, so use the app URL (not the API URL).
+  const url =
+    (await AsyncStorage.getItem('noteflow_app_url')) ??
+    (await AsyncStorage.getItem('noteflow_url')) ??
+    '';
   return { tasks, url };
 }
 

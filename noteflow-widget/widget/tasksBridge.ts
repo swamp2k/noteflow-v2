@@ -10,7 +10,10 @@ export interface Task {
 }
 
 export async function fetchTasks(): Promise<Task[]> {
-  const url = await AsyncStorage.getItem('noteflow_url');
+  // Tasks are fetched from the API URL (falls back to the legacy single-URL key).
+  const url =
+    (await AsyncStorage.getItem('noteflow_api_url')) ??
+    (await AsyncStorage.getItem('noteflow_url'));
   const token = await AsyncStorage.getItem('noteflow_token');
   if (!url || !token) return [];
   try {

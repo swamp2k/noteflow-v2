@@ -33,15 +33,25 @@ NoteFlow is a personal PWA note-taking app for one user (Martin, martin@jeppesen
 noteflow-v2/
 ├── noteflow-widget/           ← Android companion app (Expo / React Native)
 │   ├── app/                   ← Expo Router screens
-│   │   ├── _layout.tsx        ← Root layout (dark theme header)
-│   │   └── index.tsx          ← Setup screen (URL + token entry, test connection)
+│   │   ├── _layout.tsx        ← Root layout (ErrorBoundary + custom header; uses <Slot/>, NOT <Stack/> — Stack's SceneView crashed on boot)
+│   │   └── index.tsx          ← Setup screen (API URL + App URL + token entry, test connection)
 │   ├── widget/
-│   │   ├── TasksWidget.tsx    ← Widget UI (FlexWidget/ListWidget from react-native-android-widget)
-│   │   ├── tasksBridge.ts     ← fetchTasks(), formatDue(), priorityDot(), isOverdue()
-│   │   └── widgetTaskHandler.ts ← registerWidgetTaskHandler + background refresh task
+│   │   ├── TasksWidget.tsx    ← Widget UI (FlexWidget/ListWidget from react-native-android-widget); deep links use the App URL
+│   │   ├── tasksBridge.ts     ← fetchTasks() (uses API URL), formatDue(), priorityDot(), isOverdue()
+│   │   └── widgetTaskHandler.ts ← registerWidgetTaskHandler (registered via app.json widgetTaskHandler, NOT imported in _layout) + background refresh task
 │   ├── constants/theme.ts     ← Color palette
-│   ├── app.json               ← Expo config (react-native-android-widget plugin)
+│   ├── app.json               ← Expo config (react-native-android-widget plugin; needs `widgetTaskHandler` path)
 │   └── package.json           ← Expo SDK ~52, react-native-android-widget, AsyncStorage
+│
+│   Android widget config (AsyncStorage keys, set on the setup screen):
+│     • noteflow_api_url  — API base for fetching tasks   (https://noteflow-api.jeppesen.cc)
+│     • noteflow_app_url  — App base for task deep links   (https://notes.jeppesen.cc, the PWA)
+│     • noteflow_token    — widget token (from Settings → Android Widget)
+│     • noteflow_url      — legacy single-URL key, kept in sync with api_url for back-compat
+│   The API and the PWA live on DIFFERENT subdomains. fetchTasks() uses api_url;
+│   widget deep links (#/task/:id, #/new-task, #/tasks) use app_url so they open the PWA.
+│   The /api/widget/tasks path must have a Cloudflare Access *Bypass* policy (Everyone)
+│   on whichever host the widget calls, or CF Access returns its HTML login page (→ JSON parse error).
 ├── worker/                    ← Cloudflare Worker (ES modules)
 │   ├── index.js               ← Router only — imports handlers, orchestrates auth
 │   ├── lib/
