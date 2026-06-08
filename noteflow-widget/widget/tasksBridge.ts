@@ -14,9 +14,11 @@ export async function fetchTasks(): Promise<Task[]> {
   const token = await AsyncStorage.getItem('noteflow_token');
   if (!url || !token) return [];
   try {
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), 10000);
     const r = await fetch(`${url}/api/widget/tasks?token=${encodeURIComponent(token)}`, {
-      signal: AbortSignal.timeout(10000),
-    });
+      signal: ctrl.signal,
+    }).finally(() => clearTimeout(tid));
     if (!r.ok) return [];
     const data = await r.json();
     return data.tasks ?? [];

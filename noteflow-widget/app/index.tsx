@@ -41,10 +41,12 @@ export default function SetupScreen() {
     }
     setStatus({ type: 'loading', msg: 'Testing connection…' });
     try {
+      const ctrl = new AbortController();
+      const tid = setTimeout(() => ctrl.abort(), 10000);
       const r = await fetch(
         `${trimUrl}/api/widget/tasks?token=${encodeURIComponent(trimToken)}`,
-        { signal: AbortSignal.timeout(10000) }
-      );
+        { signal: ctrl.signal }
+      ).finally(() => clearTimeout(tid));
       if (!r.ok) {
         const body = await r.json().catch(() => ({}));
         setStatus({ type: 'error', msg: `Error ${r.status}: ${body.error ?? 'Unknown error'}` });
