@@ -237,8 +237,11 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#f5f4f0;margin:0;
 .card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:28px 32px;line-height:1.7;font-size:15px}
 .card img{max-width:100%;border-radius:8px}
 .card h1,.card h2,.card h3{margin-top:1.2em}
-.images{margin-top:16px;display:flex;flex-wrap:wrap;gap:8px}
-.images img{max-height:240px;border-radius:8px;object-fit:cover}
+.media{margin-top:16px;display:flex;flex-direction:column;gap:12px}
+.media img{max-width:100%;max-height:400px;border-radius:8px;object-fit:contain}
+.media video,.media audio{width:100%;border-radius:8px}
+.file-link{display:inline-flex;align-items:center;gap:8px;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:8px;padding:8px 14px;font-size:14px;color:#374151;text-decoration:none}
+.file-link:hover{background:#e5e7eb}
 .footer{margin-top:24px;text-align:center;font-size:12px;color:#9ca3af}
 .footer a{color:#5b6af0;text-decoration:none}
 </style>
@@ -253,16 +256,30 @@ marked.use({breaks:true,gfm:true});
 document.getElementById('body').innerHTML=marked.parse(${escaped});
 var atts=${attJson};
 if(atts.length){
-  var imgs=document.createElement('div');imgs.className='images';var hasImg=false;
+  var mediaDiv=document.createElement('div');mediaDiv.className='media';
   atts.forEach(function(a){
-    var m=a.mime_type||'';
-    if(m.startsWith('image/')){
-      var el=document.createElement('img');el.alt=a.filename||'';
-      el.src='https://noteflow-api.jeppesen.cc/api/public/attachments/'+a.id;
-      imgs.appendChild(el);hasImg=true;
+    var mime=a.mime_type||'';
+    var fname=a.filename||'file';
+    var ext=fname.split('.').pop().toLowerCase();
+    var src='https://noteflow-api.jeppesen.cc/api/public/attachments/'+a.id;
+    if(mime.startsWith('image/')||/\\.(jpg|jpeg|png|gif|webp|svg|bmp|avif)$/.test(fname.toLowerCase())){
+      var el=document.createElement('img');el.alt=fname;el.src=src;
+      mediaDiv.appendChild(el);
+    } else if(mime.startsWith('video/')||['mp4','webm','mov','mkv','avi'].includes(ext)){
+      var v=document.createElement('video');v.controls=true;v.preload='metadata';
+      var s=document.createElement('source');s.src=src;s.type=mime||'video/mp4';
+      v.appendChild(s);mediaDiv.appendChild(v);
+    } else if(mime.startsWith('audio/')||['mp3','ogg','wav','flac','m4a'].includes(ext)){
+      var au=document.createElement('audio');au.controls=true;
+      var as=document.createElement('source');as.src=src;as.type=mime;
+      au.appendChild(as);mediaDiv.appendChild(au);
+    } else {
+      var link=document.createElement('a');link.className='file-link';
+      link.href=src;link.download=fname;link.textContent='⬇ '+fname;
+      mediaDiv.appendChild(link);
     }
   });
-  if(hasImg)document.querySelector('.card').appendChild(imgs);
+  if(mediaDiv.children.length)document.querySelector('.card').appendChild(mediaDiv);
 }
 </script>
 </body>
