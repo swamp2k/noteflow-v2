@@ -36,9 +36,9 @@ noteflow-v2/
 │   │   ├── _layout.tsx        ← Root layout (ErrorBoundary + custom header; uses <Slot/>, NOT <Stack/> — Stack's SceneView crashed on boot)
 │   │   └── index.tsx          ← Setup screen (API URL + App URL + token entry, test connection)
 │   ├── widget/
-│   │   ├── TasksWidget.tsx    ← Widget UI (FlexWidget/ListWidget from react-native-android-widget); deep links use the App URL
-│   │   ├── tasksBridge.ts     ← fetchTasks() (uses API URL), formatDue(), priorityDot(), isOverdue()
-│   │   └── widgetTaskHandler.ts ← registerWidgetTaskHandler (registered via app.json widgetTaskHandler, NOT imported in _layout) + background refresh task
+│   │   ├── TasksWidget.tsx    ← Widget UI (FlexWidget/ListWidget from react-native-android-widget); deep links use the App URL; accepts textSize prop
+│   │   ├── tasksBridge.ts     ← fetchTasks() (uses API URL), getTextSize(), formatDue(), isOverdue(); Task.subject (not priority)
+│   │   └── widgetTaskHandler.ts ← registerWidgetTaskHandler (registered via app.json widgetTaskHandler, NOT imported in _layout)
 │   ├── constants/theme.ts     ← Color palette
 │   ├── app.json               ← Expo config (react-native-android-widget plugin; needs `widgetTaskHandler` path)
 │   └── package.json           ← Expo SDK ~52, react-native-android-widget, AsyncStorage
@@ -48,10 +48,19 @@ noteflow-v2/
 │     • noteflow_app_url  — App base for task deep links   (https://notes.jeppesen.cc, the PWA)
 │     • noteflow_token    — widget token (from Settings → Android Widget)
 │     • noteflow_url      — legacy single-URL key, kept in sync with api_url for back-compat
+│     • noteflow_text_size — widget font scale: 'small' | 'medium' | 'large' (default 'medium')
 │   The API and the PWA live on DIFFERENT subdomains. fetchTasks() uses api_url;
 │   widget deep links (#/task/:id, #/new-task, #/tasks) use app_url so they open the PWA.
 │   The /api/widget/tasks path must have a Cloudflare Access *Bypass* policy (Everyone)
 │   on whichever host the widget calls, or CF Access returns its HTML login page (→ JSON parse error).
+│
+│   Widget refresh behaviour:
+│     Android enforces a minimum of 30 minutes for updatePeriodMillis. The widget task handler
+│     is triggered by the OS on this schedule. The ↺ refresh button was removed — Android 12+
+│     background process restrictions prevent reliable headless task startup from a widget tap.
+│     Users can pull down on the setup screen to confirm API connectivity (shows live task count).
+│     For the widget to refresh after completing/adding tasks, disable battery optimization:
+│     Settings → Apps → NoteFlow Widget → Battery → Unrestricted.
 ├── worker/                    ← Cloudflare Worker (ES modules)
 │   ├── index.js               ← Router only — imports handlers, orchestrates auth
 │   ├── lib/

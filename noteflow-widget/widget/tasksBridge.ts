@@ -4,10 +4,10 @@ export interface Task {
   id: string;
   title: string;
   due_at: number | null;
-  priority: 'high' | 'medium' | 'low';
-  category: string;
-  status: string;
+  subject: string | null;
 }
+
+export type TextSize = 'small' | 'medium' | 'large';
 
 export async function fetchTasks(): Promise<Task[]> {
   // Tasks are fetched from the API URL (falls back to the legacy single-URL key).
@@ -30,6 +30,12 @@ export async function fetchTasks(): Promise<Task[]> {
   }
 }
 
+export async function getTextSize(): Promise<TextSize> {
+  const saved = await AsyncStorage.getItem('noteflow_text_size');
+  if (saved === 'small' || saved === 'medium' || saved === 'large') return saved;
+  return 'medium';
+}
+
 export function isOverdue(due_at: number | null): boolean {
   if (!due_at) return false;
   return due_at < new Date().setHours(0, 0, 0, 0);
@@ -46,8 +52,4 @@ export function formatDue(due_at: number | null): string {
   if (diff === 1) return 'tomorrow';
   if (diff < 7) return d.toLocaleDateString('en', { weekday: 'short' }).toLowerCase();
   return d.toLocaleDateString('en', { month: 'short', day: 'numeric' });
-}
-
-export function priorityDot(priority: string): string {
-  return ({ high: '🔴', medium: '🟡', low: '🟢' } as Record<string, string>)[priority] ?? '⚪';
 }

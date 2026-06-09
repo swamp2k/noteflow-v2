@@ -5,15 +5,32 @@ import {
   TextWidget,
 } from 'react-native-android-widget';
 import { colors } from '../constants/theme';
-import type { Task } from './tasksBridge';
-import { formatDue, isOverdue, priorityDot } from './tasksBridge';
+import type { Task, TextSize } from './tasksBridge';
+import { formatDue, isOverdue } from './tasksBridge';
 
 interface Props {
   tasks: Task[];
   url: string;
+  textSize?: TextSize;
 }
 
-export function TasksWidget({ tasks, url }: Props) {
+const FONT_SIZES: Record<TextSize, { header: number; title: number; due: number; footer: number; empty: number }> = {
+  small:  { header: 13, title: 12, due: 10, footer: 11, empty: 12 },
+  medium: { header: 15, title: 14, due: 12, footer: 13, empty: 14 },
+  large:  { header: 17, title: 17, due: 14, footer: 15, empty: 16 },
+};
+
+// Deterministic color from subject name — matches the PWA's SUBJECT_PALETTE hash
+const SUBJECT_PALETTE = ['#7c6fa0', '#4a9eda', '#e67e22', '#27ae60', '#e74c3c', '#8e44ad', '#16a085'];
+function subjectColor(subject: string): string {
+  let hash = 0;
+  for (let i = 0; i < subject.length; i++) hash = ((hash * 31) + subject.charCodeAt(i)) >>> 0;
+  return SUBJECT_PALETTE[hash % SUBJECT_PALETTE.length];
+}
+
+export function TasksWidget({ tasks, url, textSize = 'medium' }: Props) {
+  const fs = FONT_SIZES[textSize] ?? FONT_SIZES.medium;
+
   return (
     <FlexWidget
       style={{
@@ -23,25 +40,25 @@ export function TasksWidget({ tasks, url }: Props) {
         backgroundColor: colors.surface,
       }}
     >
-      {/* Header */}
+      {/* Header — no refresh button; widget auto-refreshes via updatePeriodMillis */}
       <FlexWidget
         style={{
           flexDirection: 'row',
           alignItems: 'center',
-          padding: 12,
+          paddingHorizontal: 12,
+          paddingVertical: 10,
           backgroundColor: colors.bg,
         }}
       >
         <FlexWidget style={{ flex: 1 }}>
           <TextWidget
             text="✓ NoteFlow Tasks"
-            style={{ color: colors.text, fontSize: 15, fontWeight: 'bold' }}
+            style={{ color: colors.text, fontSize: fs.header, fontWeight: 'bold' }}
           />
         </FlexWidget>
         <TextWidget
-          text="↺"
-          clickAction="WIDGET_REFRESH"
-          style={{ color: colors.muted, fontSize: 18, padding: 4 }}
+          text={`${tasks.length}`}
+          style={{ color: colors.muted, fontSize: fs.due }}
         />
       </FlexWidget>
 
@@ -55,7 +72,7 @@ export function TasksWidget({ tasks, url }: Props) {
         >
           <TextWidget
             text="No pending tasks"
-            style={{ color: colors.muted, fontSize: 14 }}
+            style={{ color: colors.muted, fontSize: fs.empty }}
           />
         </FlexWidget>
       ) : (
@@ -63,6 +80,7 @@ export function TasksWidget({ tasks, url }: Props) {
           {tasks.map((task) => {
             const overdue = isOverdue(task.due_at);
             const dueLabel = formatDue(task.due_at);
+            const dotColor = task.subject ? subjectColor(task.subject) : colors.border;
             return (
               <FlexWidget
                 key={task.id}
@@ -76,16 +94,22 @@ export function TasksWidget({ tasks, url }: Props) {
                   backgroundColor: colors.surface,
                 }}
               >
-                <TextWidget
-                  text={priorityDot(task.priority)}
-                  style={{ fontSize: 13, marginRight: 8 }}
+                {/* Subject dot */}
+                <FlexWidget
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: 4,
+                    backgroundColor: dotColor,
+                    marginRight: 10,
+                  }}
                 />
                 <FlexWidget style={{ flex: 1 }}>
                   <TextWidget
                     text={task.title}
                     style={{
                       color: overdue ? colors.overdue : colors.text,
-                      fontSize: 14,
+                      fontSize: fs.title,
                     }}
                     maxLines={1}
                   />
@@ -95,7 +119,7 @@ export function TasksWidget({ tasks, url }: Props) {
                     text={dueLabel}
                     style={{
                       color: overdue ? colors.overdue : colors.muted,
-                      fontSize: 12,
+                      fontSize: fs.due,
                       marginLeft: 8,
                     }}
                   />
@@ -123,13 +147,13 @@ export function TasksWidget({ tasks, url }: Props) {
           text="+ New"
           clickAction="OPEN_URI"
           clickActionData={{ uri: `${url}/#/new-task` }}
-          style={{ color: colors.accent, fontSize: 13, padding: 4 }}
+          style={{ color: colors.accent, fontSize: fs.footer, padding: 4 }}
         />
         <TextWidget
           text="Open app"
           clickAction="OPEN_URI"
           clickActionData={{ uri: `${url}/#/tasks` }}
-          style={{ color: colors.accent, fontSize: 13, padding: 4 }}
+          style={{ color: colors.accent, fontSize: fs.footer, padding: 4 }}
         />
       </FlexWidget>
     </FlexWidget>
