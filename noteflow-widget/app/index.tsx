@@ -5,6 +5,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,14 +15,23 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { registerWidgetRefresh } from '../widget/widgetTaskHandler';
 import { colors } from '../constants/theme';
+import type { TextSize } from '../widget/tasksBridge';
 
 const DEFAULT_API_URL = 'https://noteflow-api.jeppesen.cc';
 const DEFAULT_APP_URL = 'https://notes.jeppesen.cc';
+
+const TEXT_SIZE_LABELS: { value: TextSize; label: string }[] = [
+  { value: 'small',  label: 'Small'  },
+  { value: 'medium', label: 'Medium' },
+  { value: 'large',  label: 'Large'  },
+];
 
 export default function SetupScreen() {
   const [apiUrl, setApiUrl] = useState(DEFAULT_API_URL);
   const [appUrl, setAppUrl] = useState(DEFAULT_APP_URL);
   const [token, setToken] = useState('');
+  const [textSize, setTextSize] = useState<TextSize>('medium');
+  const [refreshing, setRefreshing] = useState(false);
   const [status, setStatus] = useState<{ type: 'idle' | 'loading' | 'ok' | 'error'; msg: string }>({
     type: 'idle',
     msg: '',
@@ -33,17 +43,19 @@ export default function SetupScreen() {
       const savedApi =
         (await AsyncStorage.getItem('noteflow_api_url')) ??
         (await AsyncStorage.getItem('noteflow_url'));
-      const savedApp = await AsyncStorage.getItem('noteflow_app_url');
+      const savedApp  = await AsyncStorage.getItem('noteflow_app_url');
       const savedToken = await AsyncStorage.getItem('noteflow_token');
-      if (savedApi) setApiUrl(savedApi);
-      if (savedApp) setAppUrl(savedApp);
+      const savedSize  = await AsyncStorage.getItem('noteflow_text_size');
+      if (savedApi)  setApiUrl(savedApi);
+      if (savedApp)  setAppUrl(savedApp);
       if (savedToken) setToken(savedToken);
+      if (savedSize === 'small' || savedSize === 'medium' || savedSize === 'large') setTextSize(savedSize);
     })();
   }, []);
 
   async function handleSaveAndTest() {
-    const trimApi = apiUrl.trim().replace(/\/$/, '');
-    const trimApp = appUrl.trim().replace(/\/$/, '');
+    const trimApi   = apiUrl.trim().replace(/\/$/, '');
+    const trimApp   = appUrl.trim().replace(/\/$/, '');
     const trimToken = token.trim();
     if (!trimApi || !trimApp || !trimToken) {
       setStatus({ type: 'error', msg: 'API URL, App URL and token are all required.' });
@@ -52,7 +64,7 @@ export default function SetupScreen() {
     setStatus({ type: 'loading', msg: 'Testing connection…' });
     try {
       const ctrl = new AbortController();
-      const tid = setTimeout(() => ctrl.abort(), 10000);
+      const tid  = setTimeout(() => ctrl.abort(), 10000);
       const r = await fetch(
         `${trimApi}/api/widget/tasks?token=${encodeURIComponent(trimToken)}`,
         { signal: ctrl.signal }
@@ -62,17 +74,54 @@ export default function SetupScreen() {
         setStatus({ type: 'error', msg: `Error ${r.status}: ${body.error ?? 'Unknown error'}` });
         return;
       }
-      const data = await r.json();
+      const data  = await r.json();
       const count = (data.tasks ?? []).length;
       await AsyncStorage.setItem('noteflow_api_url', trimApi);
       await AsyncStorage.setItem('noteflow_app_url', trimApp);
-      await AsyncStorage.setItem('noteflow_token', trimToken);
+      await AsyncStorage.setItem('noteflow_token',   trimToken);
       // Keep the legacy key in sync so existing widget code keeps working.
       await AsyncStorage.setItem('noteflow_url', trimApi);
       await registerWidgetRefresh();
       setStatus({ type: 'ok', msg: `Connected! ${count} pending task${count !== 1 ? 's' : ''} found.` });
     } catch (e: any) {
       setStatus({ type: 'error', msg: e?.message ?? 'Connection failed' });
+    }
+  }
+
+  async function handleTextSize(size: TextSize) {
+    setTextSize(size);
+    await AsyncStorage.setItem('noteflow_text_size', size);
+  }
+
+  // Pull-to-refresh: re-fetches current task count to confirm the API is reachable.
+  // The widget itself refreshes on Android's schedule (every ~30 min); this is a
+  // connectivity check so you can see live task data without waiting.
+  async function handleRefresh() {
+    setRefreshing(true);
+    try {
+      const savedApi =
+        (await AsyncStorage.getItem('noteflow_api_url')) ??
+        (await AsyncStorage.getItem('noteflow_url'));
+      const savedToken = await AsyncStorage.getItem('noteflow_token');
+      if (savedApi && savedToken) {
+        const ctrl = new AbortController();
+        const tid  = setTimeout(() => ctrl.abort(), 10000);
+        const r = await fetch(
+          `${savedApi}/api/widget/tasks?token=${encodeURIComponent(savedToken)}`,
+          { signal: ctrl.signal }
+        ).finally(() => clearTimeout(tid));
+        if (r.ok) {
+          const data  = await r.json();
+          const count = (data.tasks ?? []).length;
+          setStatus({ type: 'ok', msg: `${count} pending task${count !== 1 ? 's' : ''} right now.` });
+        } else {
+          setStatus({ type: 'error', msg: `API returned ${r.status} — check your token.` });
+        }
+      }
+    } catch {
+      setStatus({ type: 'error', msg: 'Could not reach API. Check your connection.' });
+    } finally {
+      setRefreshing(false);
     }
   }
 
@@ -89,7 +138,19 @@ export default function SetupScreen() {
       style={{ flex: 1, backgroundColor: colors.bg }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            colors={[colors.accent]}
+            tintColor={colors.accent}
+            progressBackgroundColor={colors.surface}
+          />
+        }
+      >
         <Text style={styles.heading}>NoteFlow Widget</Text>
         <Text style={styles.subheading}>
           Enter your NoteFlow URLs and widget token to connect.{'\n'}
@@ -134,8 +195,28 @@ export default function SetupScreen() {
           secureTextEntry={false}
         />
 
+        <Text style={[styles.label, { marginTop: 20 }]}>Widget Text Size</Text>
+        <View style={styles.sizeRow}>
+          {TEXT_SIZE_LABELS.map(({ value, label }) => (
+            <Pressable
+              key={value}
+              style={[styles.sizeBtn, textSize === value && styles.sizeBtnActive]}
+              onPress={() => handleTextSize(value)}
+            >
+              <Text style={[styles.sizeBtnText, textSize === value && styles.sizeBtnTextActive]}>
+                {label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+
         {status.type !== 'idle' && (
-          <View style={[styles.statusBox, status.type === 'ok' ? styles.statusOk : status.type === 'error' ? styles.statusError : styles.statusLoading]}>
+          <View style={[
+            styles.statusBox,
+            status.type === 'ok'      ? styles.statusOk      :
+            status.type === 'error'   ? styles.statusError   :
+                                        styles.statusLoading,
+          ]}>
             {status.type === 'loading' ? (
               <ActivityIndicator size="small" color={colors.accent} style={{ marginRight: 8 }} />
             ) : null}
@@ -159,7 +240,9 @@ export default function SetupScreen() {
         </Pressable>
 
         <Text style={styles.footer}>
-          The widget refreshes every 15–30 minutes automatically. Tap the ↺ icon on the widget for an immediate refresh.
+          The widget refreshes automatically every ~30 minutes.{'\n'}
+          Pull down on this screen to check the current task count.{'\n'}
+          To disable battery optimization: Settings → Apps → NoteFlow Widget → Battery → Unrestricted.
         </Text>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -205,6 +288,33 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
+  sizeRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 8,
+  },
+  sizeBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  sizeBtnActive: {
+    backgroundColor: colors.accent,
+    borderColor: colors.accent,
+  },
+  sizeBtnText: {
+    fontSize: 13,
+    color: colors.muted,
+    fontWeight: '500',
+  },
+  sizeBtnTextActive: {
+    color: '#fff',
+    fontWeight: '600',
+  },
   statusBox: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -212,8 +322,8 @@ const styles = StyleSheet.create({
     padding: 12,
     marginTop: 16,
   },
-  statusOk: { backgroundColor: '#1a3a1a' },
-  statusError: { backgroundColor: '#3a1a1a' },
+  statusOk:      { backgroundColor: '#1a3a1a' },
+  statusError:   { backgroundColor: '#3a1a1a' },
   statusLoading: { backgroundColor: colors.surface },
   statusText: { color: colors.text, fontSize: 13, flex: 1 },
   btn: {
@@ -222,10 +332,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 16,
   },
-  btnPrimary: { backgroundColor: colors.accent },
+  btnPrimary:   { backgroundColor: colors.accent },
   btnSecondary: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
-  btnPressed: { opacity: 0.7 },
-  btnTextPrimary: { color: '#fff', fontWeight: '600', fontSize: 15 },
+  btnPressed:   { opacity: 0.7 },
+  btnTextPrimary:   { color: '#fff', fontWeight: '600', fontSize: 15 },
   btnTextSecondary: { color: colors.text, fontSize: 15 },
   footer: {
     fontSize: 12,

@@ -18,14 +18,11 @@ export async function widgetHandler(request, env, ctx, url, path, method, userId
        LIMIT 20`
     ).bind(row.user_id).all();
 
-    const PRIO = { 1: "high", 2: "medium", 3: "low" };
     const tasks = results.map(n => ({
       id: n.id,
       title: (n.content || "").split("\n")[0].replace(/^#+\s*/, "").trim() || "(no title)",
       due_at: n.due_date ? new Date(n.due_date).getTime() : null,
-      priority: PRIO[n.priority] ?? "medium",
-      category: "task",
-      status: "pending",
+      subject: n.priority || null, // priority TEXT column stores subject/category name
     }));
 
     return jsonOpen({ tasks }, 200);
