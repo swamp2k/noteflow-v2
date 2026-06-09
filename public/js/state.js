@@ -1,6 +1,6 @@
 // ── CONFIG ────────────────────────────────────────────────────────────────────
 const API_BASE      = 'https://noteflow-api.jeppesen.cc/api';
-const SHARE_BASE    = 'https://notes.jeppesen.cc';
+const SHARE_BASE    = 'https://noteflow-api.jeppesen.cc/api/public/note';
 
 const PAGE_SIZE     = 20;
 const SPECIAL_TAGS  = ['hidden', 'starred'];

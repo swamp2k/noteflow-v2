@@ -214,6 +214,61 @@ export async function publicHandler(request, env, ctx, url, path, method, userId
     return new Response(JSON.stringify(manifest), { headers:{"Content-Type":"application/manifest+json","Access-Control-Allow-Origin":"*","Cache-Control":"public, max-age=3600"} });
   }
   if (url.pathname.startsWith("/pwa/") || url.pathname === "/favicon.ico" || url.pathname === "/favicon.svg") return fetch("https://memos-api.jeppesen.cc" + url.pathname);
+  const pubNoteHtmlMatch = url.pathname.match(/^\/api\/public\/note\/([^/]+)$/);
+  if (pubNoteHtmlMatch && request.method === "GET") {
+    const id = pubNoteHtmlMatch[1];
+    const note = await env.DB.prepare("SELECT id,content,created_at FROM notes WHERE id=? AND visibility='PUBLIC'").bind(id).first();
+    if (!note) return new Response("<!DOCTYPE html><html><head><meta charset=UTF-8><title>NoteFlow</title></head><body style='font-family:system-ui;max-width:700px;margin:48px auto;padding:0 20px;color:#6b7280;text-align:center'><p>Note not found or no longer public.</p><p><a href='https://notes.jeppesen.cc' style='color:#5b6af0'>NoteFlow</a></p></body></html>", { status:404, headers:{"Content-Type":"text/html;charset=utf-8"} });
+    const { results: atts } = await env.DB.prepare("SELECT id,filename,mime_type FROM attachments WHERE note_id=?").bind(id).all();
+    const content = (note.content||'').replace(/<!-- tags -->[\s\S]*?<\/details>/gi,'').replace(/<!-- ocr -->\n/g,'').trim();
+    const escaped = JSON.stringify(content);
+    const attJson = JSON.stringify(atts||[]);
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Shared Note — NoteFlow</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+<style>
+*{box-sizing:border-box}
+body{font-family:system-ui,-apple-system,sans-serif;background:#f5f4f0;margin:0;padding:40px 20px;color:#1a1a1a}
+.wrap{max-width:700px;margin:0 auto}
+.card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:28px 32px;line-height:1.7;font-size:15px}
+.card img{max-width:100%;border-radius:8px}
+.card h1,.card h2,.card h3{margin-top:1.2em}
+.images{margin-top:16px;display:flex;flex-wrap:wrap;gap:8px}
+.images img{max-height:240px;border-radius:8px;object-fit:cover}
+.footer{margin-top:24px;text-align:center;font-size:12px;color:#9ca3af}
+.footer a{color:#5b6af0;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card" id="body"></div>
+  <div class="footer">Shared via <a href="https://notes.jeppesen.cc">NoteFlow</a></div>
+</div>
+<script>
+marked.use({breaks:true,gfm:true});
+document.getElementById('body').innerHTML=marked.parse(${escaped});
+var atts=${attJson};
+if(atts.length){
+  var imgs=document.createElement('div');imgs.className='images';var hasImg=false;
+  atts.forEach(function(a){
+    var m=a.mime_type||'';
+    if(m.startsWith('image/')){
+      var el=document.createElement('img');el.alt=a.filename||'';
+      el.src='https://noteflow-api.jeppesen.cc/api/public/attachments/'+a.id;
+      imgs.appendChild(el);hasImg=true;
+    }
+  });
+  if(hasImg)document.querySelector('.card').appendChild(imgs);
+}
+</script>
+</body>
+</html>`;
+    return new Response(html, { status:200, headers:{"Content-Type":"text/html;charset=utf-8","Cache-Control":"no-store"} });
+  }
   const pubMatch = url.pathname.match(/^\/api\/public\/notes\/([^/]+)$/);
   if (pubMatch && request.method === "GET") {
     const note = await env.DB.prepare("SELECT n.id,n.content,n.created_at FROM notes n WHERE n.id=? AND n.visibility='PUBLIC'").bind(pubMatch[1]).first();

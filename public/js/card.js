@@ -632,7 +632,7 @@ function openShareModal(memo) {
   const linkWrap = document.getElementById('share-link-wrap');
   if (vis !== 'PRIVATE') {
     linkWrap.style.display = 'block';
-    document.getElementById('share-link-input').value = SHARE_BASE + '/note/' + memo.id;
+    document.getElementById('share-link-input').value = SHARE_BASE + '/' + memo.id;
   } else {
     linkWrap.style.display = 'none';
   }
@@ -643,7 +643,7 @@ document.getElementById('share-vis').addEventListener('change', function() {
   const linkWrap = document.getElementById('share-link-wrap');
   if (this.value !== 'PRIVATE' && shareTargetMemo) {
     linkWrap.style.display = 'block';
-    document.getElementById('share-link-input').value = SHARE_BASE + '/note/' + shareTargetMemo.id;
+    document.getElementById('share-link-input').value = SHARE_BASE + '/' + shareTargetMemo.id;
   } else {
     linkWrap.style.display = 'none';
   }
