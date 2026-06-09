@@ -13,8 +13,6 @@ function initAuth() { return true; }
   const m = window.location.pathname.match(/^\/note\/([^/]+)$/);
   if (!m) return;
   const noteId = m[1];
-  const token = getCFToken();
-  if (token) return; // authenticated — normal app flow handles it
 
   // Hide app shell, show share view
   document.getElementById('app').style.display = 'none';
