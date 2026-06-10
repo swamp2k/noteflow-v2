@@ -1,5 +1,25 @@
 import { json, jsonOpen, err, errOpen } from "../lib/utils.js";
 
+// Mirrors formatDue()/isOverdue() from noteflow-widget/widget/tasksBridge.ts so non-JS
+// clients (e.g. KWGT) get a ready-to-display label without redoing the date math.
+// A Cloudflare Worker runs in UTC; tzOffsetMin (minutes to add to UTC) shifts "today"
+// to the caller's local calendar day so today/tomorrow/overdue don't slip near midnight.
+function dueInfo(due_at, tzOffsetMin) {
+  if (!due_at) return { due_label: "", overdue: false };
+  const off = tzOffsetMin * 60000;
+  const dayMs = 86400000;
+  const todayMid = Math.floor((Date.now() + off) / dayMs) * dayMs; // UTC-midnight of caller's local date
+  const diff = Math.floor((due_at - todayMid) / dayMs);
+  const d = new Date(due_at);
+  let due_label;
+  if (diff < 0) due_label = "overdue";
+  else if (diff === 0) due_label = "today";
+  else if (diff === 1) due_label = "tomorrow";
+  else if (diff < 7) due_label = new Intl.DateTimeFormat("en", { weekday: "short", timeZone: "UTC" }).format(d).toLowerCase();
+  else due_label = new Intl.DateTimeFormat("en", { month: "short", day: "numeric", timeZone: "UTC" }).format(d);
+  return { due_label, overdue: due_at < todayMid };
+}
+
 export async function widgetHandler(request, env, ctx, url, path, method, userId, origin) {
   // ── Public: GET /api/widget/tasks?token=<token> ──────────────────────────────
   if (path === "/api/widget/tasks" && method === "GET") {
@@ -11,6 +31,9 @@ export async function widgetHandler(request, env, ctx, url, path, method, userId
     ).bind(token).first();
     if (!row) return errOpen("Invalid token", 401);
 
+    // Optional: minutes to add to UTC to reach the caller's local day (default 0 = UTC).
+    const tzOffsetMin = parseInt(url.searchParams.get("tzoffset") || "0", 10) || 0;
+
     const { results } = await env.DB.prepare(
       `SELECT id, content, due_date, priority FROM notes
        WHERE user_id = ? AND is_task = 1 AND completed_at IS NULL AND archived = 0
@@ -18,12 +41,16 @@ export async function widgetHandler(request, env, ctx, url, path, method, userId
        LIMIT 20`
     ).bind(row.user_id).all();
 
-    const tasks = results.map(n => ({
-      id: n.id,
-      title: (n.content || "").split("\n")[0].replace(/^#+\s*/, "").trim() || "(no title)",
-      due_at: n.due_date ? new Date(n.due_date).getTime() : null,
-      subject: n.priority || null, // priority TEXT column stores subject/category name
-    }));
+    const tasks = results.map(n => {
+      const due_at = n.due_date ? new Date(n.due_date).getTime() : null;
+      return {
+        id: n.id,
+        title: (n.content || "").split("\n")[0].replace(/^#+\s*/, "").trim() || "(no title)",
+        due_at,
+        subject: n.priority || null, // priority TEXT column stores subject/category name
+        ...dueInfo(due_at, tzOffsetMin), // due_label (string) + overdue (bool) for header-less clients (KWGT)
+      };
+    });
 
     return jsonOpen({ tasks }, 200);
   }

@@ -61,6 +61,10 @@ noteflow-v2/
 â”‚     Users can pull down on the setup screen to confirm API connectivity (shows live task count).
 â”‚     For the widget to refresh after completing/adding tasks, disable battery optimization:
 â”‚     Settings â†’ Apps â†’ NoteFlow Widget â†’ Battery â†’ Unrestricted.
+â”‚
+â”‚   Alternative front-end â€” KWGT: KWGT (Kustom Widget Maker) can render the same tasks by
+â”‚     fetching GET /api/widget/tasks?token=...&tzoffset=<min> directly (token in query string,
+â”‚     no headers). No backend beyond that endpoint is required. Setup guide: docs/kwgt-setup.md.
 â”œâ”€â”€ worker/                    â† Cloudflare Worker (ES modules)
 â”‚   â”œâ”€â”€ index.js               â† Router only â€” imports handlers, orchestrates auth
 â”‚   â”œâ”€â”€ lib/
@@ -419,6 +423,8 @@ push_subscriptions (id TEXT PK, user_id TEXT, endpoint TEXT UNIQUE,
 widget_tokens (token TEXT PK, user_id TEXT NOT NULL, created_at INTEGER NOT NULL)
 ```
 One token per user. Generated via `POST /api/widget/token` (requires session auth); revoked via `DELETE /api/widget/token`. Used by `GET /api/widget/tasks?token=<token>` (public, pre-auth). The GET endpoint returns only a `preview` (first8â€¦last4) â€” the full token is shown once on generation.
+
+`GET /api/widget/tasks` returns `{ tasks: [{ id, title, due_at, subject, due_label, overdue }] }` (max 20, incomplete + non-archived, sorted by due_date ASC). `due_label`/`overdue` are server-computed display fields mirroring `formatDue()`/`isOverdue()` in `noteflow-widget/widget/tasksBridge.ts`, added for header-less clients like KWGT that can't easily do date math. They honor an optional `?tzoffset=<minutes-from-UTC>` param (default 0=UTC) so today/tomorrow/overdue align with the caller's local day. The React widget ignores these two fields.
 
 **D1 migration required** (not auto-run):
 ```bash
