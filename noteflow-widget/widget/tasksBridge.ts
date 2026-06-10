@@ -3,7 +3,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export interface Task {
   id: string;
   title: string;
-  due_at: number | null;
+  due: string | null;       // ISO "YYYY-MM-DD" — used for relative day math
+  due_at?: number | null;   // legacy ms timestamp (fallback only)
   subject: string | null;
 }
 
@@ -36,20 +37,42 @@ export async function getTextSize(): Promise<TextSize> {
   return 'medium';
 }
 
-export function isOverdue(due_at: number | null): boolean {
-  if (!due_at) return false;
-  return due_at < new Date().setHours(0, 0, 0, 0);
+// Local "today" as YYYY-MM-DD (string compare avoids timezone drift).
+function todayStr(): string {
+  const n = new Date();
+  const y = n.getFullYear();
+  const m = String(n.getMonth() + 1).padStart(2, '0');
+  const d = String(n.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
 
-export function formatDue(due_at: number | null): string {
-  if (!due_at) return '';
-  const d = new Date(due_at);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const diff = Math.floor((d.getTime() - today.getTime()) / 86400000);
-  if (diff < 0) return 'overdue';
-  if (diff === 0) return 'today';
-  if (diff === 1) return 'tomorrow';
-  if (diff < 7) return d.toLocaleDateString('en', { weekday: 'short' }).toLowerCase();
-  return d.toLocaleDateString('en', { month: 'short', day: 'numeric' });
+// Whole-day difference between a due date and today (positive = future).
+function dayDiff(due: string): number {
+  const [ty, tm, td] = todayStr().split('-').map(Number);
+  const [dy, dm, dd] = due.split('-').map(Number);
+  return Math.round((Date.UTC(dy, dm - 1, dd) - Date.UTC(ty, tm - 1, td)) / 86400000);
+}
+
+export function isOverdue(due: string | null): boolean {
+  if (!due) return false;
+  return due < todayStr();
+}
+
+// Mirrors the PWA's relativeDue() (public/js/tasks.js): Today / N days / N wks / N mo,
+// with "ago" variants for overdue dates.
+export function formatDue(due: string | null): string {
+  if (!due) return '';
+  const diff = dayDiff(due);
+  if (diff === 0) return 'Today';
+  if (diff > 0) {
+    if (diff === 1) return '1 day';
+    if (diff <= 14) return diff + ' days';
+    if (diff < 90) return Math.round(diff / 7) + ' wks';
+    return Math.round(diff / 30) + ' mo';
+  }
+  const abs = Math.abs(diff);
+  if (abs === 1) return '1 day ago';
+  if (abs <= 14) return abs + ' days ago';
+  if (abs < 90) return Math.round(abs / 7) + ' wks ago';
+  return Math.round(abs / 30) + ' mo ago';
 }

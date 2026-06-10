@@ -37,7 +37,7 @@ noteflow-v2/
 â”‚   â”‚   â””â”€â”€ index.tsx          â† Setup screen (API URL + App URL + token entry, test connection)
 â”‚   â”œâ”€â”€ widget/
 â”‚   â”‚   â”œâ”€â”€ TasksWidget.tsx    â† Widget UI (FlexWidget/ListWidget from react-native-android-widget); deep links use the App URL; accepts textSize prop
-â”‚   â”‚   â”œâ”€â”€ tasksBridge.ts     â† fetchTasks() (uses API URL), getTextSize(), formatDue(), isOverdue(); Task.subject (not priority)
+â”‚   â”‚   â”œâ”€â”€ tasksBridge.ts     â† fetchTasks() (uses API URL), getTextSize(), formatDue()/isOverdue() (operate on Task.due ISO string, mirror PWA relativeDue: "N days"/"N wks"/"N mo"); Task.subject (not priority)
 â”‚   â”‚   â””â”€â”€ widgetTaskHandler.ts â† registerWidgetTaskHandler (registered via app.json widgetTaskHandler, NOT imported in _layout)
 â”‚   â”œâ”€â”€ constants/theme.ts     â† Color palette
 â”‚   â”œâ”€â”€ app.json               â† Expo config (react-native-android-widget plugin; needs `widgetTaskHandler` path)

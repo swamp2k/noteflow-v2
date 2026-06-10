@@ -78,8 +78,8 @@ export function TasksWidget({ tasks, url, textSize = 'medium' }: Props) {
       ) : (
         <ListWidget>
           {tasks.map((task) => {
-            const overdue = isOverdue(task.due_at);
-            const dueLabel = formatDue(task.due_at);
+            const overdue = isOverdue(task.due);
+            const dueLabel = formatDue(task.due);
             const dotColor = task.subject ? subjectColor(task.subject) : colors.border;
             return (
               <FlexWidget

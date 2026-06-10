@@ -1,23 +1,32 @@
 import { json, jsonOpen, err, errOpen } from "../lib/utils.js";
 
-// Mirrors formatDue()/isOverdue() from noteflow-widget/widget/tasksBridge.ts so non-JS
-// clients (e.g. KWGT) get a ready-to-display label without redoing the date math.
-// A Cloudflare Worker runs in UTC; tzOffsetMin (minutes to add to UTC) shifts "today"
-// to the caller's local calendar day so today/tomorrow/overdue don't slip near midnight.
+// Mirrors formatDue()/isOverdue() from noteflow-widget/widget/tasksBridge.ts (which in turn
+// mirror the PWA's relativeDue()) so non-JS clients (e.g. KWGT) get a ready-to-display
+// relative label ("Today" / "N days" / "N wks" / "N mo", + "ago" for overdue) without
+// redoing the date math. A Cloudflare Worker runs in UTC; tzOffsetMin (minutes to add to
+// UTC) shifts "today" to the caller's local calendar day so the day count doesn't slip
+// near midnight.
 function dueInfo(due_at, tzOffsetMin) {
   if (!due_at) return { due_label: "", overdue: false };
   const off = tzOffsetMin * 60000;
   const dayMs = 86400000;
   const todayMid = Math.floor((Date.now() + off) / dayMs) * dayMs; // UTC-midnight of caller's local date
   const diff = Math.floor((due_at - todayMid) / dayMs);
-  const d = new Date(due_at);
   let due_label;
-  if (diff < 0) due_label = "overdue";
-  else if (diff === 0) due_label = "today";
-  else if (diff === 1) due_label = "tomorrow";
-  else if (diff < 7) due_label = new Intl.DateTimeFormat("en", { weekday: "short", timeZone: "UTC" }).format(d).toLowerCase();
-  else due_label = new Intl.DateTimeFormat("en", { month: "short", day: "numeric", timeZone: "UTC" }).format(d);
-  return { due_label, overdue: due_at < todayMid };
+  if (diff === 0) due_label = "Today";
+  else if (diff > 0) {
+    if (diff === 1) due_label = "1 day";
+    else if (diff <= 14) due_label = diff + " days";
+    else if (diff < 90) due_label = Math.round(diff / 7) + " wks";
+    else due_label = Math.round(diff / 30) + " mo";
+  } else {
+    const abs = Math.abs(diff);
+    if (abs === 1) due_label = "1 day ago";
+    else if (abs <= 14) due_label = abs + " days ago";
+    else if (abs < 90) due_label = Math.round(abs / 7) + " wks ago";
+    else due_label = Math.round(abs / 30) + " mo ago";
+  }
+  return { due_label, overdue: diff < 0 };
 }
 
 export async function widgetHandler(request, env, ctx, url, path, method, userId, origin) {
@@ -46,7 +55,8 @@ export async function widgetHandler(request, env, ctx, url, path, method, userId
       return {
         id: n.id,
         title: (n.content || "").split("\n")[0].replace(/^#+\s*/, "").trim() || "(no title)",
-        due_at,
+        due: n.due_date || null,  // raw ISO "YYYY-MM-DD" — RN widget does its own day math on this
+        due_at,                   // legacy ms timestamp, kept for older installs
         subject: n.priority || null, // priority TEXT column stores subject/category name
         ...dueInfo(due_at, tzOffsetMin), // due_label (string) + overdue (bool) for header-less clients (KWGT)
       };
