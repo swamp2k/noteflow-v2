@@ -21,8 +21,8 @@ const FONT_SIZES: Record<TextSize, { header: number; title: number; due: number;
 };
 
 // Deterministic color from subject name — matches the PWA's SUBJECT_PALETTE hash
-const SUBJECT_PALETTE = ['#7c6fa0', '#4a9eda', '#e67e22', '#27ae60', '#e74c3c', '#8e44ad', '#16a085'];
-function subjectColor(subject: string): string {
+const SUBJECT_PALETTE = ['#7c6fa0', '#4a9eda', '#e67e22', '#27ae60', '#e74c3c', '#8e44ad', '#16a085'] as const;
+function subjectColor(subject: string): `#${string}` {
   let hash = 0;
   for (let i = 0; i < subject.length; i++) hash = ((hash * 31) + subject.charCodeAt(i)) >>> 0;
   return SUBJECT_PALETTE[hash % SUBJECT_PALETTE.length];
