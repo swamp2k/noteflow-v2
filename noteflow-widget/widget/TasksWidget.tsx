@@ -40,7 +40,7 @@ export function TasksWidget({ tasks, url, textSize = 'medium' }: Props) {
         backgroundColor: colors.surface,
       }}
     >
-      {/* Header — no refresh button; widget auto-refreshes via updatePeriodMillis */}
+      {/* Header */}
       <FlexWidget
         style={{
           flexDirection: 'row',
@@ -56,10 +56,23 @@ export function TasksWidget({ tasks, url, textSize = 'medium' }: Props) {
             style={{ color: colors.text, fontSize: fs.header, fontWeight: 'bold' }}
           />
         </FlexWidget>
-        <TextWidget
-          text={`${tasks.length}`}
-          style={{ color: colors.muted, fontSize: fs.due }}
-        />
+        {/* Refresh — FlexWidget gives a proper 44dp touch target; works when
+            battery optimisation is disabled for this app (Settings → Apps →
+            NoteFlow Widget → Battery → Unrestricted). */}
+        <FlexWidget
+          clickAction="WIDGET_REFRESH"
+          style={{
+            width: 44,
+            height: 44,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <TextWidget
+            text="↺"
+            style={{ color: colors.muted, fontSize: 18 }}
+          />
+        </FlexWidget>
       </FlexWidget>
 
       {/* Divider */}

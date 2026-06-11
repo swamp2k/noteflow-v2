@@ -2,7 +2,7 @@ import React from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { registerWidgetTaskHandler } from 'react-native-android-widget';
 import { TasksWidget } from './TasksWidget';
-import { fetchTasks, getTextSize } from './tasksBridge';
+import { fetchTasks, getTextSize, TASKS_CACHE_KEY } from './tasksBridge';
 
 async function getWidgetData() {
   const [tasks, textSize, appUrl, legacyUrl] = await Promise.all([
@@ -24,8 +24,16 @@ registerWidgetTaskHandler(async ({ widgetInfo, widgetAction, renderWidget }) => 
     const { tasks, url, textSize } = await getWidgetData();
     renderWidget(React.createElement(TasksWidget, { tasks, url, textSize }));
   } catch {
-    // Render an empty widget on failure rather than crashing the headless task
-    renderWidget(React.createElement(TasksWidget, { tasks: [], url: '', textSize: 'medium' }));
+    // getWidgetData() itself crashed — pull whatever we have from cache so the
+    // widget doesn't go blank just because of a transient error.
+    try {
+      const raw = await AsyncStorage.getItem(TASKS_CACHE_KEY);
+      const tasks = raw ? JSON.parse(raw) : [];
+      const appUrl = (await AsyncStorage.getItem('noteflow_app_url')) ?? (await AsyncStorage.getItem('noteflow_url')) ?? '';
+      renderWidget(React.createElement(TasksWidget, { tasks, url: appUrl, textSize: 'medium' }));
+    } catch {
+      renderWidget(React.createElement(TasksWidget, { tasks: [], url: '', textSize: 'medium' }));
+    }
   }
 });
 

@@ -10,24 +10,39 @@ export interface Task {
 
 export type TextSize = 'small' | 'medium' | 'large';
 
+export const TASKS_CACHE_KEY = 'noteflow_widget_tasks_cache';
+
+async function loadCachedTasks(): Promise<Task[]> {
+  try {
+    const raw = await AsyncStorage.getItem(TASKS_CACHE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
 export async function fetchTasks(): Promise<Task[]> {
   // Tasks are fetched from the API URL (falls back to the legacy single-URL key).
   const url =
     (await AsyncStorage.getItem('noteflow_api_url')) ??
     (await AsyncStorage.getItem('noteflow_url'));
   const token = await AsyncStorage.getItem('noteflow_token');
-  if (!url || !token) return [];
+  if (!url || !token) return loadCachedTasks();
   try {
     const ctrl = new AbortController();
     const tid = setTimeout(() => ctrl.abort(), 10000);
     const r = await fetch(`${url}/api/widget/tasks?token=${encodeURIComponent(token)}`, {
       signal: ctrl.signal,
     }).finally(() => clearTimeout(tid));
-    if (!r.ok) return [];
+    if (!r.ok) return loadCachedTasks();
     const data = await r.json();
-    return data.tasks ?? [];
+    const tasks: Task[] = data.tasks ?? [];
+    // Persist for fallback on next network failure
+    await AsyncStorage.setItem(TASKS_CACHE_KEY, JSON.stringify(tasks)).catch(() => {});
+    return tasks;
   } catch {
-    return [];
+    // Network error / timeout — show last known tasks rather than empty list
+    return loadCachedTasks();
   }
 }
 
