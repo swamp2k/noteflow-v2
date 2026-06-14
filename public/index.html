@@ -1772,7 +1772,7 @@
 </div>
 
 <!-- Task Detail modal -->
-<div class="modal-backdrop" id="task-detail-modal">
+<div class="modal-backdrop" id="task-detail-modal" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="modal" style="width:560px;max-width:95vw;max-height:90vh;overflow-y:auto">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
       <input type="checkbox" id="td-complete-cb" style="width:17px;height:17px;cursor:pointer;flex-shrink:0;accent-color:#22c55e">

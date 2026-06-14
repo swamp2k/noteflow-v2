@@ -715,6 +715,15 @@ document.getElementById('copy-link-btn').addEventListener('click', () => {
     activeCard.style.background = Math.abs(clamped) >= 80 ? '#fde8e8' : '';
   }, { passive: false });
 
+  document.addEventListener('touchcancel', function() {
+    if (!activeCard) return;
+    activeCard.style.transition = 'transform 0.3s ease, background 0.2s';
+    activeCard.style.transform = '';
+    activeCard.style.background = '';
+    activeCard = null;
+    isSwiping = false;
+  }, { passive: true });
+
   document.addEventListener('touchend', function(e) {
     if (!activeCard || !isSwiping) { activeCard = null; isSwiping = false; return; }
     const dx = e.changedTouches[0].clientX - startX;

@@ -653,11 +653,14 @@ async function renderTasksOverlay() {
 
 // ── Task Detail modal ─────────────────────────────────────────────────────────
 let _taskDetailId = null;
+let _taskDetailLoading = false;
 
 async function openTaskDetail(taskId) {
+  if (_taskDetailLoading) return;
+  _taskDetailLoading = true;
   _taskDetailId = taskId;
   const modal = document.getElementById('task-detail-modal');
-  if (!modal) return;
+  if (!modal) { _taskDetailLoading = false; return; }
 
   // Fetch full task data
   let task;
@@ -666,8 +669,10 @@ async function openTaskDetail(taskId) {
     task = data.note;
   } catch(e) {
     toast('Failed to load task: ' + e.message);
+    _taskDetailLoading = false;
     return;
   }
+  _taskDetailLoading = false;
 
   // Populate fields
   document.getElementById('td-complete-cb').checked = !!task.completed_at;
