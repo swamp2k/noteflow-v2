@@ -40,6 +40,8 @@ let settings = {
   tasks_default_subject:      null,
   tasks_show_completed:       false,
   tasks_show_count_badge:     true,
+  // Calendar feed (ICS)
+  ical_include_completed:     false,
   // Notification settings
   notif_enabled:              false,
   notif_send_time:            '08:00',

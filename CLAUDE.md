@@ -78,7 +78,7 @@ noteflow-v2/
 â”‚       â”œâ”€â”€ attachments.js     â† /api/attachments, /api/attachments/:id, /api/admin/reindex
 â”‚       â”œâ”€â”€ tracker.js         â† /api/trackers, /api/trackers/:id, etc.
 â”‚       â”œâ”€â”€ partner.js         â† /partner page, /api/partner/:token/*, /api/trackers/:id/partner-tokens
-â”‚       â”œâ”€â”€ widget.js          â† /api/widget/tasks (public), /api/widget/token (GET/POST/DELETE, auth)
+â”‚       â”œâ”€â”€ widget.js          â† /api/widget/tasks (public), /api/widget/token (GET/POST/DELETE, auth), /api/widget/token/full (GET, auth = full token reveal); ical.js -> /api/ical/tasks.ics (public, widget-token auth, iCalendar feed of tasks with a due_date)
 â”‚       â”œâ”€â”€ user.js            â† /api/boot, /api/me, /api/user/settings
 â”‚       â”œâ”€â”€ search.js          â† /api/search, /api/notes/autotag
 â”‚       â”œâ”€â”€ email.js           â† /api/email/send
@@ -363,6 +363,7 @@ let tasksOverlayOpen = false;
 `settings` object keys for tasks and notifications:
 ```
 tasks_hide_from_main_feed, task_subjects, tasks_default_subject, tasks_show_completed, tasks_show_count_badge
+ical_include_completed
 notif_enabled
 notif_discord_enabled, notif_discord_webhook
 emailTaskApprovedSenders
@@ -547,6 +548,8 @@ Anthropic calls use `anthropic-beta: prompt-caching-2024-07-31` with `cache_cont
 12. **Never add `notif_send_time` or `notif_trigger_*` settings fields back.** These were intentionally removed â€” per-task notification scheduling via `notif_days_before` + `notif_time` on the note replaces them entirely. The settings UI only has the channels (email/Discord/push) and the master `notif_enabled` toggle.
 
 13. **When bumping the service worker version, update it in two places:** the comment on line 1 (`// NoteFlow Service Worker vN`) and the `CACHE_NAME` constant. Also update the version reference in this file's Repository Structure section.
+
+14. **Never add Cache-Control headers that allow CDN caching on `/api/ical/tasks.ics`.** The response must be `no-cache, no-store`. Calendar clients manage their own poll schedule; CDN caching would serve stale task data. The ICS feed authenticates via the existing `widget_tokens` table (`?token=...`), runs pre-auth in `index.js`, and only emits tasks that have a `due_date`. The `priority` column (a TEXT subject label here) is emitted as `CATEGORIES`, not iCal `PRIORITY`.
 
 ---
 

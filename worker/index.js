@@ -3,6 +3,7 @@ import { verifyJWT, ensureUser } from "./lib/auth.js";
 import { publicHandler } from "./handlers/public.js";
 import { partnerHandler } from "./handlers/partner.js";
 import { widgetHandler } from "./handlers/widget.js";
+import { icalHandler } from "./handlers/ical.js";
 import { userHandler } from "./handlers/user.js";
 import { notesHandler } from "./handlers/notes.js";
 import { tagsHandler } from "./handlers/tags.js";
@@ -33,6 +34,10 @@ export default {
     if (res) return res;
 
     res = await widgetHandler(request, env, ctx, url, path, method, null, origin);
+    if (res) return res;
+
+    // ICS calendar feed — carries its own widget-token auth, so it runs pre-auth
+    res = await icalHandler(request, env, ctx, url, path, method, null, origin);
     if (res) return res;
 
     if (!path.startsWith("/api/")) return new Response("NoteFlow API v2", { headers: cors });

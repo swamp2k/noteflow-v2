@@ -1591,6 +1591,35 @@
           </div>
         </div>
 
+        <!-- Calendar Feed (ICS) -->
+        <div class="settings-section" id="calendar-feed-settings">
+          <div class="settings-section-title">Calendar Feed</div>
+          <div class="settings-desc" style="font-size:13px;color:var(--muted);padding:0 16px 12px">
+            Subscribe to your tasks in Google Calendar, Apple Calendar, or any ICS-compatible app.
+            Only tasks with a due date appear. Calendars refresh every 12–24 hours.
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Include completed tasks</div>
+              <div class="settings-desc">Show finished tasks in the calendar feed too</div>
+            </div>
+            <div class="settings-control">
+              <label class="toggle"><input type="checkbox" id="setting-ical-include-completed"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+            </div>
+          </div>
+          <div class="settings-row" style="flex-direction:column;align-items:flex-start;gap:8px">
+            <div class="settings-label">Subscribe link</div>
+            <div class="settings-desc">Uses your Android Widget token. Generate one above first if you haven't.</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <button id="copy-ical-link-btn" style="font-size:13px;padding:6px 14px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text);cursor:pointer">Copy link</button>
+              <span id="ical-link-feedback" style="display:none;color:var(--green,#2e9e4f);font-size:13px">Copied!</span>
+            </div>
+            <div id="ical-no-token-hint" style="display:none;color:var(--danger,#e74c3c);font-size:13px">
+              No widget token found — generate one in the Android Widget section above.
+            </div>
+          </div>
+        </div>
+
         <!-- Notifications settings -->
         <div class="settings-section">
           <div class="settings-section-title">Notifications</div>

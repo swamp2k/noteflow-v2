@@ -68,6 +68,14 @@ export async function widgetHandler(request, env, ctx, url, path, method, userId
   // ── Auth-required routes below — skip if no userId ───────────────────────────
   if (!userId) return null;
 
+  // ── GET /api/widget/token/full — returns the full token (for Copy / ICS link) ─
+  if (path === "/api/widget/token/full" && method === "GET") {
+    const row = await env.DB.prepare(
+      "SELECT token FROM widget_tokens WHERE user_id = ?"
+    ).bind(userId).first();
+    return json({ token: row ? row.token : null }, 200, origin);
+  }
+
   // ── GET /api/widget/token — check if token exists (returns preview only) ──────
   if (path === "/api/widget/token" && method === "GET") {
     const row = await env.DB.prepare(

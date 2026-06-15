@@ -232,6 +232,9 @@ function syncSettingsControls() {
   if (taskSubjectsInput) taskSubjectsInput.value = (s.task_subjects || []).join(', ');
   refreshSubjectDefaultSelect();
 
+  const icalCheck = el('setting-ical-include-completed');
+  if (icalCheck) icalCheck.checked = !!s.ical_include_completed;
+
   // Notification settings
   const notifEnabledCb     = el('setting-notif-enabled');
   const notifDiscordCb     = el('setting-notif-discord');
@@ -519,10 +522,44 @@ function initSettingsControls() {
     }
   });
 
-  if (btnCopyWidgetToken) btnCopyWidgetToken.addEventListener('click', () => {
-    const val = widgetTokenDisplay ? widgetTokenDisplay.value : '';
-    if (!val) { toast('No token to copy'); return; }
+  if (btnCopyWidgetToken) btnCopyWidgetToken.addEventListener('click', async () => {
+    // The display only shows a masked preview after a reload, so always fetch the
+    // full token from the worker for the copy.
+    let val = '';
+    try {
+      const res = await apiGet('/widget/token/full');
+      val = res && res.token ? res.token : '';
+    } catch(e) { /* fall through to "no token" */ }
+    if (!val) { toast('No token — generate one first'); return; }
     navigator.clipboard.writeText(val).then(() => toast('Token copied')).catch(() => toast('Copy failed'));
+  });
+
+  // ── Calendar feed (ICS) ───────────────────────────────────────────────────
+  const icalIncludeCompleted = document.getElementById('setting-ical-include-completed');
+  if (icalIncludeCompleted) icalIncludeCompleted.addEventListener('change', function () {
+    settings.ical_include_completed = this.checked;
+    saveSettings();
+  });
+
+  const btnCopyIcalLink = document.getElementById('copy-ical-link-btn');
+  if (btnCopyIcalLink) btnCopyIcalLink.addEventListener('click', async () => {
+    const noTokenHint = document.getElementById('ical-no-token-hint');
+    const feedback    = document.getElementById('ical-link-feedback');
+    let token = '';
+    try {
+      const res = await apiGet('/widget/token/full');
+      token = res && res.token ? res.token : '';
+    } catch(e) { /* fall through */ }
+    if (!token) {
+      if (noTokenHint) noTokenHint.style.display = 'block';
+      return;
+    }
+    if (noTokenHint) noTokenHint.style.display = 'none';
+    // API_BASE (state.js) points to the worker, not Pages
+    const icsUrl = `${API_BASE}/api/ical/tasks.ics?token=${token}`;
+    navigator.clipboard.writeText(icsUrl).then(() => {
+      if (feedback) { feedback.style.display = 'inline'; setTimeout(() => { feedback.style.display = 'none'; }, 2000); }
+    }).catch(() => toast('Copy failed'));
   });
 
   // ── Activity log ──────────────────────────────────────────────────────────
