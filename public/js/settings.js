@@ -555,8 +555,8 @@ function initSettingsControls() {
       return;
     }
     if (noTokenHint) noTokenHint.style.display = 'none';
-    // API_BASE (state.js) points to the worker, not Pages
-    const icsUrl = `${API_BASE}/api/ical/tasks.ics?token=${token}`;
+    // API_BASE (state.js) already ends in /api
+    const icsUrl = `${API_BASE}/ical/tasks.ics?token=${token}`;
     navigator.clipboard.writeText(icsUrl).then(() => {
       if (feedback) { feedback.style.display = 'inline'; setTimeout(() => { feedback.style.display = 'none'; }, 2000); }
     }).catch(() => toast('Copy failed'));
