@@ -94,7 +94,7 @@ noteflow-v2/
     â”œâ”€â”€ tracker.html           â† Tracker feature (standalone page)
     â”œâ”€â”€ tagcloud.html          â† Tag Cloud / Semantic / Embeddings (standalone)
     â”œâ”€â”€ nav.js                 â† Shared sidebar â€” loaded by all three pages
-    â”œâ”€â”€ service-worker.js      â† Browser service worker (v25)
+    â”œâ”€â”€ service-worker.js      â† Browser service worker (v26)
     â””â”€â”€ js/                    â† Frontend JS modules (plain <script> tags, shared global scope)
         â”œâ”€â”€ state.js           â† All global state variables (API_BASE, SHARE_BASE, allMemos, settings, etc.)
         â”œâ”€â”€ api.js             â† getCFToken, authHeaders, apiGet, apiPatch, apiPost, apiDelete, uploadAttachment
@@ -551,6 +551,10 @@ Anthropic calls use `anthropic-beta: prompt-caching-2024-07-31` with `cache_cont
 
 14. **Never add Cache-Control headers that allow CDN caching on `/api/ical/tasks.ics`.** The response must be `no-cache, no-store`. Calendar clients manage their own poll schedule; CDN caching would serve stale task data. The ICS feed authenticates via the existing `widget_tokens` table (`?token=...`), runs pre-auth in `index.js`, and only emits tasks that have a `due_date`. The `priority` column (a TEXT subject label here) is emitted as `CATEGORIES`, not iCal `PRIORITY`.
 
+15. **The service worker exists as THREE copies that must be kept byte-identical:** `/service-worker.js` (repo root, marked as "source"), `/public/service-worker.js` (the one actually served by Cloudflare Pages at `notes.jeppesen.cc/service-worker.js`, since the browser registers it via the relative path `/service-worker.js`), and the `SERVICE_WORKER_JS` template string inside `worker/handlers/public.js` (served at `GET /service-worker.js` on the Worker's own domain). These had drifted out of sync before (one was 2 versions behind and missing the push-notification handlers entirely). Whenever you edit the service worker, update all three, then re-run `node --check worker/handlers/public.js` to confirm the embedded copy is still valid JS-in-a-template-string.
+
+16. **The root-path navigation cache strategy must be network-first, not cache-first.** Cache-first (`caches.match('/').then(cached => cached || fetch(request))`) means the cached shell HTML is served forever once cached, and is only refreshed when the service worker file itself changes bytes (triggering reinstall). Since `index.html`'s markup can change on a normal deploy without `service-worker.js` changing, cache-first silently serves a stale DOM indefinitely — e.g. a stale shell missing a newly-added modal field (`#td-subject`) caused `openTaskDetail` to throw on `null.innerHTML` and the task modal would never open, until the user did a hard-refresh (which bypasses the SW). Always fetch the network first for the shell, falling back to the cache only on fetch failure (offline).
+
 ---
 
 ## Testing Checklist After Any Change
@@ -591,4 +595,4 @@ Anthropic calls use `anthropic-beta: prompt-caching-2024-07-31` with `cache_cont
 | `public/js/project-ai.js` | Project AI panel |
 | `public/js/app.js` | Boot sequence (must load last) |
 | `public/js/*.js` | 17 frontend modules total (plain scripts, shared scope) |
-| `public/service-worker.js` | Offline queue + push notification handler (v25) |
+| `public/service-worker.js` | Offline queue + push notification handler (v26) |
