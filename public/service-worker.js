@@ -1,6 +1,6 @@
-// NoteFlow Service Worker v25
+// NoteFlow Service Worker v26
 // Handles: share target, offline queue, basic shell caching
-const CACHE_NAME = 'noteflow-shell-v25';
+const CACHE_NAME = 'noteflow-shell-v26';
 const API_BASE   = 'https://noteflow-api.jeppesen.cc/api';
 
 // ── Install: cache only the shell HTML — no external deps ────────────────────
@@ -37,10 +37,20 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Only serve cached shell for the root path — let other pages (tracker.html, tagcloud.html) hit the network
+  // Only intercept the root path — let other pages (tracker.html, tagcloud.html) hit the network.
+  // Network-first: the shell's markup can change on deploy without service-worker.js itself
+  // changing, so a stale cache-first response would silently keep serving an outdated DOM
+  // (e.g. missing newly-added elements) until the SW byte-diffs and reinstalls. Only fall
+  // back to the cache when the network is unavailable (offline).
   if (request.mode === 'navigate' && url.origin === self.location.origin && (url.pathname === '/' || url.pathname === '/index.html')) {
     event.respondWith(
-      caches.match('/').then(cached => cached || fetch(request))
+      fetch(request)
+        .then(res => {
+          const copy = res.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put('/', copy)).catch(() => {});
+          return res;
+        })
+        .catch(() => caches.match('/'))
     );
     return;
   }
