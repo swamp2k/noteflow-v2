@@ -55,14 +55,41 @@ export async function widgetHandler(request, env, ctx, url, path, method, userId
       return {
         id: n.id,
         title: (n.content || "").split("\n")[0].replace(/^#+\s*/, "").trim() || "(no title)",
-        due: n.due_date || null,  // raw ISO "YYYY-MM-DD" — RN widget does its own day math on this
-        due_at,                   // legacy ms timestamp, kept for older installs
+        content: n.content || "",    // full text — Make.com stores this in Google Tasks notes
+        due: n.due_date || null,     // raw ISO "YYYY-MM-DD" — RN widget does its own day math on this
+        due_at,                      // legacy ms timestamp, kept for older installs
         subject: n.priority || null, // priority TEXT column stores subject/category name
         ...dueInfo(due_at, tzOffsetMin), // due_label (string) + overdue (bool) for header-less clients (KWGT)
       };
     });
 
     return jsonOpen({ tasks }, 200);
+  }
+
+  // ── Public: POST /api/widget/tasks/:id/complete?token=<token> ────────────────
+  // Used by Make.com to mark a task complete/incomplete without a session JWT.
+  const completeMatch = method === "POST" && path.match(/^\/api\/widget\/tasks\/([^/]+)\/complete$/);
+  if (completeMatch) {
+    const token = url.searchParams.get("token");
+    if (!token) return errOpen("Missing token", 400);
+
+    const tokenRow = await env.DB.prepare(
+      "SELECT user_id FROM widget_tokens WHERE token = ?"
+    ).bind(token).first();
+    if (!tokenRow) return errOpen("Invalid token", 401);
+
+    const taskId = completeMatch[1];
+    let body = {};
+    try { body = await request.json(); } catch (_) {}
+    const completed = body.completed !== false; // default true if omitted
+    const completedAt = completed ? new Date().toISOString() : null;
+
+    const result = await env.DB.prepare(
+      "UPDATE notes SET completed_at = ? WHERE id = ? AND user_id = ? AND is_task = 1"
+    ).bind(completedAt, taskId, tokenRow.user_id).run();
+
+    if (result.meta.changes === 0) return errOpen("Task not found", 404);
+    return jsonOpen({ ok: true }, 200);
   }
 
   // ── Auth-required routes below — skip if no userId ───────────────────────────
