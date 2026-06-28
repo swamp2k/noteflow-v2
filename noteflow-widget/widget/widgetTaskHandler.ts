@@ -1,8 +1,14 @@
 import React from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { registerWidgetTaskHandler } from 'react-native-android-widget';
+import * as TaskManager from 'expo-task-manager';
+import * as BackgroundTask from 'expo-background-task';
+import { registerWidgetTaskHandler, requestWidgetUpdate } from 'react-native-android-widget';
 import { TasksWidget } from './TasksWidget';
 import { fetchTasks, getTextSize, TASKS_CACHE_KEY } from './tasksBridge';
+
+// Identifier for the background task. Must match between defineTask and
+// registerTaskAsync, and must be unique within the app.
+const BACKGROUND_REFRESH_TASK = 'noteflow-widget-background-refresh';
 
 async function getWidgetData() {
   const [tasks, textSize, appUrl, legacyUrl] = await Promise.all([
@@ -37,7 +43,35 @@ registerWidgetTaskHandler(async ({ widgetInfo, widgetAction, renderWidget }) => 
   }
 });
 
+// Defined at module scope, per Expo's documented requirement. This file is
+// imported from app/_layout.tsx (the app's root, loaded first) and
+// app/index.tsx, either of which is enough to register this definition with
+// the JS runtime before registerTaskAsync() is called below.
+TaskManager.defineTask(BACKGROUND_REFRESH_TASK, async () => {
+  try {
+    const { tasks, url, textSize } = await getWidgetData();
+    await requestWidgetUpdate({
+      widgetName: 'TasksWidget',
+      renderWidget: () => React.createElement(TasksWidget, { tasks, url, textSize }),
+      // No widgets left on the home screen — stop scheduling future wakeups.
+      widgetNotFound: () => {
+        BackgroundTask.unregisterTaskAsync(BACKGROUND_REFRESH_TASK).catch(() => {});
+      },
+    });
+    return BackgroundTask.BackgroundTaskResult.Success;
+  } catch (err) {
+    console.error('noteflow widget background refresh failed', err);
+    return BackgroundTask.BackgroundTaskResult.Failed;
+  }
+});
+
 export async function registerWidgetRefresh() {
-  // No-op: widget refresh is triggered by Android via updatePeriodMillis in app.json.
-  // The widget task handler above handles all update events (WIDGET_UPDATE, WIDGET_ADDED, etc.).
+  // Guard against double-registration (e.g. Save & Test pressed more than once).
+  const already = await TaskManager.isTaskRegisteredAsync(BACKGROUND_REFRESH_TASK);
+  if (already) return;
+  // minimumInterval is advisory — Android's WorkManager treats anything below
+  // 15 min as 15 min, and the OS may still defer further to save battery.
+  await BackgroundTask.registerTaskAsync(BACKGROUND_REFRESH_TASK, {
+    minimumInterval: 30, // minutes; matches the prior updatePeriodMillis cadence
+  });
 }

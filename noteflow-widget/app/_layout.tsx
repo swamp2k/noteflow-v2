@@ -1,7 +1,9 @@
 import 'react-native-gesture-handler';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Text, ScrollView, StyleSheet, View, StatusBar } from 'react-native';
 import { Slot } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { registerWidgetRefresh } from '../widget/widgetTaskHandler';
 
 interface ErrorBoundaryState { error: Error | null }
 
@@ -40,6 +42,22 @@ const styles = StyleSheet.create({
 });
 
 export default function RootLayout() {
+  useEffect(() => {
+    // Re-register on every app open. registerWidgetRefresh() itself no-ops if
+    // already registered, so this is just insurance against the OS having
+    // dropped the registration (e.g. after the app was force-stopped).
+    (async () => {
+      const token = await AsyncStorage.getItem('noteflow_token');
+      if (token) {
+        try {
+          await registerWidgetRefresh();
+        } catch (err) {
+          console.error('Failed to re-register widget background refresh', err);
+        }
+      }
+    })();
+  }, []);
+
   return (
     <ErrorBoundary>
       <View style={styles.root}>

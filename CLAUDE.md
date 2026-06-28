@@ -38,10 +38,10 @@ noteflow-v2/
 â”‚   â”œâ”€â”€ widget/
 â”‚   â”‚   â”œâ”€â”€ TasksWidget.tsx    â† Widget UI (FlexWidget/ListWidget from react-native-android-widget); deep links use the App URL; accepts textSize prop
 â”‚   â”‚   â”œâ”€â”€ tasksBridge.ts     â† fetchTasks() (uses API URL), getTextSize(), formatDue()/isOverdue() (operate on Task.due ISO string, mirror PWA relativeDue: "N days"/"N wks"/"N mo"); Task.subject (not priority)
-â”‚   â”‚   â””â”€â”€ widgetTaskHandler.ts â† registerWidgetTaskHandler (registered via app.json widgetTaskHandler, NOT imported in _layout)
+â”‚   â”‚   â””â”€â”€ widgetTaskHandler.ts â† registerWidgetTaskHandler + WorkManager background refresh (expo-task-manager + expo-background-task); also imported by _layout.tsx to re-register on app open
 â”‚   â”œâ”€â”€ constants/theme.ts     â† Color palette
-â”‚   â”œâ”€â”€ app.json               â† Expo config (react-native-android-widget plugin; needs `widgetTaskHandler` path)
-â”‚   â””â”€â”€ package.json           â† Expo SDK ~52, react-native-android-widget, AsyncStorage
+â”‚   â”œâ”€â”€ app.json               â† Expo config (react-native-android-widget + expo-background-task plugins; needs `widgetTaskHandler` path)
+â”‚   â””â”€â”€ package.json           â† Expo SDK ^56.0.0, react-native-android-widget 0.17.1, expo-task-manager/expo-background-task ~56.0.19, AsyncStorage
 â”‚
 â”‚   Android widget config (AsyncStorage keys, set on the setup screen):
 â”‚     â€¢ noteflow_api_url  â€” API base for fetching tasks   (https://noteflow-api.jeppesen.cc)
@@ -55,11 +55,15 @@ noteflow-v2/
 â”‚   on whichever host the widget calls, or CF Access returns its HTML login page (â†’ JSON parse error).
 â”‚
 â”‚   Widget refresh behaviour:
-â”‚     Android enforces a minimum of 30 minutes for updatePeriodMillis. The widget task handler
-â”‚     is triggered by the OS on this schedule. The â†º refresh button was removed â€” Android 12+
-â”‚     background process restrictions prevent reliable headless task startup from a widget tap.
+â”‚     The widget uses WorkManager (via expo-background-task) for reliable background refresh,
+â”‚     scheduled at ~30-minute intervals. Android may defer wakeups further to save battery;
+â”‚     this is expected. On first setup (Save & Test), registerWidgetRefresh() registers the
+â”‚     WorkManager job; _layout.tsx re-registers on every app open as insurance against the OS
+â”‚     dropping the registration after a force-stop.
+â”‚     The â†º refresh button was removed â€” Android 12+ background process restrictions
+â”‚     prevent reliable headless task startup from a widget tap.
 â”‚     Users can pull down on the setup screen to confirm API connectivity (shows live task count).
-â”‚     For the widget to refresh after completing/adding tasks, disable battery optimization:
+â”‚     For best reliability, disable battery optimization:
 â”‚     Settings â†’ Apps â†’ NoteFlow Widget â†’ Battery â†’ Unrestricted.
 â”‚
 â”‚   Alternative front-end â€” KWGT: KWGT (Kustom Widget Maker) can render the same tasks by
