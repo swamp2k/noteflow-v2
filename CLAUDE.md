@@ -78,7 +78,7 @@ noteflow-v2/
 â”‚       â”œâ”€â”€ attachments.js     â† /api/attachments, /api/attachments/:id, /api/admin/reindex
 â”‚       â”œâ”€â”€ tracker.js         â† /api/trackers, /api/trackers/:id, etc.
 â”‚       â”œâ”€â”€ partner.js         â† /partner page, /api/partner/:token/*, /api/trackers/:id/partner-tokens
-â”‚       â”œâ”€â”€ widget.js          â† /api/widget/tasks (public), /api/widget/token (GET/POST/DELETE, auth), /api/widget/token/full (GET, auth = full token reveal); ical.js -> /api/ical/tasks.ics (public, widget-token auth, iCalendar feed of tasks with a due_date)
+â”‚       â”œâ”€â”€ widget.js          â† /api/widget/tasks (GET public), /api/widget/tasks/:id/complete (POST public, widget-token auth, for Make.com bidirectional sync), /api/widget/token (GET/POST/DELETE, auth), /api/widget/token/full (GET, auth = full token reveal); ical.js -> /api/ical/tasks.ics (public, widget-token auth, iCalendar feed of tasks with a due_date)
 â”‚       â”œâ”€â”€ user.js            â† /api/boot, /api/me, /api/user/settings
 â”‚       â”œâ”€â”€ search.js          â† /api/search, /api/notes/autotag
 â”‚       â”œâ”€â”€ email.js           â† /api/email/send
@@ -425,7 +425,9 @@ widget_tokens (token TEXT PK, user_id TEXT NOT NULL, created_at INTEGER NOT NULL
 ```
 One token per user. Generated via `POST /api/widget/token` (requires session auth); revoked via `DELETE /api/widget/token`. Used by `GET /api/widget/tasks?token=<token>` (public, pre-auth). The GET endpoint returns only a `preview` (first8â€¦last4) â€” the full token is shown once on generation.
 
-`GET /api/widget/tasks` returns `{ tasks: [{ id, title, due_at, subject, due_label, overdue }] }` (max 20, incomplete + non-archived, sorted by due_date ASC). `due_label`/`overdue` are server-computed display fields mirroring `formatDue()`/`isOverdue()` in `noteflow-widget/widget/tasksBridge.ts`, added for header-less clients like KWGT that can't easily do date math. They honor an optional `?tzoffset=<minutes-from-UTC>` param (default 0=UTC) so today/tomorrow/overdue align with the caller's local day. The React widget ignores these two fields.
+`GET /api/widget/tasks` returns `{ tasks: [{ id, title, content, due, due_at, subject, due_label, overdue }] }` (max 20, incomplete + non-archived, sorted by due_date ASC). `content` is the full task text (used by Make.com to populate Google Tasks notes). `due_label`/`overdue` are server-computed display fields mirroring `formatDue()`/`isOverdue()` in `noteflow-widget/widget/tasksBridge.ts`, added for header-less clients like KWGT that can't easily do date math. They honor an optional `?tzoffset=<minutes-from-UTC>` param (default 0=UTC) so today/tomorrow/overdue align with the caller's local day. The React widget ignores `due_label`/`overdue`/`content`.
+
+`POST /api/widget/tasks/:id/complete?token=<token>` — public, widget-token auth. Body: `{ "completed": true|false }` (defaults to `true` if omitted). Sets or clears `completed_at` on the task. Returns `{ ok: true }`. Used by Make.com to sync Google Tasks completions back to NoteFlow without requiring a session JWT.
 
 **D1 migration required** (not auto-run):
 ```bash
