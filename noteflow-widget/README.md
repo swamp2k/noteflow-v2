@@ -8,7 +8,7 @@ This directory contains the native Android replacement for the retired Expo / Re
 - Tasks are always rendered from an app-private persistent cache.
 - The widget never performs network work while Android is asking it to draw.
 - A user refresh becomes an expedited native WorkManager request on Android 12+.
-- A six-hour periodic WorkManager job repairs missed updates and stale data.
+- One native periodic WorkManager job refreshes the cache approximately every 30 minutes. Android may defer it while the device is idle.
 - Failed requests keep the last successful task list visible and mark the widget as offline.
 - Task taps and footer actions open the existing NoteFlow PWA.
 
@@ -16,7 +16,7 @@ The existing `GET /api/widget/tasks?token=...` endpoint is reused unchanged.
 
 ## Build
 
-The GitHub Actions workflow builds and uploads a debug APK for every pull request that changes this directory.
+The GitHub Actions workflow builds and uploads a debug APK for widget pull requests, `agent/**` branches, and `main`.
 
 From Android Studio, open `noteflow-widget` as a project and run the `app` configuration. From a shell with Gradle 9.4.1 and Android SDK 36 installed:
 
@@ -49,5 +49,6 @@ This version deliberately ships without Firebase configuration or secrets. Once 
 1. The app registers its FCM token with NoteFlow.
 2. NoteFlow sends a small `tasks_changed` data message after task mutations.
 3. The app enqueues the same native sync worker already used by manual and periodic refresh.
+4. The periodic fallback can then be reduced from 30 minutes to six or twelve hours.
 
 The cache, worker and widget rendering are already separated so FCM can be added without another widget rewrite.
