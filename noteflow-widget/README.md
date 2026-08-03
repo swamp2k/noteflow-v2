@@ -10,6 +10,7 @@ This directory contains the native Android replacement for the retired Expo / Re
 - A user refresh becomes an expedited native WorkManager request on Android 12+.
 - One native periodic WorkManager job refreshes the cache approximately every 30 minutes. Android may defer it while the device is idle.
 - Failed requests keep the last successful task list visible and mark the widget as offline.
+- Malformed API responses are surfaced as sync errors rather than crashing or breaking compilation paths.
 - Task taps and footer actions open the existing NoteFlow PWA.
 
 The existing `GET /api/widget/tasks?token=...` endpoint is reused unchanged.
