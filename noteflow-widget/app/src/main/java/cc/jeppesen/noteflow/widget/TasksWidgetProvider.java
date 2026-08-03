@@ -11,8 +11,9 @@ public final class TasksWidgetProvider extends AppWidgetProvider {
     @Override
     public void onReceive(Context context, Intent intent) {
         if (ACTION_REFRESH.equals(intent.getAction())) {
-            TaskCache.markSyncing(context);
-            WidgetUpdater.refreshAll(context);
+            // The worker marks the cache as syncing only when Android actually starts it.
+            // This prevents an offline, network-constrained request from leaving the
+            // widget stuck on "Updating…" while it waits in WorkManager's queue.
             SyncScheduler.enqueueImmediate(context, true);
             return;
         }
