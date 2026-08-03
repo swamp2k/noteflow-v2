@@ -24,17 +24,22 @@ final class SyncEngine {
             WidgetUpdater.refreshAll(appContext);
             return SyncResult.success(tasks.size());
         } catch (NoteFlowApi.ApiException error) {
-            TaskCache.saveError(appContext, error.getMessage());
+            String message = safeMessage(error, "NoteFlow rejected the request");
+            TaskCache.saveError(appContext, message);
             WidgetUpdater.refreshAll(appContext);
             boolean retryable = error.statusCode >= 500 || error.statusCode == 429;
-            return SyncResult.failure(retryable, error.getMessage());
+            return SyncResult.failure(retryable, message);
         } catch (Exception error) {
-            String message = error.getMessage();
-            if (message == null || message.isBlank()) message = "Could not reach NoteFlow";
+            String message = safeMessage(error, "Could not reach NoteFlow");
             TaskCache.saveError(appContext, message);
             WidgetUpdater.refreshAll(appContext);
             return SyncResult.failure(true, message);
         }
+    }
+
+    private static String safeMessage(Exception error, String fallback) {
+        String message = error.getMessage();
+        return message == null || message.trim().isEmpty() ? fallback : message;
     }
 
     static final class SyncResult {
