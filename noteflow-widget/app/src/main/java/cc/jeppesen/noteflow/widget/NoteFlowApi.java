@@ -1,6 +1,7 @@
 package cc.jeppesen.noteflow.widget;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -56,7 +57,13 @@ final class NoteFlowApi {
                 throw new ApiException(status, message);
             }
 
-            JSONArray array = new JSONObject(body).optJSONArray("tasks");
+            JSONArray array;
+            try {
+                array = new JSONObject(body).optJSONArray("tasks");
+            } catch (JSONException error) {
+                throw new IOException("NoteFlow returned invalid JSON", error);
+            }
+
             List<TaskItem> tasks = new ArrayList<>();
             if (array == null) return tasks;
 
