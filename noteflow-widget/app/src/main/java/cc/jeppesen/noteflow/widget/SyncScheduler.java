@@ -30,8 +30,8 @@ final class SyncScheduler {
     static void schedulePeriodic(Context context) {
         PeriodicWorkRequest request = new PeriodicWorkRequest.Builder(
                 SyncWorker.class,
-                6,
-                TimeUnit.HOURS
+                30,
+                TimeUnit.MINUTES
         )
                 .setConstraints(connectedNetwork())
                 .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.SECONDS)
