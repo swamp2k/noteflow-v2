@@ -56,7 +56,7 @@ public final class TasksWidgetService extends RemoteViewsService {
                     task.overdue ? Color.parseColor("#ff6b6b") : Color.parseColor("#e8e8f0")
             );
 
-            if (task.dueLabel.isBlank()) {
+            if (isBlank(task.dueLabel)) {
                 views.setViewVisibility(R.id.task_due, View.GONE);
             } else {
                 views.setViewVisibility(R.id.task_due, View.VISIBLE);
@@ -85,12 +85,16 @@ public final class TasksWidgetService extends RemoteViewsService {
         }
 
         private int subjectColor(String subject) {
-            if (subject == null || subject.isBlank()) return Color.parseColor("#3a3a5a");
+            if (isBlank(subject)) return Color.parseColor("#3a3a5a");
             long hash = 0;
             for (int i = 0; i < subject.length(); i++) {
                 hash = ((hash * 31) + subject.charAt(i)) & 0xffffffffL;
             }
             return Color.parseColor(SUBJECT_PALETTE[(int) (hash % SUBJECT_PALETTE.length)]);
+        }
+
+        private boolean isBlank(String value) {
+            return value == null || value.trim().isEmpty();
         }
 
         @Override public RemoteViews getLoadingView() { return null; }
