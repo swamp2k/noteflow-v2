@@ -38,14 +38,14 @@ final class SettingsStore {
     }
 
     static boolean isConfigured(Context context) {
-        return !token(context).isBlank() && !apiUrl(context).isBlank() && !appUrl(context).isBlank();
+        return !isBlank(token(context)) && !isBlank(apiUrl(context)) && !isBlank(appUrl(context));
     }
 
     static void save(Context context, String apiUrl, String appUrl, String token, String textSize) {
         prefs(context).edit()
                 .putString(KEY_API_URL, normalizeUrl(apiUrl))
                 .putString(KEY_APP_URL, normalizeUrl(appUrl))
-                .putString(KEY_TOKEN, token.trim())
+                .putString(KEY_TOKEN, token == null ? "" : token.trim())
                 .putString(KEY_TEXT_SIZE, textSize)
                 .apply();
     }
@@ -56,5 +56,9 @@ final class SettingsStore {
             normalized = normalized.substring(0, normalized.length() - 1);
         }
         return normalized;
+    }
+
+    private static boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
     }
 }
