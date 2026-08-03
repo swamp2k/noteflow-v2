@@ -1,6 +1,7 @@
 package cc.jeppesen.noteflow.widget;
 
 import android.content.Context;
+import android.os.Build;
 
 import androidx.work.BackoffPolicy;
 import androidx.work.Constraints;
@@ -8,6 +9,7 @@ import androidx.work.ExistingPeriodicWorkPolicy;
 import androidx.work.ExistingWorkPolicy;
 import androidx.work.NetworkType;
 import androidx.work.OneTimeWorkRequest;
+import androidx.work.OutOfQuotaPolicy;
 import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkManager;
 
@@ -42,16 +44,21 @@ final class SyncScheduler {
         );
     }
 
-    static void enqueueImmediate(Context context) {
-        OneTimeWorkRequest request = new OneTimeWorkRequest.Builder(SyncWorker.class)
+    static void enqueueImmediate(Context context, boolean userInitiated) {
+        OneTimeWorkRequest.Builder builder = new OneTimeWorkRequest.Builder(SyncWorker.class)
                 .setConstraints(connectedNetwork())
-                .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 20, TimeUnit.SECONDS)
-                .build();
+                .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 20, TimeUnit.SECONDS);
+
+        // Android 12+ can run this as a true expedited JobScheduler request without
+        // waking a React Native runtime or requiring a battery-optimization exemption.
+        if (userInitiated && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            builder.setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST);
+        }
 
         WorkManager.getInstance(context.getApplicationContext()).enqueueUniqueWork(
                 IMMEDIATE_WORK,
                 ExistingWorkPolicy.REPLACE,
-                request
+                builder.build()
         );
     }
 
