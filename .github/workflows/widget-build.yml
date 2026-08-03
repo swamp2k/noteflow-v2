@@ -2,14 +2,24 @@ name: Android Widget Build
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - 'agent/**'
     paths:
       - 'noteflow-widget/**'
-  workflow_dispatch:   # allow manual trigger from the Actions tab
+      - '.github/workflows/widget-build.yml'
+  pull_request:
+    paths:
+      - 'noteflow-widget/**'
+      - '.github/workflows/widget-build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   build:
-    name: EAS Build (preview APK)
+    name: Native debug APK
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -19,20 +29,29 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
         with:
-          node-version: '22'
-          cache: 'npm'
-          cache-dependency-path: noteflow-widget/package-lock.json
+          distribution: temurin
+          java-version: '17'
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
 
-      - name: Set up EAS CLI
-        run: npm install -g eas-cli
+      - name: Install Android platform
+        run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
 
-      - name: Build Android APK (preview)
-        run: eas build --platform android --profile preview --non-interactive
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.4.1'
+
+      - name: Lint, test and build APK
+        run: gradle :app:lintDebug :app:testDebugUnitTest :app:assembleDebug --stacktrace
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: noteflow-widget-debug
+          path: noteflow-widget/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error

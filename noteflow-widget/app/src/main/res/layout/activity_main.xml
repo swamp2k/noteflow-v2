@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/noteflow_bg"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/setup_title"
+            android:textColor="@color/noteflow_text"
+            android:textSize="28sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="20dp"
+            android:lineSpacingExtra="3dp"
+            android:text="@string/setup_intro"
+            android:textColor="@color/noteflow_muted"
+            android:textSize="14sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:labelFor="@id/api_url"
+            android:text="@string/api_url_label"
+            android:textColor="@color/noteflow_text"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/api_url"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:background="@drawable/field_background"
+            android:hint="@string/api_url_hint"
+            android:inputType="textUri"
+            android:maxLines="1"
+            android:textColor="@color/noteflow_text"
+            android:textColorHint="@color/noteflow_muted" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:labelFor="@id/app_url"
+            android:text="@string/app_url_label"
+            android:textColor="@color/noteflow_text"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/app_url"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:background="@drawable/field_background"
+            android:hint="@string/app_url_hint"
+            android:inputType="textUri"
+            android:maxLines="1"
+            android:textColor="@color/noteflow_text"
+            android:textColorHint="@color/noteflow_muted" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:labelFor="@id/widget_token"
+            android:text="@string/token_label"
+            android:textColor="@color/noteflow_text"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/widget_token"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:background="@drawable/field_background"
+            android:hint="@string/token_hint"
+            android:importantForAutofill="no"
+            android:inputType="textVisiblePassword"
+            android:maxLines="1"
+            android:textColor="@color/noteflow_text"
+            android:textColorHint="@color/noteflow_muted" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:labelFor="@id/text_size"
+            android:text="@string/text_size_label"
+            android:textColor="@color/noteflow_text"
+            android:textStyle="bold" />
+
+        <Spinner
+            android:id="@+id/text_size"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="6dp"
+            android:background="@drawable/field_background"
+            android:popupBackground="@color/noteflow_surface"
+            android:spinnerMode="dropdown" />
+
+        <TextView
+            android:id="@+id/status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:lineSpacingExtra="2dp"
+            android:textSize="13sp"
+            android:visibility="gone" />
+
+        <Button
+            android:id="@+id/save_test_button"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="18dp"
+            android:background="@drawable/button_primary"
+            android:text="@string/save_test"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/refresh_now_button"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/button_secondary"
+            android:text="@string/refresh_now"
+            android:textAllCaps="false"
+            android:textColor="@color/noteflow_text" />
+
+        <Button
+            android:id="@+id/add_widget_button"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="24dp"
+            android:background="@drawable/button_secondary"
+            android:text="@string/add_widget"
+            android:textAllCaps="false"
+            android:textColor="@color/noteflow_text" />
+
+    </LinearLayout>
+</ScrollView>
