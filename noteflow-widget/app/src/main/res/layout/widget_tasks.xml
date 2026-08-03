@@ -54,10 +54,11 @@
             android:textSize="22sp" />
     </LinearLayout>
 
-    <View
+    <TextView
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="@color/noteflow_border" />
+        android:background="@color/noteflow_border"
+        android:importantForAccessibility="no" />
 
     <ListView
         android:id="@+id/task_list"
@@ -80,10 +81,11 @@
         android:textColor="@color/noteflow_muted"
         android:textSize="13sp" />
 
-    <View
+    <TextView
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="@color/noteflow_border" />
+        android:background="@color/noteflow_border"
+        android:importantForAccessibility="no" />
 
     <LinearLayout
         android:layout_width="match_parent"
