@@ -12,7 +12,7 @@ final class TaskItem {
 
     TaskItem(String id, String title, String dueLabel, boolean overdue, String subject) {
         this.id = id == null ? "" : id;
-        this.title = title == null || title.isBlank() ? "(no title)" : title;
+        this.title = isBlank(title) ? "(no title)" : title;
         this.dueLabel = dueLabel == null ? "" : dueLabel;
         this.overdue = overdue;
         this.subject = subject == null ? "" : subject;
@@ -44,5 +44,9 @@ final class TaskItem {
 
     int stableId() {
         return id.hashCode();
+    }
+
+    private static boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
     }
 }
