@@ -26,7 +26,7 @@ final class WidgetUpdater {
             updateWidget(appContext, manager, widgetId);
         }
         if (widgetIds.length > 0) {
-            manager.notifyAppWidgetViewDataSetChanged(widgetIds, R.id.task_list);
+            manager.notifyAppWidgetViewDataChanged(widgetIds, R.id.task_list);
         }
     }
 
