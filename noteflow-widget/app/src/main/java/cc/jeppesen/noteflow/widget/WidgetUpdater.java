@@ -26,7 +26,7 @@ final class WidgetUpdater {
             updateWidget(appContext, manager, widgetId);
         }
         if (widgetIds.length > 0) {
-            manager.notifyAppWidgetViewDataChanged(widgetIds, R.id.task_list);
+            manager.notifyAppWidgetViewDataSetChanged(widgetIds, R.id.task_list);
         }
     }
 
@@ -36,6 +36,7 @@ final class WidgetUpdater {
 
         views.setTextViewText(R.id.widget_title, "✓ NoteFlow Tasks");
         views.setTextViewText(R.id.widget_status, statusText(context, tasks.size()));
+        views.setTextViewText(R.id.empty_view, emptyText(context));
 
         Intent serviceIntent = new Intent(context, TasksWidgetService.class);
         serviceIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId);
@@ -120,6 +121,15 @@ final class WidgetUpdater {
         }
         String count = taskCount + (taskCount == 1 ? " task" : " tasks");
         return isBlank(updated) ? count : count + " • " + updated;
+    }
+
+    private static String emptyText(Context context) {
+        if (!SettingsStore.isConfigured(context)) return "Open the app to connect NoteFlow";
+        if (TaskCache.isSyncing(context)) return "Loading tasks…";
+        if (!isBlank(TaskCache.lastError(context)) && TaskCache.lastSync(context) == 0L) {
+            return "Could not load tasks — tap refresh";
+        }
+        return "No pending tasks";
     }
 
     private static boolean isBlank(String value) {
