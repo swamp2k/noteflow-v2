@@ -57,13 +57,7 @@ final class NoteFlowApi {
                 throw new ApiException(status, message);
             }
 
-            JSONArray array;
-            try {
-                array = new JSONObject(body).optJSONArray("tasks");
-            } catch (JSONException error) {
-                throw new IOException("NoteFlow returned invalid JSON", error);
-            }
-
+            JSONArray array = parseTasksArray(body);
             List<TaskItem> tasks = new ArrayList<>();
             if (array == null) return tasks;
 
@@ -88,6 +82,14 @@ final class NoteFlowApi {
             return tasks;
         } finally {
             connection.disconnect();
+        }
+    }
+
+    private static JSONArray parseTasksArray(String body) throws IOException {
+        try {
+            return new JSONObject(body).optJSONArray("tasks");
+        } catch (JSONException error) {
+            throw new IOException("NoteFlow returned invalid JSON", error);
         }
     }
 
