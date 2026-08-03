@@ -25,7 +25,7 @@ final class NoteFlowApi {
     static List<TaskItem> fetchTasks(String apiUrl, String token) throws IOException {
         String normalized = SettingsStore.normalizeUrl(apiUrl);
         String endpoint = normalized + "/api/widget/tasks?token="
-                + URLEncoder.encode(token, StandardCharsets.UTF_8);
+                + URLEncoder.encode(token, "UTF-8");
 
         HttpURLConnection connection = (HttpURLConnection) new URL(endpoint).openConnection();
         connection.setRequestMethod("GET");
@@ -46,7 +46,7 @@ final class NoteFlowApi {
                 String message = "API returned " + status;
                 try {
                     String apiMessage = new JSONObject(body).optString("error", "");
-                    if (!apiMessage.isBlank()) message += ": " + apiMessage;
+                    if (!isBlank(apiMessage)) message += ": " + apiMessage;
                 } catch (Exception ignored) {
                     // Preserve the status-only error.
                 }
@@ -62,7 +62,7 @@ final class NoteFlowApi {
                 if (json == null) continue;
                 String dueLabel = json.optString("due_label", "");
                 boolean overdue = json.optBoolean("overdue", false);
-                if (dueLabel.isBlank()) {
+                if (isBlank(dueLabel)) {
                     DueInfo fallback = dueInfo(json.optString("due", ""));
                     dueLabel = fallback.label;
                     overdue = fallback.overdue;
@@ -93,7 +93,7 @@ final class NoteFlowApi {
     }
 
     private static DueInfo dueInfo(String due) {
-        if (due == null || due.isBlank()) return new DueInfo("", false);
+        if (isBlank(due)) return new DueInfo("", false);
         try {
             long diff = ChronoUnit.DAYS.between(LocalDate.now(), LocalDate.parse(due));
             if (diff == 0) return new DueInfo("Today", false);
@@ -113,6 +113,10 @@ final class NoteFlowApi {
         }
     }
 
+    private static boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
+    }
+
     static final class ApiException extends IOException {
         final int statusCode;
 
@@ -122,5 +126,13 @@ final class NoteFlowApi {
         }
     }
 
-    private record DueInfo(String label, boolean overdue) {}
+    private static final class DueInfo {
+        final String label;
+        final boolean overdue;
+
+        DueInfo(String label, boolean overdue) {
+            this.label = label;
+            this.overdue = overdue;
+        }
+    }
 }
