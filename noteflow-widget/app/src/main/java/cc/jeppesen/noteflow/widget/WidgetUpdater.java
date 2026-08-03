@@ -115,10 +115,14 @@ final class WidgetUpdater {
                 : "Updated " + new SimpleDateFormat("HH:mm", Locale.getDefault())
                         .format(new Date(lastSync));
 
-        if (error != null && !error.isBlank()) {
-            return updated.isBlank() ? "Offline" : "Offline • " + updated;
+        if (!isBlank(error)) {
+            return isBlank(updated) ? "Offline" : "Offline • " + updated;
         }
         String count = taskCount + (taskCount == 1 ? " task" : " tasks");
-        return updated.isBlank() ? count : count + " • " + updated;
+        return isBlank(updated) ? count : count + " • " + updated;
+    }
+
+    private static boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
     }
 }
