@@ -15,6 +15,7 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TimeZone;
 
 final class NoteFlowApi {
     private static final int CONNECT_TIMEOUT_MS = 5_000;
@@ -24,8 +25,10 @@ final class NoteFlowApi {
 
     static List<TaskItem> fetchTasks(String apiUrl, String token) throws IOException {
         String normalized = SettingsStore.normalizeUrl(apiUrl);
+        int offsetMinutes = TimeZone.getDefault().getOffset(System.currentTimeMillis()) / 60000;
         String endpoint = normalized + "/api/widget/tasks?token="
-                + URLEncoder.encode(token, "UTF-8");
+                + URLEncoder.encode(token, "UTF-8")
+                + "&tzoffset=" + offsetMinutes;
 
         HttpURLConnection connection = (HttpURLConnection) new URL(endpoint).openConnection();
         connection.setRequestMethod("GET");
