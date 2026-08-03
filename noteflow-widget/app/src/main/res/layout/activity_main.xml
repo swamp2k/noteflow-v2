@@ -32,6 +32,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:labelFor="@id/api_url"
             android:text="@string/api_url_label"
             android:textColor="@color/noteflow_text"
             android:textStyle="bold" />
@@ -42,6 +43,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
             android:background="@drawable/field_background"
+            android:hint="@string/api_url_hint"
             android:inputType="textUri"
             android:maxLines="1"
             android:textColor="@color/noteflow_text"
@@ -51,6 +53,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="18dp"
+            android:labelFor="@id/app_url"
             android:text="@string/app_url_label"
             android:textColor="@color/noteflow_text"
             android:textStyle="bold" />
@@ -61,6 +64,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
             android:background="@drawable/field_background"
+            android:hint="@string/app_url_hint"
             android:inputType="textUri"
             android:maxLines="1"
             android:textColor="@color/noteflow_text"
@@ -70,6 +74,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="18dp"
+            android:labelFor="@id/widget_token"
             android:text="@string/token_label"
             android:textColor="@color/noteflow_text"
             android:textStyle="bold" />
@@ -79,8 +84,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
-            android:autofillHints=""
             android:background="@drawable/field_background"
+            android:hint="@string/token_hint"
             android:importantForAutofill="no"
             android:inputType="textVisiblePassword"
             android:maxLines="1"
@@ -91,6 +96,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="18dp"
+            android:labelFor="@id/text_size"
             android:text="@string/text_size_label"
             android:textColor="@color/noteflow_text"
             android:textStyle="bold" />
