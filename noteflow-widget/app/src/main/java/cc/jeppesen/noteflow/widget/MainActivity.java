@@ -46,9 +46,9 @@ public final class MainActivity extends Activity {
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
                 this,
                 R.array.text_sizes,
-                android.R.layout.simple_spinner_item
+                R.layout.spinner_item
         );
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
         textSizeSpinner.setAdapter(adapter);
 
         loadSettings();
