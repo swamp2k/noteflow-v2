@@ -2,7 +2,9 @@ name: Android Widget Build
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - 'agent/**'
     paths:
       - 'noteflow-widget/**'
       - '.github/workflows/widget-build.yml'
