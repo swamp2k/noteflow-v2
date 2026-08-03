@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">NoteFlow Widget</string>
+    <string name="widget_name">NoteFlow Tasks</string>
+    <string name="widget_description">Displays pending tasks from NoteFlow</string>
+    <string name="setup_title">NoteFlow Widget</string>
+    <string name="setup_intro">Connect the native widget to your existing NoteFlow task feed. The widget always renders its local cache and does not require unrestricted battery access.</string>
+    <string name="api_url_label">API URL</string>
+    <string name="app_url_label">App URL</string>
+    <string name="token_label">Widget token</string>
+    <string name="text_size_label">Widget text size</string>
+    <string name="save_test">Save &amp; Test</string>
+    <string name="refresh_now">Refresh now</string>
+    <string name="add_widget">Add widget to home screen</string>
+    <string name="widget_empty">No pending tasks</string>
+    <string name="new_task">+ New</string>
+    <string name="open_app">Open app</string>
+    <string-array name="text_sizes">
+        <item>Small</item>
+        <item>Medium</item>
+        <item>Large</item>
+    </string-array>
+</resources>
