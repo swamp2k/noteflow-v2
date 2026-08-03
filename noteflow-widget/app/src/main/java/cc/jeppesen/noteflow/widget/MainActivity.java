@@ -61,11 +61,14 @@ public final class MainActivity extends Activity {
         apiUrlInput.setText(SettingsStore.apiUrl(this));
         appUrlInput.setText(SettingsStore.appUrl(this));
         tokenInput.setText(SettingsStore.token(this));
-        textSizeSpinner.setSelection(switch (SettingsStore.textSize(this)) {
-            case "small" -> 0;
-            case "large" -> 2;
-            default -> 1;
-        });
+        String savedSize = SettingsStore.textSize(this);
+        if ("small".equals(savedSize)) {
+            textSizeSpinner.setSelection(0);
+        } else if ("large".equals(savedSize)) {
+            textSizeSpinner.setSelection(2);
+        } else {
+            textSizeSpinner.setSelection(1);
+        }
 
         if (TaskCache.lastSync(this) > 0) {
             setStatus("Connected. " + TaskCache.load(this).size() + " pending tasks cached.", true);
@@ -78,8 +81,8 @@ public final class MainActivity extends Activity {
         String token = tokenInput.getText().toString().trim();
         String textSize = selectedTextSize();
 
-        if (!isHttpUrl(apiUrl) || !isHttpUrl(appUrl) || token.isBlank()) {
-            setStatus("Enter valid API/App URLs and a widget token.", false);
+        if (!isHttpsUrl(apiUrl) || !isHttpsUrl(appUrl) || token.isEmpty()) {
+            setStatus("Enter HTTPS API/App URLs and a widget token.", false);
             return;
         }
 
@@ -128,7 +131,7 @@ public final class MainActivity extends Activity {
                 });
             } catch (Exception error) {
                 String message = error.getMessage();
-                if (message == null || message.isBlank()) message = "Connection failed";
+                if (message == null || message.trim().isEmpty()) message = "Connection failed";
                 String finalMessage = message;
                 runOnUiThread(() -> {
                     setBusy(false);
@@ -156,15 +159,14 @@ public final class MainActivity extends Activity {
     }
 
     private String selectedTextSize() {
-        return switch (textSizeSpinner.getSelectedItemPosition()) {
-            case 0 -> "small";
-            case 2 -> "large";
-            default -> "medium";
-        };
+        int position = textSizeSpinner.getSelectedItemPosition();
+        if (position == 0) return "small";
+        if (position == 2) return "large";
+        return "medium";
     }
 
-    private boolean isHttpUrl(String value) {
-        return value.startsWith("https://") || value.startsWith("http://");
+    private boolean isHttpsUrl(String value) {
+        return value != null && value.startsWith("https://");
     }
 
     private void setBusy(boolean busy) {
