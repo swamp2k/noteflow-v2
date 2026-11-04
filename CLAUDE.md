@@ -602,3 +602,13 @@ Anthropic calls use `anthropic-beta: prompt-caching-2024-07-31` with `cache_cont
 | `public/js/app.js` | Boot sequence (must load last) |
 | `public/js/*.js` | 17 frontend modules total (plain scripts, shared scope) |
 | `public/service-worker.js` | Offline queue + push notification handler (v26) |
+
+
+---
+
+## Session Coordination
+
+- Read `NOW.md` at the start of each session.
+- Update `NOW.md` before ending every session, preserving relevant existing content.
+- Whenever either root instruction file (`AGENTS.md` or `CLAUDE.md`) changes, update both files so their contents remain identical.
+- Leave nested instruction files unchanged unless the user explicitly directs otherwise.
