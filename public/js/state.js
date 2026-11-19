@@ -69,7 +69,6 @@ let _saveSettingsTimer = null;
 
 // ── Composer ──────────────────────────────────────────────────────────────────
 let composerEditor = null; // kept for API compat — points to the textarea
-let _pendingShareContent = null;
 
 // ── Offline cache ─────────────────────────────────────────────────────────────
 const NOTES_CACHE_KEY     = 'noteflow_notes_cache';

@@ -51,55 +51,33 @@ function updateQueueBadge(size) {
 window.addEventListener('online',  () => setOffline(false));
 window.addEventListener('offline', () => setOffline(true));
 
-// ── Share target: check for pending share on load ────────────────────────────
+// The share navigation identifies one payload, so simultaneous shares use different drafts.
 async function checkSharePending() {
+  const url = new URL(location.href);
+  const shareId = url.searchParams.get('share');
+  if (!shareId) return;
+
   try {
-    const cache = await caches.open('noteflow-v2');
-    const res = await cache.match('/__share_pending__');
-    if (!res) return;
-    const { content, fileCount = 0 } = await res.json();
-    await cache.delete('/__share_pending__');
-
-    switchView('all');
-    if (content) openComposerWithContent(content);
-
-    // Load shared files into the composer's pending attachments
-    for (let i = 0; i < fileCount; i++) {
-      const fileRes = await cache.match(`/__share_file_${i}__`);
-      if (fileRes) {
-        await cache.delete(`/__share_file_${i}__`);
-        const blob = await fileRes.blob();
-        const name = decodeURIComponent(fileRes.headers.get('X-File-Name') || `file_${i}`);
-        const file = new File([blob], name, { type: blob.type });
-        await addFile(file);
-      }
-    }
-  } catch(e) { /* no cache, no problem */ }
-}
-
-// Also check sessionStorage fallback (for when SW wasn't ready)
-const _ssPending = sessionStorage.getItem('__share_pending__');
-if (_ssPending) {
-  try {
-    const { content } = JSON.parse(_ssPending);
-    sessionStorage.removeItem('__share_pending__');
-    if (content) setTimeout(() => openComposerWithContent(content), 500);
-  } catch(e) {}
-}
-
-function openComposerWithContent(content) {
-  switchView('all');
-  if (composerEditor) {
-    composerEditor.value = content;
-    composerEditor.focus();
-    document.getElementById('composer').classList.add('expanded');
-  } else {
-    // Composer not ready yet — store for deferred apply
-    _pendingShareContent = content;
+    if (!/^[0-9a-f-]{36}$/.test(shareId)) throw new Error('Invalid share ID');
+    const cache = await caches.open('noteflow-shares-v1');
+    const key = '/__share_pending__/' + shareId;
+    const response = await cache.match(key);
+    if (!response) throw new Error('Missing share payload');
+    const payload = await response.formData();
+    // Only the page that successfully claims this payload should open a draft.
+    if (!await cache.delete(key)) return;
+    composerShowEdit();
+    composerEditor.value = payload.get('content') || '';
+    for (const file of payload.getAll('files')) addFile(file);
+  } catch (error) {
+    console.warn('Could not open share:', error);
+    toast('Could not import the share. Try sharing it again.');
   }
+  const currentUrl = new URL(location.href);
+  currentUrl.searchParams.delete('share');
+  history.replaceState(null, '', currentUrl);
 }
 
-// Check for share payload after SW is ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', checkSharePending);
 } else {

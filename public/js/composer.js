@@ -14,40 +14,45 @@ async function aiTags(content) {
 function fileToBase64(file) {
   return new Promise((res, rej) => {
     const reader = new FileReader();
-    reader.onloadend = () => res({ base64: reader.result.split(',')[1], mediaType: file.type || 'image/jpeg' });
+    reader.onload = () => res({ base64: reader.result.split(',')[1], mediaType: file.type });
     reader.onerror = rej;
     reader.readAsDataURL(file);
   });
 }
 
 async function addFile(file) {
-  const { base64, mediaType } = await fileToBase64(file);
-  const entry = { file, base64, mediaType, ocrText: null, ocrLoading: false };
-  if (mediaType.startsWith('image/')) {
-    entry.ocrLoading = true;
-    pendingImages.push(entry);
-    renderImagePreviews();
+  const mediaType = file.type || 'application/octet-stream';
+  const isImage = mediaType.startsWith('image/');
+  const previewUrl = isImage ? URL.createObjectURL(file) : null;
+  const entry = { file, mediaType, previewUrl, ocrText: null, ocrLoading: isImage };
+  pendingImages.push(entry);
+  renderImagePreviews();
+
+  if (isImage) {
     try {
+      const { base64 } = await fileToBase64(file);
       entry.ocrText = await claudeVision(base64, mediaType) || null;
     } catch(e) { entry.ocrText = null; }
     entry.ocrLoading = false;
-    renderImagePreviews();
-  } else {
-    pendingImages.push(entry);
-    renderImagePreviews();
+    if (pendingImages.includes(entry)) renderImagePreviews();
   }
+}
+
+function removePendingFile(entry) {
+  pendingImages = pendingImages.filter(file => file !== entry);
+  if (entry.previewUrl) URL.revokeObjectURL(entry.previewUrl);
 }
 
 function renderImagePreviews() {
   const area = document.getElementById('image-preview-area');
   area.innerHTML = '';
-  pendingImages.forEach((img, i) => {
+  pendingImages.forEach(img => {
     const wrap = document.createElement('div');
     const isImage = img.mediaType.startsWith('image/');
     if (isImage) {
       wrap.className = 'img-preview-wrap';
       const el = document.createElement('img');
-      el.src = 'data:' + img.mediaType + ';base64,' + img.base64;
+      el.src = img.previewUrl;
       wrap.appendChild(el);
       const badge = document.createElement('div');
       badge.className = 'ocr-badge';
@@ -66,7 +71,7 @@ function renderImagePreviews() {
     }
     const rm = document.createElement('button');
     rm.className = 'img-remove'; rm.textContent = '✕';
-    rm.onclick = () => { pendingImages.splice(i, 1); renderImagePreviews(); };
+    rm.onclick = () => { removePendingFile(img); renderImagePreviews(); };
     wrap.appendChild(rm);
     area.appendChild(wrap);
   });
@@ -171,7 +176,7 @@ const SVG_EDIT = '<svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2
     setTimeout(() => {
       const composer = document.getElementById('composer');
       if (!composer.matches(':focus-within')) {
-        if (!ta.value.trim()) {
+        if (!ta.value.trim() && !pendingImages.length) {
           composer.classList.remove('expanded');
         } else {
           composerShowPreview();
@@ -207,102 +212,107 @@ const SVG_EDIT = '<svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2
     preview.addEventListener('click', () => composerShowEdit());
   }
 
-  if (_pendingShareContent) {
-    ta.value = _pendingShareContent;
-    ta.focus();
-    _pendingShareContent = null;
-  }
 })();
 
-// ── Save ──────────────────────────────────────────────────────────────────────
+// Keep the created note ID when an attachment fails, so Save retries the same note.
+let composerUploadNote = null;
+
 document.getElementById('save-btn').addEventListener('click', async () => {
   if (!composerEditor) return;
-  // Make sure we read from the textarea, not the preview
   composerShowEdit();
-  const content_raw = composerEditor.value.trim();
-  if (!content_raw) return;
+  const content = composerEditor.value.trim();
+  if (!content && !pendingImages.length && !composerUploadNote) return;
 
-  const saveBtn = document.getElementById('save-btn');
-  saveBtn.disabled = true;
-  saveBtn.innerHTML = '<span class="spinner"></span>';
-
-  // Offline: queue note and return early
   if (!navigator.onLine) {
-    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+    if (pendingImages.length || composerUploadNote) {
+      toast('You’re offline. Attachments are still in the composer.');
+    } else if (navigator.serviceWorker?.controller) {
       navigator.serviceWorker.controller.postMessage({
         type: 'QUEUE_MEMO',
-        payload: { content: content_raw, token: getCFToken() }
+        payload: { content, token: getCFToken() }
       });
       composerEditor.value = '';
       composerEditor.style.height = 'auto';
-      pendingImages = [];
-      renderImagePreviews();
       toast('📥 Saved offline — will sync when reconnected');
     } else {
-      toast('You\'re offline — note could not be saved');
+      toast('You’re offline. Note could not be saved.');
     }
-    saveBtn.disabled = false;
-    saveBtn.textContent = 'Save';
     return;
   }
 
-  try {
-    let content = content_raw;
+  const composer = document.getElementById('composer');
+  const saveBtn = document.getElementById('save-btn');
+  composer.inert = true;
+  saveBtn.disabled = true;
+  saveBtn.innerHTML = '<span class="spinner"></span>';
 
-    // Extract inline hashtags and view tags synchronously
+  try {
     const inlineHashtags = (content.match(/#[\wÀ-ɏ-]+/g) || [])
       .map(t => t.slice(1).toLowerCase()).filter(t => !SPECIAL_TAGS.includes(t));
-    const viewTags = [];
+    const viewTags = (composerUploadNote?.tags || []).filter(t => SPECIAL_TAGS.includes(t));
     if (currentView === 'starred') viewTags.push('starred');
-    if (currentView === 'hidden')  viewTags.push('hidden');
+    if (currentView === 'hidden') viewTags.push('hidden');
     const initialTags = [...new Set([...inlineHashtags, ...viewTags])];
 
-    // Save immediately — don't wait for AI tags
-    const result = await apiPost('/notes', { content: content.trim(), visibility: 'PRIVATE', tags: initialTags });
-    const newMemo = result.note;
+    if (!composerUploadNote) {
+      const result = await apiPost('/notes', { content, visibility: 'PRIVATE', tags: initialTags });
+      composerUploadNote = result.note;
+    } else if (composerUploadNote.content !== content) {
+      await apiPatch('/notes/' + composerUploadNote.id, { content, tags: initialTags });
+      Object.assign(composerUploadNote, { content, tags: initialTags });
+    }
+    const note = composerUploadNote;
+    note.attachments ||= [];
+    for (const entry of [...pendingImages]) {
+      try {
+        const { attachment, indexed } = await uploadAttachment(entry.file, note.id);
+        if (!attachment) throw new Error('Attachment missing from upload response');
+        note.attachments.push({ ...attachment, _indexed: indexed });
+        removePendingFile(entry);
+      } catch (error) {
+        console.warn('Upload failed:', error);
+      }
+    }
 
-    // Update UI right away so user can continue
-    allMemos.unshift(newMemo);
-    saveNotesCache(allMemos);  // keep offline cache in sync
-    const snapshotImages = [...pendingImages];
+    const index = allMemos.findIndex(memo => memo.id === note.id);
+    if (index === -1) {
+      allMemos.unshift(note);
+      if (currentView !== 'tasks') renderFeed();
+    } else {
+      allMemos[index] = note;
+      updateCard(note);
+    }
+    saveNotesCache(allMemos);
+    renderImagePreviews();
+
+    if (pendingImages.length) {
+      toast('Note saved. Some files failed to upload. Tap Save to retry.');
+      return;
+    }
+
+    composerUploadNote = null;
     composerEditor.value = '';
     composerEditor.style.height = 'auto';
-    pendingImages = [];
-    renderImagePreviews();
-    renderFeed();
     toast('Saved ✓');
-    saveBtn.disabled = false;
-    saveBtn.textContent = 'Save';
 
-    // Attachments + AI tagging run in background
+    // Keep AI tagging in the background.
     (async () => {
-      for (const img of snapshotImages) {
-        try {
-          const attResult = await uploadAttachment(img.file || img, newMemo.id);
-          if (attResult.attachment) {
-            if (!newMemo.attachments) newMemo.attachments = [];
-            attResult.attachment._indexed = attResult.indexed;
-            newMemo.attachments.push(attResult.attachment);
-          }
-        } catch(e) { console.warn('Upload failed:', e); }
-      }
-      if (snapshotImages.length > 0 && !document.querySelector('.card-editing')) renderFeed();
       try {
         const aiTagList = await aiTags(content);
         if (aiTagList.length > 0) {
           const merged = [...new Set([...initialTags, ...aiTagList])];
-          await apiPatch('/notes/' + newMemo.id, { tags: merged });
-          const idx = allMemos.findIndex(m => m.id === newMemo.id);
-          if (idx !== -1) { allMemos[idx].tags = merged; updateCard(allMemos[idx]); }
+          await apiPatch('/notes/' + note.id, { tags: merged });
+          const memo = allMemos.find(m => m.id === note.id);
+          if (memo) { memo.tags = merged; updateCard(memo); }
         }
       } catch(e) { console.error('AI tagging failed (compose):', e.message); }
     })();
-    return;
   } catch(err) {
     console.error(err);
     toast('Error: ' + err.message);
+  } finally {
+    composer.inert = false;
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Save';
   }
-
-  saveBtn.disabled = false;
-  saveBtn.textContent = 'Save';
 });
