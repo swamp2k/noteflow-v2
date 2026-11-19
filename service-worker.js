@@ -1,6 +1,7 @@
-// NoteFlow Service Worker v26
+// NoteFlow Service Worker v27
 // Handles: share target, offline queue, basic shell caching
-const CACHE_NAME = 'noteflow-shell-v26';
+const CACHE_NAME = 'noteflow-shell-v27';
+const SHARE_CACHE_NAME = 'noteflow-shares-v1';
 const API_BASE   = 'https://noteflow-api.jeppesen.cc/api';
 
 // ── Install: cache only the shell HTML — no external deps ────────────────────
@@ -19,7 +20,7 @@ self.addEventListener('activate', event => {
     caches.keys().then(keys =>
       Promise.all(
         keys
-          .filter(k => k !== CACHE_NAME && k !== 'noteflow-attachments-v1')
+          .filter(k => k !== CACHE_NAME && k !== SHARE_CACHE_NAME && k !== 'noteflow-attachments-v1')
           .map(k => caches.delete(k))
       )
     ).then(() => self.clients.claim())
@@ -60,17 +61,33 @@ self.addEventListener('fetch', event => {
 
 // ── Share target handler ───────────────────────────────────────────────────────
 async function handleShareTarget(event) {
-  let title = '', text = '', sharedUrl = '';
+  const destination = new URL('/', event.request.url);
+  let content;
   try {
     const formData = await event.request.formData();
-    title     = formData.get('title')  || '';
-    text      = formData.get('text')   || '';
-    sharedUrl = formData.get('url')    || '';
-  } catch(e) {}
+    const files = formData.getAll('files').filter(value => value instanceof File);
+    content = ['title', 'text', 'url']
+      .map(field => formData.get(field))
+      .filter(value => typeof value === 'string')
+      .map(value => value.trim())
+      .filter(Boolean)
+      .join('\n');
 
-  // Build note content from shared data
-  const parts = [title, text, sharedUrl].map(s => s.trim()).filter(Boolean);
-  const content = parts.join('\n');
+    if (files.length) {
+      const shareId = crypto.randomUUID();
+      const payload = new FormData();
+      payload.set('content', content);
+      for (const file of files) payload.append('files', file);
+      const cache = await caches.open(SHARE_CACHE_NAME);
+      await cache.put(new URL('/__share_pending__/' + shareId, destination), new Response(payload));
+      destination.searchParams.set('share', shareId);
+      return Response.redirect(destination, 303);
+    }
+  } catch (error) {
+    console.error('Could not receive share:', error);
+    destination.searchParams.set('share', 'error');
+    return Response.redirect(destination, 303);
+  }
 
   // Try to post to API — if it fails (offline), queue it
   let saved = false;
@@ -94,7 +111,7 @@ async function handleShareTarget(event) {
   }
 
   // Redirect to app after share
-  return Response.redirect('/', 303);
+  return Response.redirect(destination, 303);
 }
 
 // ── Offline queue (IndexedDB) ─────────────────────────────────────────────────

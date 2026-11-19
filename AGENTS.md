@@ -98,7 +98,7 @@ noteflow-v2/
     â”œâ”€â”€ tracker.html           â† Tracker feature (standalone page)
     â”œâ”€â”€ tagcloud.html          â† Tag Cloud / Semantic / Embeddings (standalone)
     â”œâ”€â”€ nav.js                 â† Shared sidebar â€” loaded by all three pages
-    â”œâ”€â”€ service-worker.js      â† Browser service worker (v26)
+    â”œâ”€â”€ service-worker.js      â† Browser service worker (v27)
     â””â”€â”€ js/                    â† Frontend JS modules (plain <script> tags, shared global scope)
         â”œâ”€â”€ state.js           â† All global state variables (API_BASE, SHARE_BASE, allMemos, settings, etc.)
         â”œâ”€â”€ api.js             â† getCFToken, authHeaders, apiGet, apiPatch, apiPost, apiDelete, uploadAttachment
@@ -113,7 +113,7 @@ noteflow-v2/
         â”œâ”€â”€ tasks.js           â† renderTasksFeed, openTasksOverlay, closeTasksOverlay, openTaskDetail, quickAddTask, completeTask, saveTaskFields, buildTaskCard, buildTaskRow
         â”œâ”€â”€ lightbox.js        â† openLightbox, openFilePreview, renderLightbox, closeLightbox, touch/zoom IIFE
         â”œâ”€â”€ view-nav.js        â† renderProjectsNav, initCollapsibleSections, switchView, initNavItems, infiniteObserver
-        â”œâ”€â”€ offline.js         â† ensureOfflineUI, setOffline, updateQueueBadge, checkSharePending, openComposerWithContent
+        â”œâ”€â”€ offline.js         â† ensureOfflineUI, setOffline, updateQueueBadge, checkSharePending
         â”œâ”€â”€ project-ai.js      â† project AI panel rendering (shown when viewing a project tag)
         â”œâ”€â”€ push.js            â† subscribeToPush, unsubscribeFromPush (Web Push)
         â””â”€â”€ app.js             â† marked.use() config, initAuth(), boot sequence, SW registration
@@ -303,6 +303,11 @@ File and image attachments are supported in three places:
 2. **Inline note editor** (`card.js`) â€” paste handler on `inlineTextarea` catches file clipboard items, pushes to `inlinePendingFiles`. Attach button opens a file picker. Both show previews via `renderInlinePreviews()` (image thumbnails + file chips in `inlinePreviewArea`). Files are uploaded on Save.
 
 3. **Task detail modal** (`tasks.js`) â€” `openTaskDetail()` renders existing `task.attachments` as chips in `#td-attachment-list`. Attach button (`#td-attach-btn`) + file input (`#td-file-input`) for click-to-upload. Paste handler on `#td-textarea` uploads files immediately. Delete button calls `DELETE /api/attachments/:id`. Uses `.onclick`/`.onchange`/`.onpaste` assignment to prevent stacking on re-open.
+
+Android PWA file shares land in the composer with the original files and any shared text.
+The service worker stores each share as a separate multipart payload in `noteflow-shares-v1`, then redirects with its ID.
+The composer accepts file-only notes and keeps failed uploads pending for a retry against the same note.
+Text-only shares retain the existing auto-save and offline queue.
 
 ### Targeted card updates (performance)
 Do NOT call `renderFeed()` for single-note operations. Use:
@@ -601,7 +606,7 @@ Anthropic calls use `anthropic-beta: prompt-caching-2024-07-31` with `cache_cont
 | `public/js/project-ai.js` | Project AI panel |
 | `public/js/app.js` | Boot sequence (must load last) |
 | `public/js/*.js` | 17 frontend modules total (plain scripts, shared scope) |
-| `public/service-worker.js` | Offline queue + push notification handler (v26) |
+| `public/service-worker.js` | Offline queue + push notification handler (v27) |
 
 
 ---
